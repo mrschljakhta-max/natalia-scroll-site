@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#12232a">
 <link rel="preload" as="image" type="image/svg+xml" href="./assets/images/forest-paper-texture.svg">
+<link rel="preload" as="image" type="image/svg+xml" href="./assets/images/cinematic-sea-sky.svg">
 <meta name="robots" content="noindex,nofollow">
 <meta name="description" content="Тривимірний скролітелінг Наталії та Анни: паперові документи у вихорі та складання орігамі-вітрильника.">
 <link rel="canonical" href="https://mrschljakhta-max.github.io/natalia-scroll-site/">
@@ -42,10 +43,24 @@ html.webgl-ready #paperCanvas{opacity:0!important}
 html.webgl-ready #origami3d{opacity:1}
 html.canvas-fallback #origami3d{opacity:0}
 #origami3d canvas{display:block;width:100%;height:100%;pointer-events:none;outline:0}
-/* Outdoor terrace. Entire scene is handcrafted inline SVG and works offline. */
-.escape-world{position:absolute;inset:0;z-index:1;opacity:var(--day);transform:translateY(calc((1 - var(--day))*45px)) scale(calc(1.04 - var(--day)*.04));transform-origin:center;pointer-events:none;will-change:opacity,transform}
-.escape-world svg{width:100%;height:100%;display:block}
-.sun-bloom{position:absolute;right:9%;top:4%;width:47vw;height:38vw;max-width:670px;max-height:670px;border-radius:50%;background:radial-gradient(circle,#fff4cc80,transparent 70%);mix-blend-mode:screen;filter:blur(16px);pointer-events:none;opacity:var(--day)}
+/* CINEMATIC PAPER SEA — layered atmosphere behind the actual WebGL yacht.
+   The sky is a separate responsive texture; water is a fragment shader in Three.js.
+   The simple CSS sea appears ONLY when WebGL cannot start. */
+.escape-world{position:absolute;inset:0;z-index:1;opacity:var(--day);
+ transform:translateY(calc((1 - var(--day))*14px)) scale(calc(1.012 - var(--day)*.012));
+ transform-origin:center;pointer-events:none;will-change:opacity,transform;overflow:hidden}
+.sea-sky{position:absolute;inset:0;
+ background:#a9c3bd url("./assets/images/cinematic-sea-sky.svg") center center/cover no-repeat}
+.sea-haze{position:absolute;left:0;right:0;top:49%;height:28%;
+ background:linear-gradient(180deg,transparent 0%,#fff2d013 28%,#f2e6cb46 54%,transparent 93%);
+ filter:blur(16px);opacity:.60}
+.sun-bloom{position:absolute;right:1%;top:9%;width:min(53vw,780px);height:min(53vw,780px);
+ border-radius:50%;background:radial-gradient(circle,#fff4d080 0%,#fff0bc27 29%,transparent 67%);
+ mix-blend-mode:screen;filter:blur(26px);pointer-events:none;opacity:calc(var(--day)*.56)}
+.fallback-ocean{display:none;position:absolute;inset:61% 0 0;
+ background:radial-gradient(ellipse 12% 85% at 80% 0%,#eadbbb39,transparent 100%),
+  linear-gradient(180deg,#79a5a0 0%,#55908c 34%,#2c696b 100%)}
+html.canvas-fallback .fallback-ocean{display:block}
 .topbar{position:absolute;left:clamp(18px,4.5vw,76px);right:clamp(18px,4.5vw,76px);top:clamp(17px,3vw,37px);display:flex;justify-content:space-between;align-items:center;gap:20px;z-index:12}
 .brand{display:flex;align-items:center;gap:12px;color:#f5f1e8;text-decoration:none;transition:color .3s}.monogram{font:400 24px Georgia,serif;width:45px;height:45px;border:1px solid currentColor;display:grid;place-items:center;border-radius:50%}.brand-name{display:grid;gap:2px;font-size:13px;letter-spacing:.22em;font-weight:700}.brand-name small{font:500 9px 'DM Sans',sans-serif;letter-spacing:.16em;opacity:.65}
 .pill{border:1px solid #f7f4ec4a;background:#13232b5a;backdrop-filter:blur(14px);border-radius:100px;font-size:10px;letter-spacing:.13em;padding:12px 18px;color:#e7f1e9;white-space:nowrap}
@@ -81,6 +96,13 @@ html.canvas-fallback #origami3d{opacity:0}
 .stage.is-day .brand .sail-mark{background:#f9f2decc;border-color:#3f6f6470}
 @media(max-width:670px){.sail-mark{width:44px;height:44px;flex-basis:44px}.sail-mark svg{width:37px;height:37px}.brand-name{font-size:11px}.brand-name small{font-size:7px}.stage.is-day .headline-area{top:18%}}
 
+/* Keep the sunset composition and horizon aligned on narrow portrait viewports. */
+@media(max-width:670px){
+ .sea-sky{background-position:69% center}
+ .sea-haze{top:54%;height:27%}
+ .sun-bloom{right:-13%;top:16%;width:95vw;height:95vw;filter:blur(18px);opacity:calc(var(--day)*.42)}
+ .fallback-ocean{top:63%}
+}
 /* Art-directed crop and ink wash for narrow screens: one responsive paper asset. */
 @media(max-width:670px){
  .dark-world{
@@ -97,13 +119,9 @@ html.canvas-fallback #origami3d{opacity:0}
 <div class="stage" id="stage">
   <div class="dark-world" aria-hidden="true"></div><div class="paper-glow" aria-hidden="true"></div>
   <div class="escape-world" id="escapeWorld" aria-hidden="true">
-    <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" role="presentation">
-<defs><linearGradient id="sky2" x2="0" y2="1"><stop stop-color="#7caaa8"/><stop offset=".5" stop-color="#c9d8cd"/><stop offset="1" stop-color="#f2d7b4"/></linearGradient><linearGradient id="sea2" x2="0" y2="1"><stop stop-color="#8cb2a9"/><stop offset=".4" stop-color="#548e8a"/><stop offset="1" stop-color="#193e49"/></linearGradient><radialGradient id="sun2"><stop stop-color="#fffbe5"/><stop offset=".2" stop-color="#ffedc8" stop-opacity=".75"/><stop offset="1" stop-color="#ffeecc" stop-opacity="0"/></radialGradient></defs>
-<rect width="1600" height="900" fill="url(#sky2)"/><ellipse cx="1300" cy="335" rx="450" ry="375" fill="url(#sun2)"/><circle cx="1315" cy="330" r="48" fill="#fffce4"/>
-<path d="M-30 210Q150 165 333 205T780 208Q985 180 1170 203T1640 201L1640 225Q1310 210 1160 230T787 232Q535 213 340 238T-30 242Z" fill="#fff8ea" opacity=".23"/>
-<path d="M0 550Q220 540 500 548T1020 547T1600 545L1600 900H0Z" fill="url(#sea2)"/>
-<path d="M0 549Q530 538 1060 546T1600 547" fill="none" stroke="#fff1d5" stroke-width="4" opacity=".75"/>
-<g fill="none" stroke="#f9e9c8" stroke-linecap="round"><path d="M1050 570Q1310 557 1600 570M1150 598Q1350 583 1610 599M1000 627Q1330 607 1610 632" stroke-width="3" opacity=".43"/><path d="M-40 612Q250 592 490 607T1010 614T1640 605M-20 683Q325 646 760 677T1660 668M-30 778Q420 751 900 773T1630 766" stroke-width="3" opacity=".24"/></g></svg>
+    <div class="sea-sky" aria-hidden="true"></div>
+    <div class="sea-haze" aria-hidden="true"></div>
+    <div class="fallback-ocean" aria-hidden="true"></div>
     <div class="sun-bloom"></div>
   </div>
   <canvas id="paperCanvas" aria-hidden="true"></canvas>
