@@ -397,11 +397,18 @@ function tick(time){
  boatGroup.rotation.z=reduce.matches?0:Math.sin(time*.63)*.011*afloat;
  boatGroup.position.y-=reduce.matches?0:Math.sin(time*.81)*.012*afloat;
  renderer.render(scene,camera);
+ // Reveal WebGL only after its first real render (never display a blank canvas).
+ if(!window.__origami3DReady){
+  if(typeof window.__activateWebGL==="function")window.__activateWebGL();
+  else{window.__natalia3d=true;window.__origami3DReady=true;}
+ }
  window.__origami3DProgress=p;
 }
 try{
  resize();renderer.render(scene,camera);
- const scrub={p:0};
+ const initialPosition=clamp(-journey.getBoundingClientRect().top/Math.max(1,journey.offsetHeight-innerHeight));
+ progress=initialPosition;
+ const scrub={p:initialPosition};
  GS.to(scrub,{p:1,ease:"none",scrollTrigger:{
   trigger:journey,start:"top top",end:"bottom bottom",scrub:0.65,
   invalidateOnRefresh:true,onUpdate:()=>{}
@@ -409,7 +416,16 @@ try{
  GS.ticker.add(tick);
  document.addEventListener("visibilitychange",()=>{active=!document.hidden;if(active)resize()});
  window.addEventListener("resize",resize,{passive:true});
- renderer.domElement.addEventListener("webglcontextlost",()=>{window.__natalia3d=false;target.style.display="none"},{passive:true});
- window.__natalia3d=true;window.__origami3DReady=true;
+ renderer.domElement.addEventListener("webglcontextlost",()=>{
+  window.__origami3DReady=false;window.__natalia3d=false;
+  document.documentElement.classList.remove("webgl-ready");
+  target.style.display="none";
+  window.__enableCanvasFallback?.("webgl-context-lost");
+},{passive:true});
  window.__origami3DDiagnostics={engine:"Three.js WebGL",controller:"GSAP ScrollTrigger",sheetMeshes:halves.length,sheetVertices:halves.reduce((n,o)=>n+o.geo.attributes.position.count,0),vortexMeshes:docs.length,boatFacets:8,sailFacets:4,geometryVersion:"v5-symmetric"};
-}catch(err){window.__natalia3d=false;target.style.display="none";console.error("3D scene init failed; fallback to Canvas",err)}
+}catch(err){
+ window.__origami3DReady=false;window.__natalia3d=false;
+ target.style.display="none";
+ window.__enableCanvasFallback?.("webgl-init-error");
+ console.error("3D scene init failed; fallback to Canvas",err);
+}

@@ -32,8 +32,12 @@
 .dark-world::before{content:'';position:absolute;inset:0;opacity:.18;background:repeating-linear-gradient(90deg,transparent 0 78px,#c1d1b927 79px 80px),repeating-linear-gradient(0deg,transparent 0 78px,#c1d1b927 79px 80px);mask-image:linear-gradient(to bottom,transparent,#0008 20%,#0008 76%,transparent)}
 .dark-world::after{content:'';position:absolute;inset:-15%;background:radial-gradient(ellipse 56% 49% at 65% 56%,#8db6a817 0%,transparent 73%),radial-gradient(ellipse 15% 44% at 80% 37%,#efcba915 0%,transparent 100%);opacity:calc(1 - var(--day));pointer-events:none}
 .paper-glow{position:absolute;width:84vmin;aspect-ratio:1;border-radius:50%;top:13%;left:34%;z-index:1;background:radial-gradient(circle,#f5d9aa22,transparent 67%);filter:blur(35px);pointer-events:none;opacity:calc(1 - var(--day))}
-#paperCanvas{position:absolute;inset:0;width:100%;height:100%;z-index:4;pointer-events:none;opacity:1}
-#origami3d{position:absolute;inset:0;z-index:5;pointer-events:none;overflow:hidden;contain:layout paint style}
+#paperCanvas{position:absolute;inset:0;width:100%;height:100%;z-index:4;pointer-events:none;opacity:0}
+html.canvas-fallback #paperCanvas{opacity:1}
+html.webgl-ready #paperCanvas{opacity:0!important}
+#origami3d{position:absolute;inset:0;z-index:5;pointer-events:none;overflow:hidden;contain:layout paint style;opacity:0;transition:opacity 420ms ease}
+html.webgl-ready #origami3d{opacity:1}
+html.canvas-fallback #origami3d{opacity:0}
 #origami3d canvas{display:block;width:100%;height:100%;pointer-events:none;outline:0}
 /* Outdoor terrace. Entire scene is handcrafted inline SVG and works offline. */
 .escape-world{position:absolute;inset:0;z-index:1;opacity:var(--day);transform:translateY(calc((1 - var(--day))*45px)) scale(calc(1.04 - var(--day)*.04));transform-origin:center;pointer-events:none;will-change:opacity,transform}
@@ -431,6 +435,7 @@ function drawBoat(p,time,cx,cy,S){
  ctx.restore();
 }
 function drawPapers(p,time){
+ if(!document.documentElement.classList.contains("canvas-fallback"))return;
  ctx.clearRect(0,0,w,h);
  if(window.__natalia3d)return;
  const cx=w*(w<670?.53:.635),cy=h*(w<670?.645:.545),span=Math.min(w,h);
@@ -457,6 +462,33 @@ resize();position=scrollProgress();tick=requestAnimationFrame(frame);
 </script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/ScrollTrigger.min.js" crossorigin="anonymous"></script>
-<script type="module" src="./assets/js/origami3d.js"></script>
+<script>
+/* No legacy-Canvas flash while the WebGL scene loads. Keep an accessible
+   branded hero on-screen; reveal fallback only on error / slow unavailable 3D. */
+(()=>{
+ const root=document.documentElement;
+ let fallbackTimer=null;
+ window.__enableCanvasFallback=(reason)=>{
+   if(window.__origami3DReady)return;
+   root.classList.remove("webgl-ready");
+   root.classList.add("canvas-fallback");
+   window.__natalia3d=false;
+   window.__origamiFallbackReason=reason||"unavailable";
+ };
+ window.__activateWebGL=()=>{
+   if(fallbackTimer!==null)clearTimeout(fallbackTimer);
+   root.classList.remove("canvas-fallback");
+   root.classList.add("webgl-ready");
+   window.__natalia3d=true;
+   window.__origami3DReady=true;
+ };
+ // Only trigger fallback if the browser cannot initialise 3D after an
+ // extended failure. Normal CDN/network startup never displays old imagery.
+ fallbackTimer=setTimeout(()=>{
+   if(!window.__origami3DReady)window.__enableCanvasFallback("3d-load-timeout");
+ },12000);
+})();
+</script>
+<script type="module" src="./assets/js/origami3d.js?v=6-gated-webgl" onerror="window.__enableCanvasFallback?.('module-load-error')"></script>
 </body>
 </html>
