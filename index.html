@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#12232a">
 <meta name="robots" content="noindex,nofollow">
-<meta name="description" content="Демоверсія бренду Наталії та Анни: паперовий вихор складається в орігамі-вітрильник.">
+<meta name="description" content="Тривимірний скролітелінг Наталії та Анни: паперові документи у вихорі та складання орігамі-вітрильника.">
 <link rel="canonical" href="https://mrschljakhta-max.github.io/natalia-scroll-site/">
 <script>
 /* Keep platform referral tracking out of the visible address bar, without
@@ -33,6 +33,8 @@
 .dark-world::after{content:'';position:absolute;inset:-15%;background:radial-gradient(ellipse 56% 49% at 65% 56%,#8db6a817 0%,transparent 73%),radial-gradient(ellipse 15% 44% at 80% 37%,#efcba915 0%,transparent 100%);opacity:calc(1 - var(--day));pointer-events:none}
 .paper-glow{position:absolute;width:84vmin;aspect-ratio:1;border-radius:50%;top:13%;left:34%;z-index:1;background:radial-gradient(circle,#f5d9aa22,transparent 67%);filter:blur(35px);pointer-events:none;opacity:calc(1 - var(--day))}
 #paperCanvas{position:absolute;inset:0;width:100%;height:100%;z-index:4;pointer-events:none;opacity:1}
+#origami3d{position:absolute;inset:0;z-index:5;pointer-events:none;overflow:hidden;contain:layout paint style}
+#origami3d canvas{display:block;width:100%;height:100%;pointer-events:none;outline:0}
 /* Outdoor terrace. Entire scene is handcrafted inline SVG and works offline. */
 .escape-world{position:absolute;inset:0;z-index:1;opacity:var(--day);transform:translateY(calc((1 - var(--day))*45px)) scale(calc(1.04 - var(--day)*.04));transform-origin:center;pointer-events:none;will-change:opacity,transform}
 .escape-world svg{width:100%;height:100%;display:block}
@@ -90,6 +92,7 @@
     <div class="sun-bloom"></div>
   </div>
   <canvas id="paperCanvas" aria-hidden="true"></canvas>
+  <div id="origami3d" aria-hidden="true"></div>
   <div class="topbar">
     <a class="brand" href="#experience" aria-label="Наталія та Анна — на початок"><span class="sail-mark" aria-hidden="true"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="markA" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f2f2de"/><stop offset=".48" stop-color="#abc5b1"/><stop offset="1" stop-color="#57826f"/></linearGradient><linearGradient id="markB" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f4dbb7"/><stop offset="1" stop-color="#af7a5c"/></linearGradient></defs><path d="M40 12L40 53L16 54Z" fill="url(#markA)" stroke="#f6f0db" stroke-width="1.3"/><path d="M45 23L64 54L45 54Z" fill="url(#markB)" stroke="#f4ddc1" stroke-width="1.3"/><path d="M9 56L71 56L58 66L23 65Z" fill="#ede8d8" stroke="#d5e1d0" stroke-width="1.3"/><path d="M16 56L41 62L64 56M40 12L33 52" fill="none" stroke="#769889" stroke-width="1.5"/><path d="M13 71Q39 65 67 71" fill="none" stroke="#c99d7b" stroke-width="1.8" stroke-linecap="round"/></svg></span><span class="brand-name">НАТАЛІЯ &amp; АННА<small>БУХГАЛТЕРСЬКИЙ СУПРОВІД</small></span></a>
     <span class="pill">ІНТЕРАКТИВНА КОНЦЕПЦІЯ · 01</span>
@@ -114,7 +117,7 @@
 </section>
 <section class="footer" id="conclusion" aria-label="Завершення історії">
   <div><span class="footer-kicker">NATALIIA &amp; ANNA / BEYOND THE NUMBERS</span><h2>Цифри —<br>під контролем.<br><em>Життя — у фокусі.</em></h2><p>Це демонстрація майбутнього скролітелінгу для спільного бренду Наталії та Анни. Ми показуємо шлях від інформаційного хаосу до порядку й вільного часу, а не обіцяємо фінансовий успіх як гарантований результат.</p><p class="fineprint">Сценарій і образ паперового вітрильника — робоча концепція. Номер телефону, тарифи та реальна форма звернення будуть додані тільки після погодження партнерками.</p><button class="restart" id="restart" type="button">↺ Переглянути анімацію ще раз</button></div>
-  <div class="panel"><div><span>ІСТОРІЯ</span><b>Хаос → Вихор → Складання → Свобода</b></div><div><span>ФОРМАТ</span><b>Самодостатній HTML<br>Без зовнішніх бібліотек анімації</b></div><div><span>НАСТУПНИЙ ЕТАП</span><b>Узгодження стилю, фіналу й інтеграція на сайт</b></div></div>
+  <div class="panel"><div><span>ІСТОРІЯ</span><b>Хаос → Вихор → Складання → Свобода</b></div><div><span>ФОРМАТ</span><b>Three.js + GSAP ScrollTrigger<br>WebGL 3D та керування скролом</b></div><div><span>НАСТУПНИЙ ЕТАП</span><b>Узгодження стилю, фіналу й інтеграція на сайт</b></div></div>
 </section>
 </main>
 <script>
@@ -425,6 +428,7 @@ function drawBoat(p,time,cx,cy,S){
 }
 function drawPapers(p,time){
  ctx.clearRect(0,0,w,h);
+ if(window.__natalia3d)return;
  const cx=w*(w<670?.53:.635),cy=h*(w<670?.645:.545),span=Math.min(w,h);
  const gust=smooth((p-.18)/.11)*(1-smooth((p-.56)/.11));
  drawVortex(p,time,gust,cx,cy,span);
@@ -447,5 +451,8 @@ window.addEventListener('pageshow',()=>{target=scrollProgress()});reduce.addEven
 resize();position=scrollProgress();tick=requestAnimationFrame(frame);
 })();
 </script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/ScrollTrigger.min.js" crossorigin="anonymous"></script>
+<script type="module" src="./assets/js/origami3d.js"></script>
 </body>
 </html>
