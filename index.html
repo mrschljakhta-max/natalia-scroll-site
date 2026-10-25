@@ -234,83 +234,193 @@ function drawSwarm(p,time,cx,cy,span){
 }
 /* Fold I: single real document, fold II: horizontal hinged flap,
    fold III: inward diagonal corner flaps, fold IV: locked lower edge. */
+
+/* Origami choreography v3
+   Every state derives from scrollProgress, so reverse scrolling reverses folds.
+   Timeline: document -> hinge -> mirrored corners -> locked diamond -> hull
+   -> left sail -> right sail -> gentle launch. */
+const phase=(p,a,b)=>smooth((p-a)/(b-a));
+function strokeFold(x1,y1,x2,y2,progress,light='#fff9e3'){
+ if(progress<=0)return;
+ ctx.save();ctx.globalAlpha*=progress;
+ inkLine(x1+1.2,y1+1.6,x2+1.2,y2+1.6,'#3f655041',3.5);
+ inkLine(x1,y1,x2,y2,light,1.05);
+ ctx.restore();
+}
+function foldedFace(points,light,dark,shadow=7){
+ ctx.save();ctx.shadowColor='#122b3049';ctx.shadowBlur=shadow;ctx.shadowOffsetY=3;
+ poly(points,grad(-148,-160,140,115,[[0,light],[.56,light],[1,dark]]),'#88a394',1.2);
+ ctx.restore();
+}
+/* The document itself hinges along its horizontal midpoint. The folding
+   paper uses cos(angle) projection rather than fading or scaling a whole page. */
 function drawSheetFold(p,cx,cy,S){
- const emerge=smooth((p-.535)/.07),halfFold=smooth((p-.612)/.07),
-  corners=smooth((p-.682)/.066),lock=smooth((p-.735)/.064),
-  opacity=emerge*(1-smooth((p-.79)/.065));
- if(opacity<.003)return;
- ctx.save();ctx.translate(cx,cy);ctx.scale(S,S);ctx.globalAlpha=opacity;
- let a=131,b=mix(174,91,halfFold);
- ctx.shadowColor='#061b2090';ctx.shadowBlur=28;ctx.shadowOffsetY=15;
- poly([[-a,-b],[a,-b],[a,b],[-a,b]],grad(-a,-b,a,b,[[0,'#fffdf1'],[.6,'#ecefe4'],[1,'#c1d2c1']]),'#97b09e',1.3);
- ctx.shadowBlur=0;ctx.shadowOffsetY=0;
- ctx.save();ctx.globalAlpha*=1-halfFold*.9;
- ctx.font='bold 10px Arial';ctx.fillStyle='#3b6555';ctx.fillText('N / A   ACCOUNTING · DOCUMENT',-104,-b+23);
- inkLine(-105,-b+33,105,-b+33,'#8ea99a',2);
- for(let k=0;k<9;k++){let yy=-b+50+k*20;ctx.fillStyle=k%3===0?'#87a491':'#bccfbc';ctx.fillRect(-104,yy,178+(k%3)*9,2.3)}ctx.restore();
- if(halfFold>.015){
-  let h=b*(1-halfFold),fl=grad(-a,0,a,b,[[0,'#f4f4e9'],[1,'#bbcebd']]);
-  poly([[-a,0],[a,0],[a,h],[-a,h]],fl,'#92aa9a',1);
-  inkLine(-a,0,a,0,'#779785',1.7);
-  // Darkening crease is strongest at a right-angle fold.
-  ctx.globalAlpha*=.95;ctx.fillStyle='#3f68541c';ctx.fillRect(-a,-3,2*a,6*Math.sin(Math.PI*halfFold));
+ const reveal=phase(p,.540,.590);
+ const crease=phase(p,.593,.653);
+ const leftCorner=phase(p,.658,.703);
+ const rightCorner=phase(p,.688,.728);
+ const compact=phase(p,.729,.776);
+ const pocket=phase(p,.767,.824);
+ const fade=1-phase(p,.784,.838);
+ const opacity=reveal*fade;
+ if(opacity<.002)return;
+
+ const a=131,b=168;
+ const swing=Math.cos(Math.PI*crease);
+ const centerShift=crease*b*.47;
+ const sheen=Math.sin(Math.PI*crease)*.65;
+ const tilt=(1-reveal)*-.085+(1-compact)*.012;
+ const cardY=mix(-18,0,reveal)+pocket*23;
+ ctx.save();
+ ctx.translate(cx,cy+S*(cardY+centerShift));
+ ctx.rotate(tilt);
+ ctx.scale(S*(1-compact*.14),S*(1-compact*.10));
+ ctx.globalAlpha=opacity;
+ ctx.lineJoin='round';ctx.lineCap='round';
+
+ // Upper half is stationary, and remains on screen while the lower flap lifts.
+ foldedFace([[-a,-b],[a,-b],[a,0],[-a,0]],'#fffdf1','#dce4d5',24);
+ ctx.save();ctx.globalAlpha*=Math.max(0,1-crease*.7);
+ ctx.font='bold 10px Arial';ctx.fillStyle='#315b4b';
+ ctx.fillText('N / A  ACCOUNTING · DOCUMENT',-102,-b+23);
+ inkLine(-102,-b+33,102,-b+33,'#7a9b88',1.8);
+ for(let i=0;i<7;i++){
+  let yy=-b+49+i*19;
+  ctx.fillStyle=i%2?'#b2c6b5':'#8da998';
+  ctx.fillRect(-102,yy,182-(i%4)*11,2.5);
+ }ctx.restore();
+
+ // Continuous folding plane. At 90 degrees the paper becomes a very thin edge;
+ // from 90 to 180 degrees its shaded underside reappears over the upper sheet.
+ const flapY=b*swing;
+ const upside=crease>.5;
+ const flapGradient=grad(-a,0,a,flapY||1,upside?
+  [[0,'#e7e6d7'],[.5,'#dae0d2'],[1,'#adbfae']]:
+  [[0,'#f9f7ec'],[.47,'#f2f4e9'],[1,'#c9d8c8']]);
+ ctx.save();
+ ctx.shadowColor='#183a365e';ctx.shadowBlur=9+sheen*16;
+ ctx.shadowOffsetY=5+sheen*8;
+ poly([[-a,0],[a,0],[a,flapY],[-a,flapY]],flapGradient,'#9ab09d',1.1);
+ ctx.restore();
+ if(!upside){
+  ctx.save();ctx.globalAlpha*=1-crease*1.7;ctx.fillStyle='#9bad9c';
+  for(let i=0;i<5;i++){let yy=18+i*20;if(yy<flapY-9)ctx.fillRect(-102,yy,177-(i%3)*13,2)}
+  ctx.restore();
  }
- if(corners>.002){
-  const tip=131*corners;
-  poly([[-a,-b],[-a+tip,-b],[-a,b*.70]],grad(-a,-b,0,b,[[0,'#fffbec'],[1,'#9fb7a6']]),'#8da69b',1.3);
-  poly([[a,-b],[a-tip,-b],[a,b*.70]],grad(0,-b,a,b,[[0,'#f9ecdb'],[1,'#ba9474']]),'#ae9277',1.3);
-  inkLine(-a,b*.70,-a+tip,-b,'#759487',1.5);
-  inkLine(a,b*.70,a-tip,-b,'#b28b72',1.5);
+ // A moving thin crease catches grazing light at the hinge.
+ strokeFold(-a,0,a,0,crease,'#fffbe8');
+ ctx.save();ctx.globalAlpha*=Math.sin(Math.PI*crease)*.42;
+ ctx.fillStyle='#355447';ctx.fillRect(-a,-3,a*2,6);ctx.restore();
+
+ // Two triangular flaps fold inward independently, by pivoting their tips
+ // towards the centre (left precedes right). A dark underlayer adds depth.
+ if(leftCorner>.005){
+  const t=leftCorner,tipX=mix(-a,0,t),tipY=mix(-b,b*.52,t);
+  foldedFace([[-a,-b],[tipX,tipY],[-a,0]],'#f5f7e8','#8eab96',6+10*t);
+  strokeFold(-a,-b,tipX,tipY,t,'#fffcf0');
  }
- if(lock>.01){
-  const up=b*.65*lock;
-  poly([[-a,b],[0,b-up],[a,b],[0,b+up*.05]],'#e1e4d5','#a9bca7',1.3);
-  inkLine(-a,b,0,b-up,'#fff9e7',1.1);inkLine(0,b-up,a,b,'#a6b6a5',1.1);
+ if(rightCorner>.005){
+  const t=rightCorner,tipX=mix(a,0,t),tipY=mix(-b,b*.52,t);
+  foldedFace([[a,-b],[tipX,tipY],[a,0]],'#faeddd','#bd9b7b',6+10*t);
+  strokeFold(a,-b,tipX,tipY,t,'#fff4df');
+ }
+
+ // Opposing lower flaps interlock into a compact diamond, not an arbitrary
+ // appearing new object. The lower corners meet on a common central seam.
+ if(compact>.005){
+  const k=compact,pointY=mix(0,76,k);
+  foldedFace([[-a,0],[0,-38-k*23],[a,0],[0,pointY]],'#edf0e3','#b4c8b6',13);
+  strokeFold(-a,0,0,-38-k*23,k);
+  strokeFold(0,-38-k*23,a,0,k);
+  inkLine(-a*.62,pointY*.57,a*.62,pointY*.57,'#93ad9c70',1.3);
+ }
+
+ // The paper diamond opens like a pocket; both triangular lips separate
+ // and expose a dark fold, then hand the same shape to the boat renderer.
+ if(pocket>.004){
+  const u=pocket,open=Math.sin(u*Math.PI*.5),mouth=12+29*open;
+  ctx.save();ctx.shadowColor='#071e2466';ctx.shadowBlur=14;
+  poly([[-120,5],[-36,-19-mouth*.35],[45,-19-mouth*.35],[120,6],[0,40]],
+   '#d7e1d3','#f9f5e5',1.3);
+  ctx.restore();
+  poly([[-110,8],[0,16+mouth],[108,8],[0,34+mouth]],'#839f8f','#f2f0db',1.2);
+  strokeFold(-110,8,0,16+mouth,u);
+  strokeFold(0,16+mouth,108,8,u);
  }
  ctx.restore();
 }
-/* Two colored paper sails rotate out of common creases in successive phases. */
+/* Boat geometry is made of planar folded paper. Hull and sails follow the
+   paper object's centre to avoid a "teleport" between the two drawings. */
 function drawBoat(p,time,cx,cy,S){
- const hull=smooth((p-.745)/.075),left=smooth((p-.767)/.091),
-  right=smooth((p-.805)/.077),travel=smooth((p-.865)/.12);
+ const hull=phase(p,.770,.840);
+ const port=phase(p,.812,.895);
+ const starboard=phase(p,.853,.938);
+ const glide=phase(p,.902,.992);
  if(hull<.001)return;
- const tx=w*(w<670?.56:.69),ty=h*(w<670?.70:.61);
- let x=mix(cx,tx,travel),y=mix(cy+S*73,ty,travel);
- let sc=S*mix(.96,.88,travel);
- let floating=reduce.matches?0:Math.sin(time*.0008)*2.8*travel;
- ctx.save();ctx.translate(x,y+floating);ctx.scale(sc,sc);
- ctx.save();ctx.globalAlpha=travel*.50;ctx.fillStyle='#143d3e84';
- ctx.beginPath();ctx.ellipse(0,49,187,14,0,0,Math.PI*2);ctx.fill();
- ctx.strokeStyle='#fff6e1';ctx.lineWidth=2.5;
- ctx.beginPath();ctx.ellipse(0,46,175,10,0,.08*Math.PI,.93*Math.PI);ctx.stroke();
- ctx.globalAlpha=travel*.2;ctx.beginPath();ctx.ellipse(0,55,220,19,0,.04*Math.PI,.94*Math.PI);ctx.stroke();ctx.restore();
- ctx.shadowColor='#071f2a91';ctx.shadowBlur=21;ctx.shadowOffsetY=12;
- const a=161*hull,hg=grad(-170,-25,166,68,[[0,'#fff7e8'],[.34,'#cfdfd0'],[.68,'#87a397'],[1,'#b38a68']]);
- poly([[-a,-10],[-a*.74,20],[-a*.24,50],[a*.67,39],[a,-11],[a*.25,-23],[-a*.34,-24]],hg,'#f7f0e2',2);
- ctx.shadowBlur=0;ctx.shadowOffsetY=0;
- poly([[-a,-10],[-a*.24,50],[-a*.30,0],[0,-22]],'#bbd0bf','#749382',1.4);
- poly([[0,-22],[a,-11],[a*.67,39],[a*.25,6]],'#b08a6e','#e5c9a6',1.4);
- poly([[-a*.30,0],[a*.25,6],[a*.67,39],[-a*.24,50]],'#f1eadb','#c7bea5',1.3);
- inkLine(-a*.74,20,a*.67,39,'#e9f5dc9e',1.1);
- if(left>.001){
-  let spread=Math.sin(left*Math.PI*.5),top=-214*left;
-  let lg=grad(-133,-215,25,-20,[[0,'#fffdf1'],[.30,'#e0eadb'],[.68,'#a8c4b1'],[1,'#568572']]);
-  ctx.shadowColor='#07272763';ctx.shadowBlur=13;ctx.shadowOffsetY=6;
-  poly([[3,-19],[3,top],[-139*spread,-19]],lg,'#eef6e8',1.8);
-  ctx.shadowBlur=0;ctx.shadowOffsetY=0;
-  poly([[3,top],[-139*spread,-19],[-64*spread,-12]],'#99baa7','#d1e0cd',1.4);
-  inkLine(3,top,-64*spread,-12,'#fffced',1.7);
-  inkLine(3,-19,3,top,'#547b69',1.4);
+
+ const destX=w*(w<670?.58:.69),destY=h*(w<670?.695:.61);
+ const x=mix(cx,destX,glide), y=mix(cy+S*87,destY,glide);
+ const scale=S*mix(.99,.88,glide);
+ const bob=reduce.matches?0:Math.sin(time*.00068)*2.8*glide;
+ const roll=reduce.matches?0:Math.sin(time*.00054)*.008*glide;
+ const wind=reduce.matches?0:Math.sin(time*.00045)*.018*glide;
+ ctx.save();ctx.translate(x,y+bob);ctx.rotate(roll);ctx.scale(scale,scale);
+ ctx.lineJoin='round';ctx.lineCap='round';
+
+ // Water contact is deliberately delayed until the boat reaches the ocean.
+ ctx.save();ctx.globalAlpha=glide*.62;
+ ctx.shadowColor='#09272b66';ctx.shadowBlur=16;
+ ctx.fillStyle='#214f4b7d';ctx.beginPath();ctx.ellipse(0,49,164,12,0,0,Math.PI*2);ctx.fill();
+ ctx.shadowBlur=0;ctx.strokeStyle='#fff1d9';ctx.lineWidth=2;
+ ctx.beginPath();ctx.ellipse(0,47,172,11,0,.08*Math.PI,.92*Math.PI);ctx.stroke();
+ ctx.globalAlpha=glide*.24;
+ ctx.beginPath();ctx.ellipse(0,56,217,17,0,.05*Math.PI,.95*Math.PI);ctx.stroke();
+ ctx.restore();
+
+ // Unfold from the final diamond: no full-width hull at the first frame.
+ const a=mix(70,163,hull),rise=1-hull;
+ const topY=-29,lowerY=mix(36,50,hull);
+ ctx.save();ctx.shadowColor='#081c249c';ctx.shadowBlur=21;ctx.shadowOffsetY=12;
+ const hullGradient=grad(-170,-35,167,72,[[0,'#fff9e9'],[.32,'#d3e1d1'],[.69,'#89a998'],[1,'#ad8468']]);
+ poly([[-a,-10],[-a*.76,20],[-a*.25,lowerY],[a*.67,39],[a,-11],
+   [a*.24,topY],[-a*.33,topY]],hullGradient,'#f4f1e4',1.8);
+ ctx.restore();
+ // Four precisely shaded facets remain visible through final rest pose.
+ poly([[-a,-10],[-a*.25,lowerY],[-a*.31,0],[0,topY]],'#bfd4c4','#729282',1.15);
+ poly([[0,topY],[a,-11],[a*.67,39],[a*.25,6]],'#b08a6e','#ebd1ad',1.15);
+ poly([[-a*.31,0],[a*.25,6],[a*.67,39],[-a*.25,lowerY]],'#eee7d6','#c6bea6',1.05);
+ strokeFold(-a*.76,20,a*.67,39,hull,'#fff8e5');
+ inkLine(0,topY,a*.25,6,'#f8e5c1bb',1.5);
+
+ // The two sails unfold by rotation around the mast and have visible backs.
+ // At 0 they are narrow creases; near 1 their faces become broad planes.
+ if(port>.001){
+  const extent=Math.sin(port*Math.PI*.5),top=-217*port;
+  const lG=grad(-141,-210,24,5,[[0,'#fffef0'],[.37,'#d9e9d6'],[.72,'#a4c6b2'],[1,'#5a8873']]);
+  ctx.save();ctx.shadowColor='#0b302c75';ctx.shadowBlur=12;ctx.shadowOffsetY=7;
+  poly([[5,-23],[5,top],[-138*extent,-20]],lG,'#f9f7eb',1.7);
+  ctx.restore();
+  // Underside exposed before the final half-turn is complete.
+  const back=.60+(1-port)*.40;
+  poly([[5,top],[-138*extent,-20],[-66*extent*(1+wind),-16]],
+   grad(-140,-186,7,15,[[0,'#a3c1ad'],[1,'#6c9982']]),'#d8e5d4',1.1);
+  strokeFold(5,top,-66*extent*(1+wind),-16,port,'#fdfced');
+  inkLine(5,-23,5,top,'#567f6b',1.25);
+  ctx.save();ctx.globalAlpha*=port*.24;inkLine(5,-145*port,-107*extent,-19,'#ffffff',.9);ctx.restore();
  }
- if(right>.001){
-  let spread=Math.sin(right*Math.PI*.5),top=-178*right;
-  let rg=grad(8,-183,125,-18,[[0,'#fff2dc'],[.34,'#e6c4a2'],[.70,'#cf9c75'],[1,'#916c55']]);
-  ctx.shadowColor='#2a181756';ctx.shadowBlur=11;ctx.shadowOffsetY=5;
-  poly([[12,-19],[12,top],[125*spread,-19]],rg,'#fff1df',1.7);
-  ctx.shadowBlur=0;ctx.shadowOffsetY=0;
-  poly([[12,top],[125*spread,-19],[59*spread,-13]],'#b78666','#e7c3a2',1.3);
-  inkLine(12,top,59*spread,-13,'#fef1db',1.5);
+ if(starboard>.001){
+  const extent=Math.sin(starboard*Math.PI*.5),top=-178*starboard;
+  const rG=grad(11,-184,124,-14,[[0,'#fff4df'],[.39,'#e5c5a0'],[.73,'#cf9c77'],[1,'#986b54']]);
+  ctx.save();ctx.shadowColor='#2a18175b';ctx.shadowBlur=12;ctx.shadowOffsetY=6;
+  poly([[13,-22],[13,top],[126*extent,-21]],rG,'#fff3dc',1.7);
+  ctx.restore();
+  poly([[13,top],[126*extent,-21],[59*extent*(1-wind),-17]],'#b17e5d','#e9c4a1',1.2);
+  strokeFold(13,top,59*extent*(1-wind),-17,starboard,'#fff0da');
+  ctx.save();ctx.globalAlpha*=starboard*.20;inkLine(13,-132*starboard,89*extent,-20,'#fff3df',.9);ctx.restore();
  }
+ // A faint debossed brand crease on the prow.
+ ctx.save();ctx.globalAlpha=glide*.53;
+ inkLine(a*.45,5,a*.71,18,'#f6e6cc',.75);ctx.restore();
  ctx.restore();
 }
 function drawPapers(p,time){
@@ -324,7 +434,10 @@ function drawPapers(p,time){
  drawBoat(p,time,cx,cy,S);
 }
 
-function frame(t){tick=0;target=scrollProgress();const rate=reduce.matches?1:.18;position=mix(position,target,rate);if(Math.abs(position-target)<.00008)position=target;
+let previousFrame=0;
+function frame(t){tick=0;target=scrollProgress();const dt=previousFrame?Math.min(50,Math.max(1,t-previousFrame)):16;previousFrame=t;
+ const rate=reduce.matches?1:1-Math.exp(-dt/82);
+ position=mix(position,target,rate);if(Math.abs(position-target)<.00008)position=target;
  const p=position;const day=smooth((p-.81)/.135),end=smooth((p-.85)/.13);stage.classList.toggle('is-day',day>.68);stage.style.setProperty('--p',p.toFixed(4));stage.style.setProperty('--day',day.toFixed(4));stage.style.setProperty('--end',end.toFixed(4));updateText(p);drawPapers(p,t);
  if(isVisible)tick=requestAnimationFrame(frame)}
 function goTo(p){const distance=journey.offsetHeight-h;const y=journey.getBoundingClientRect().top+scrollY+distance*p;window.scrollTo({top:y,behavior:reduce.matches?'instant':'smooth'})}
