@@ -435,6 +435,7 @@ function drawBoat(p,time,cx,cy,S){
  ctx.restore();
 }
 function drawPapers(p,time){
+ if(!document.documentElement.classList.contains("canvas-fallback"))return;
  ctx.clearRect(0,0,w,h);
  if(window.__natalia3d)return;
  const cx=w*(w<670?.53:.635),cy=h*(w<670?.645:.545),span=Math.min(w,h);
@@ -488,6 +489,6 @@ resize();position=scrollProgress();tick=requestAnimationFrame(frame);
  },12000);
 })();
 </script>
-<script type="module" src="./assets/js/origami3d.js" onerror="window.__enableCanvasFallback?.('module-load-error')"></script>
+<script type="module" src="./assets/js/origami3d.js?v=6-gated-webgl" onerror="window.__enableCanvasFallback?.('module-load-error')"></script>
 </body>
 </html>
