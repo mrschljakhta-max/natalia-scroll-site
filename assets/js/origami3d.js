@@ -169,7 +169,7 @@ function loftSail(parent,{
        cr=new THREE.Color(colorRidge);
  function getPoint(u,v){
   const y=baseY+height*v;
-  const spread=Math.pow(Math.max(0,1-v),.88);
+  const spread=Math.pow(Math.max(.004,1-v),.88);
   const outer=direction*width*spread*(1+.065*Math.sin(Math.PI*v));
   const xx=mastX+outer*u+(u===0?0:direction*.025*Math.sin(Math.PI*v));
   const z=-.025+.34*Math.sin(Math.PI*u)*spread
