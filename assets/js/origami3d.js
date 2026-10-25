@@ -320,43 +320,36 @@ for(let i=0;i<25;i++){
 function updateVortex(p,t){
  const pull=smooth(.115,.315,p),shrink=smooth(.390,.510,p);
  const assemble=smooth(.440,.530,p);
- const mobile=innerWidth<670, time=reduce.matches?0:t*.00008;
+ const mobile=innerWidth<670,time=reduce.matches?0:t*.00008;
  vortex.position.set(mobile?0:1.30,mobile?-.4:0,0);
- // First document will become the single sheet of the folding animation.
  const targetX=mobile?0:.50,targetY=mobile?-.34:-.19;
  for(let idx=0;idx<docs.length;idx++){
-  const d=docs[idx],m=d.mesh;
-  const angle=d.angle+(p-.12)*14*d.orbit+time;
+  const d=docs[idx],m=d.mesh,angle=d.angle+(p-.12)*14*d.orbit+time;
   const radius=d.radius*(1-shrink*.87);
-  let x=mix(d.x,Math.cos(angle)*radius*.83,pull);
-  let y=mix(d.y,Math.sin(angle)*radius*.77,pull);
-  let z=mix(d.z,Math.sin(angle*1.1+d.phase)*radius*.29,pull);
-  let rotX=mix(d.tilt,Math.sin(angle)*.30,pull),
-      rotY=mix(d.spin*.30,Math.cos(angle)*.37,pull),
-      rotZ=mix(d.spin,angle*.12,pull);
-  const focus=idx===0;
-  // All secondary papers form an ordered swarm, then disappear BEFORE the
-  // focused sheet enlarges. No translucent white pile-overlaps.
-  if(focus){
-   x=mix(x,targetX,assemble);y=mix(y,targetY,assemble);
-   z=mix(z,0,assemble);
-   rotX=mix(rotX,.016,assemble);
-   rotY=mix(rotY,-.03,assemble);
-   rotZ=mix(rotZ,-.012,assemble);
-   m.scale.set(mix(.95,W/d.pw*.92,assemble),
-     mix(.95,H/d.ph*.92,assemble),1);
-   m.material.opacity=1-smooth(.537,.553,p);
-   m.visible=p<.553;
+  let x=mix(d.x,Math.cos(angle)*radius*.83,pull),
+      y=mix(d.y,Math.sin(angle)*radius*.77,pull),
+      z=mix(d.z,Math.sin(angle*1.1+d.phase)*radius*.29,pull),
+      rx=mix(d.tilt,Math.sin(angle)*.30,pull),
+      ry=mix(d.spin*.30,Math.cos(angle)*.37,pull),
+      rz=mix(d.spin,angle*.12,pull);
+  if(idx===0){
+   // This document is not rendered twice: the *single master sheet mesh*
+   // occupies its precise pose from frame zero and grows to fill the scene.
+   x=mix(x,targetX,assemble);y=mix(y,targetY,assemble);z=mix(z,0,assemble);
+   rx=mix(rx,.016,assemble);ry=mix(ry,-.03,assemble);
+   rz=mix(rz,-.012,assemble);
+   selectedPaperPose={x,y,z,rx,ry,rz};
+   m.visible=false;
   }else{
    x=mix(x,targetX+(.35+.75*d.order)*Math.cos(d.phase),assemble);
    y=mix(y,targetY+(.35+.75*d.order)*Math.sin(d.phase),assemble);
    z=mix(z,-.6-d.order*.35,assemble);
    m.scale.setScalar((.88+.19*d.order)*(1-.34*shrink));
-   // Fully gone by 0.513, leaving the hero sheet alone.
    m.material.opacity=(1-smooth(.447,.513,p))*(.88+.12*d.order);
    m.visible=p<.514;
+   m.position.set(x,y,z);
+   m.rotation.set(rx,ry,rz);
   }
-  m.position.set(x,y,z);m.rotation.set(rotX,rotY,rotZ);
  }
 }
 
@@ -376,18 +369,16 @@ function tick(time){
  resize();
  const p=clamp(progress);
  const mobile=width<670;
- sailGroup.position.set(mobile?0:1.8,mobile?-.74:-.19,0);
- sailGroup.visible=p>.512;
- updateSheet(p);
  updateVortex(p,time*1000);
+ updateSheet(p,time);
  // Slight parallax makes the folding object read as 3D, but never hides the folds.
  camera.position.x=mix(-.10,.14,smooth(.58,.94,p));
  camera.position.y=mix(.13,-.15,smooth(.76,1,p));
  camera.lookAt(0,0,0);
- // At rest the sculpture floats with a barely perceptible paper-boat roll.
- const afloat=smooth(.954,1,p);
- boatGroup.rotation.z=reduce.matches?0:Math.sin(time*.63)*.011*afloat;
- boatGroup.position.y-=reduce.matches?0:Math.sin(time*.81)*.012*afloat;
+ // At rest, the one-paper yacht and its crease details move together.
+ const afloat=smooth(.970,1,p);
+ sailGroup.rotation.z+=(reduce.matches?0:Math.sin(time*.63)*.010*afloat);
+ sailGroup.position.y+=(reduce.matches?0:Math.sin(time*.81)*.016*afloat);
  renderer.render(scene,camera);
  // Reveal WebGL only after its first real render (never display a blank canvas).
  if(!window.__origami3DReady){
@@ -414,7 +405,7 @@ try{
   target.style.display="none";
   window.__enableCanvasFallback?.("webgl-context-lost");
 },{passive:true});
- window.__origami3DDiagnostics={engine:"Three.js WebGL",controller:"GSAP ScrollTrigger",sheetMeshes:halves.length,sheetVertices:halves.reduce((n,o)=>n+o.geo.attributes.position.count,0),vortexMeshes:docs.length,boatFacets:8,sailFacets:4,geometryVersion:"v5-symmetric"};
+ window.__origami3DDiagnostics={engine:"Three.js WebGL",controller:"GSAP ScrollTrigger",sheetMeshes:halves.length,sheetVertices:halves.reduce((n,o)=>n+o.geo.attributes.position.count,0),vortexMeshes:docs.length,boatFacets:8,sailFacets:4,geometryVersion:"v7-one-mesh-no-swap",oneContinuousSheet:true};
 }catch(err){
  window.__origami3DReady=false;window.__natalia3d=false;
  target.style.display="none";
