@@ -27,11 +27,11 @@
 *{box-sizing:border-box}html{scroll-behavior:auto}body{margin:0;background:#12232a;color:#f5f1e8;font-family:'DM Sans',Arial,sans-serif;overflow-x:hidden}button,a{-webkit-tap-highlight-color:transparent}button:focus-visible,a:focus-visible{outline:2px solid #ddedd8;outline-offset:5px}button{font:inherit;cursor:pointer}
 .skip{position:absolute;left:-9999px;top:5px;z-index:20;background:white;color:black;padding:12px}.skip:focus{left:10px}
 .journey{height:610svh;position:relative;min-height:2900px}.stage{width:100%;height:100svh;min-height:530px;position:sticky;top:0;isolation:isolate;overflow:hidden;background:#13282c;--daylight:0}
-.stage::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:3;background:linear-gradient(90deg,#101f25b0 0%,#101f253b 47%,transparent 82%);opacity:calc(1 - var(--day)*.96);transition:none}
+.stage::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:3;background:linear-gradient(90deg,#101f25df 0%,#101f2575 29%,#101f2514 58%,transparent 83%);opacity:calc(1 - var(--day)*.96)}
 .dark-world{position:absolute;inset:0;z-index:0;background:radial-gradient(ellipse 74% 77% at 59% 57%,#42635a 0%,#223e3b 44%,#12232a 87%)}
 .dark-world::before{content:'';position:absolute;inset:0;opacity:.18;background:repeating-linear-gradient(90deg,transparent 0 78px,#c1d1b927 79px 80px),repeating-linear-gradient(0deg,transparent 0 78px,#c1d1b927 79px 80px);mask-image:linear-gradient(to bottom,transparent,#0008 20%,#0008 76%,transparent)}
-.dark-world::after{content:'';position:absolute;width:68vmin;height:68vmin;border-radius:50%;border:1px solid #d8e6d320;left:45%;top:18%;box-shadow:0 0 0 9vmin #ffffff05,0 0 0 21vmin #ffffff03;transform:translate(-10%,0) scale(calc(1 + var(--p)*.37));opacity:calc(1 - var(--day));pointer-events:none}
-.paper-glow{position:absolute;width:80vmin;aspect-ratio:1;border-radius:50%;top:15%;left:35%;z-index:1;transform:translate(-10%,-1%);background:#f1e4c70b;filter:blur(90px);pointer-events:none}
+.dark-world::after{content:'';position:absolute;inset:-15%;background:radial-gradient(ellipse 56% 49% at 65% 56%,#8db6a817 0%,transparent 73%),radial-gradient(ellipse 15% 44% at 80% 37%,#efcba915 0%,transparent 100%);opacity:calc(1 - var(--day));pointer-events:none}
+.paper-glow{position:absolute;width:84vmin;aspect-ratio:1;border-radius:50%;top:13%;left:34%;z-index:1;background:radial-gradient(circle,#f5d9aa22,transparent 67%);filter:blur(35px);pointer-events:none;opacity:calc(1 - var(--day))}
 #paperCanvas{position:absolute;inset:0;width:100%;height:100%;z-index:4;pointer-events:none;opacity:1}
 /* Outdoor terrace. Entire scene is handcrafted inline SVG and works offline. */
 .escape-world{position:absolute;inset:0;z-index:1;opacity:var(--day);transform:translateY(calc((1 - var(--day))*45px)) scale(calc(1.04 - var(--day)*.04));transform-origin:center;pointer-events:none;will-change:opacity,transform}
@@ -61,7 +61,17 @@
 @media(max-width:670px){.journey{height:560svh;min-height:2350px}.stage{min-height:600px}.topbar{left:19px;right:19px;top:20px}.pill{font-size:8px;padding:9px 12px}.monogram{width:36px;height:36px;font-size:20px}.brand-name{font-size:11px}.brand-name small{font-size:7px}.headline-area{top:19%;left:23px;width:calc(100% - 74px)}.story-copy h1,.story-copy h2{font-size:clamp(43px,10.6vw,70px);margin:0 0 11px}.story-copy p{font-size:12px;line-height:1.65;max-width:290px}.eyebrow{margin-bottom:12px;font-size:8px}.eyebrow::before{width:20px}.chapter-rail{right:16px;gap:12px}.chapter-dot span{display:none}.scene-label{top:64%;right:20px;font-size:8px;letter-spacing:.1em}.bottomline{left:19px;right:19px;bottom:25px}.bottom-caption{font-size:8px}.bottom-caption small{font-size:9px}.bottom-scroll{font-size:8px;gap:7px}.wheel{width:17px;height:27px}.wheel::after{left:7px}.demo-warning{right:18px;bottom:72px;max-width:190px;font-size:8px}.footer{grid-template-columns:1fr;padding:73px 24px;gap:45px}.footer .panel{padding-left:23px}.footer h2{font-size:52px}.stage::after{background:linear-gradient(#10232ad9,#10232a3b 65%,transparent);opacity:calc(1 - var(--day))}}
 @media(max-width:400px){.pill{display:none}.headline-area{top:17%}.story-copy h1,.story-copy h2{font-size:43px}.scene-label{display:none}.bottom-scroll span{display:none}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.wheel::after{animation:none}.escape-world{transition:none}.story-copy{transition:none}.stage::after{transition:none}.chapter-dot span{transition:none}}
-.hero-wordmark{font:400 clamp(28px,3.2vw,56px)/1.06 Georgia,serif;letter-spacing:-.05em;color:#f8f2e7;white-space:nowrap;margin:0 0 18px}.hero-wordmark i{color:#d9af8a}.stage.is-day .brand,.stage.is-day .bottom-caption,.stage.is-day .bottom-caption small,.stage.is-day .bottom-scroll,.stage.is-day .chapter-dot,.stage.is-day .demo-warning{color:#173f3a}.stage.is-day .pill{background:#f5f1e8a8;color:#173f3a}.stage.is-day .chapter-dot::after{background:#345c50}.stage.is-day .chapter-dot.active::after{background:#ad7d58}.stage.is-day .wheel{border-color:#345c50}.stage.is-day .wheel::after{background:#345c50}.monogram{font-size:16px;letter-spacing:-.08em}.brand-name{letter-spacing:.14em}@media(max-width:670px){.hero-wordmark{font-size:clamp(24px,6.5vw,37px);margin-bottom:13px}.stage.is-day .headline-area{top:13%}}</style>
+.hero-wordmark{font:400 clamp(28px,3.2vw,56px)/1.06 Georgia,serif;letter-spacing:-.05em;color:#f8f2e7;white-space:nowrap;margin:0 0 18px}.hero-wordmark i{color:#d9af8a}.stage.is-day .brand,.stage.is-day .bottom-caption,.stage.is-day .bottom-caption small,.stage.is-day .bottom-scroll,.stage.is-day .chapter-dot,.stage.is-day .demo-warning{color:#173f3a}.stage.is-day .pill{background:#f5f1e8a8;color:#173f3a}.stage.is-day .chapter-dot::after{background:#345c50}.stage.is-day .chapter-dot.active::after{background:#ad7d58}.stage.is-day .wheel{border-color:#345c50}.stage.is-day .wheel::after{background:#345c50}.monogram{font-size:16px;letter-spacing:-.08em}.brand-name{letter-spacing:.14em}@media(max-width:670px){.hero-wordmark{font-size:clamp(24px,6.5vw,37px);margin-bottom:13px}.stage.is-day .headline-area{top:13%}}
+/* Master-brand mark: two individually folded sails share one origami hull. */
+.sail-mark{width:57px;height:57px;flex:0 0 57px;display:grid;place-items:center;border:1px solid #dce8d66b;background:linear-gradient(145deg,#f0e5d212,#06282b43);border-radius:50%;box-shadow:0 6px 26px #0004,inset 0 0 0 4px #e7e2d108}
+.sail-mark svg{width:47px;height:47px;display:block;filter:drop-shadow(0 2px 4px #122a2b72)}
+.brand-name{font-size:clamp(12px,.9vw,15px);letter-spacing:.14em;font-weight:700}
+.brand-name small{margin-top:3px;letter-spacing:.13em}
+.story-copy h1,.story-copy h2{text-shadow:0 2px 26px #091e2760}
+.story-copy p{text-shadow:0 1px 12px #071e2390}
+.stage.is-day .brand .sail-mark{background:#f9f2decc;border-color:#3f6f6470}
+@media(max-width:670px){.sail-mark{width:44px;height:44px;flex-basis:44px}.sail-mark svg{width:37px;height:37px}.brand-name{font-size:11px}.brand-name small{font-size:7px}.stage.is-day .headline-area{top:18%}}
+</style>
 </head>
 <body>
 <a class="skip" href="#conclusion">Пропустити анімацію</a>
@@ -81,20 +91,20 @@
   </div>
   <canvas id="paperCanvas" aria-hidden="true"></canvas>
   <div class="topbar">
-    <a class="brand" href="#experience" aria-label="Наталія та Анна — на початок"><span class="monogram">Н·А</span><span class="brand-name">НАТАЛІЯ &amp; АННА<small>БУХГАЛТЕРСЬКИЙ СУПРОВІД</small></span></a>
+    <a class="brand" href="#experience" aria-label="Наталія та Анна — на початок"><span class="sail-mark" aria-hidden="true"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="markA" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f2f2de"/><stop offset=".48" stop-color="#abc5b1"/><stop offset="1" stop-color="#57826f"/></linearGradient><linearGradient id="markB" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f4dbb7"/><stop offset="1" stop-color="#af7a5c"/></linearGradient></defs><path d="M40 12L40 53L16 54Z" fill="url(#markA)" stroke="#f6f0db" stroke-width="1.3"/><path d="M45 23L64 54L45 54Z" fill="url(#markB)" stroke="#f4ddc1" stroke-width="1.3"/><path d="M9 56L71 56L58 66L23 65Z" fill="#ede8d8" stroke="#d5e1d0" stroke-width="1.3"/><path d="M16 56L41 62L64 56M40 12L33 52" fill="none" stroke="#769889" stroke-width="1.5"/><path d="M13 71Q39 65 67 71" fill="none" stroke="#c99d7b" stroke-width="1.8" stroke-linecap="round"/></svg></span><span class="brand-name">НАТАЛІЯ &amp; АННА<small>БУХГАЛТЕРСЬКИЙ СУПРОВІД</small></span></a>
     <span class="pill">ІНТЕРАКТИВНА КОНЦЕПЦІЯ · 01</span>
   </div>
   <div class="scene-label" id="sceneLabel">THE TRANSFORMATION / 01</div>
   <div class="headline-area" aria-live="off">
     <div class="story-copy visible" data-act="0"><span class="eyebrow">01 — ВСЕ ПОЧИНАЄТЬСЯ З ХАОСУ</span><div class="hero-wordmark">Наталія <i>&amp;</i> Анна</div><h1>Коли справ<br><em>надто багато.</em></h1><p>Платежі, виписки, документи та десятки дрібних завдань. Часом здається, що вони заповнюють увесь простір.</p></div>
-    <div class="story-copy" data-act="1"><span class="eyebrow">02 — РУХ ДО ПОРЯДКУ</span><h2>Папери знаходять<br><em>свій ритм.</em></h2><p>Розрізнені фінансові процеси поступово перетворюються на систему. Щоб важливе не губилося серед другорядного.</p></div>
-    <div class="story-copy" data-act="2"><span class="eyebrow">03 — ТРАНСФОРМАЦІЯ</span><h2>З паперу —<br><em>у вітрила.</em></h2><p>Кожен аркуш знаходить своє місце. Два вітрила, один курс — і більше простору для життя.</p></div>
+    <div class="story-copy" data-act="1"><span class="eyebrow">02 — ВИХОР ПОРЯДКУ</span><h2>Хаос набуває<br><em>форми.</em></h2><p>Розрізнені фінансові процеси поступово перетворюються на систему. Щоб важливе не губилося серед другорядного.</p></div>
+    <div class="story-copy" data-act="2"><span class="eyebrow">03 — МИСТЕЦТВО СКЛАДАННЯ</span><h2>З одного аркуша —<br><em>цілий світ.</em></h2><p>Аркуш за аркушем — точні згини, нова форма. Робота завершена. Тепер час для того, що справді важливе.</p></div>
     <div class="story-copy ending-copy" data-act="3"><span class="eyebrow">04 — ЧАС ЖИТИ</span><h2>І залишається<br><em>простір для життя.</em></h2><p>Більше уваги для того, заради чого ви розвиваєте свою справу. Море, подорожі, близькі — у кожного своя свобода.</p><div class="end-signature">Наталія &amp; Анна · Порядок у цифрах.</div></div>
   </div>
   <nav class="chapter-rail" aria-label="Етапи історії">
     <button class="chapter-dot active" data-jump="0" aria-label="Перейти до етапу: Хаос" aria-current="step"><span>01 / ХАОС</span></button>
-    <button class="chapter-dot" data-jump=".35" aria-label="Перейти до етапу: Вихор"><span>02 / ПОТІК</span></button>
-    <button class="chapter-dot" data-jump=".66" aria-label="Перейти до етапу: Порядок"><span>03 / ОРІГАМІ</span></button>
+    <button class="chapter-dot" data-jump=".38" aria-label="Перейти до етапу: Вихор"><span>02 / ВИХОР</span></button>
+    <button class="chapter-dot" data-jump=".70" aria-label="Перейти до етапу: Порядок"><span>03 / ОРІГАМІ</span></button>
     <button class="chapter-dot" data-jump=".93" aria-label="Перейти до етапу: Свобода"><span>04 / СВОБОДА</span></button>
   </nav>
   <div class="bottomline"><div class="bottom-caption"><span id="chapterCounter">01 / 04 — ХАОС</span><small>Від розрізнених документів до часу для себе</small></div><div class="bottom-scroll"><div class="wheel" aria-hidden="true"></div><span id="scrollHint">ПРОКРУЧУЙТЕ, ЩОБ ПРОДОВЖИТИ</span></div></div>
@@ -104,7 +114,7 @@
 </section>
 <section class="footer" id="conclusion" aria-label="Завершення історії">
   <div><span class="footer-kicker">NATALIIA &amp; ANNA / BEYOND THE NUMBERS</span><h2>Цифри —<br>під контролем.<br><em>Життя — у фокусі.</em></h2><p>Це демонстрація майбутнього скролітелінгу для спільного бренду Наталії та Анни. Ми показуємо шлях від інформаційного хаосу до порядку й вільного часу, а не обіцяємо фінансовий успіх як гарантований результат.</p><p class="fineprint">Сценарій і образ паперового вітрильника — робоча концепція. Номер телефону, тарифи та реальна форма звернення будуть додані тільки після погодження партнерками.</p><button class="restart" id="restart" type="button">↺ Переглянути анімацію ще раз</button></div>
-  <div class="panel"><div><span>ІСТОРІЯ</span><b>Хаос → Потік → Орігамі → Свобода</b></div><div><span>ФОРМАТ</span><b>Самодостатній HTML<br>Без зовнішніх бібліотек анімації</b></div><div><span>НАСТУПНИЙ ЕТАП</span><b>Узгодження стилю, фіналу й інтеграція на сайт</b></div></div>
+  <div class="panel"><div><span>ІСТОРІЯ</span><b>Хаос → Вихор → Складання → Свобода</b></div><div><span>ФОРМАТ</span><b>Самодостатній HTML<br>Без зовнішніх бібліотек анімації</b></div><div><span>НАСТУПНИЙ ЕТАП</span><b>Узгодження стилю, фіналу й інтеграція на сайт</b></div></div>
 </section>
 </main>
 <script>
@@ -115,16 +125,21 @@ const reduce=window.matchMedia('(prefers-reduced-motion: reduce)');
 const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));const mix=(a,b,t)=>a+(b-a)*t;const smooth=t=>{t=clamp(t);return t*t*(3-2*t)};
 let w=innerWidth,h=innerHeight,dpr=1,target=0,position=0,lastAct=-1,tick=0,isVisible=true,resizeToken=0;
 let seed=8121;function rand(){seed=(seed*1664525+1013904223)>>>0;return seed/4294967296}
-const papers=Array.from({length:37},(_,i)=>({i,nx:rand()*.98+.01,ny:rand()*.92+.04,size:mix(.75,1.32,rand()),r:rand()*6.283,spin:rand()>.5?1:-1,phase:rand()*6.283,shape:rand(),tilt:(rand()-.5)*2.1,pattern:i%5,order:rand()}));
+const papers=Array.from({length:43},(_,i)=>({i,nx:rand()*.98+.01,ny:rand()*.92+.04,size:mix(.75,1.32,rand()),r:rand()*6.283,spin:rand()>.5?1:-1,phase:rand()*6.283,shape:rand(),tilt:(rand()-.5)*2.1,pattern:i%5,order:rand()}));
 function resize(){w=stage.clientWidth;h=stage.clientHeight;dpr=Math.min(window.devicePixelRatio||1,1.7);canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);canvas.style.width=w+'px';canvas.style.height=h+'px';ctx.setTransform(dpr,0,0,dpr,0,0)}
 function scrollProgress(){const r=journey.getBoundingClientRect();return clamp(-r.top/Math.max(1,r.height-h))}
-function setAct(act){if(act===lastAct)return;lastAct=act;const names=['ХАОС','ПОТІК','ОРІГАМІ','СВОБОДА'];counter.textContent=String(act+1).padStart(2,'0')+' / 04 — '+names[act];label.textContent='THE TRANSFORMATION / '+String(act+1).padStart(2,'0');hint.textContent=act===3?'ПРОКРУТІТЬ ДО ФІНАЛУ':'ПРОКРУЧУЙТЕ, ЩОБ ПРОДОВЖИТИ';dots.forEach((dot,i)=>{const ok=i===act;dot.classList.toggle('active',ok);if(ok)dot.setAttribute('aria-current','step');else dot.removeAttribute('aria-current')})}
-function actFor(p){return p<.22?0:p<.56?1:p<.81?2:3}
+function setAct(act){if(act===lastAct)return;lastAct=act;const names=['ХАОС','ВИХОР','ОРІГАМІ','СВОБОДА'];counter.textContent=String(act+1).padStart(2,'0')+' / 04 — '+names[act];label.textContent='THE TRANSFORMATION / '+String(act+1).padStart(2,'0');hint.textContent=act===3?'ПРОКРУТІТЬ ДО ФІНАЛУ':'ПРОКРУЧУЙТЕ, ЩОБ ПРОДОВЖИТИ';dots.forEach((dot,i)=>{const ok=i===act;dot.classList.toggle('active',ok);if(ok)dot.setAttribute('aria-current','step');else dot.removeAttribute('aria-current')})}
+function actFor(p){return p<.245?0:p<.56?1:p<.815?2:3}
 function updateText(p){
- const centers=[.075,.37,.66,.935],rad=[.19,.22,.19,.19];let dominant=actFor(p);
- copies.forEach((el,i)=>{const delta=Math.abs(p-centers[i]);let visibility=1-smooth(clamp((delta-(rad[i]*.20))/(rad[i]*.85)));if(i===0&&p<.045)visibility=1;if(i===3&&p>.95)visibility=1;
- el.style.opacity=visibility.toFixed(3);el.style.transform=`translateY(${((1-visibility)*18).toFixed(1)}px)`;el.classList.toggle('visible',visibility>.03);});
- setAct(dominant);
+ const boundaries=[.245,.56,.815],blend=.020,act=actFor(p);
+ copies.forEach(function(el,i){
+  const a=i===0?0:boundaries[i-1],b=i===3?1:boundaries[i];
+  const vis=(i===0?1:smooth((p-a+blend)/(blend*2)))*(i===3?1:1-smooth((p-b+blend)/(blend*2)));
+  el.style.opacity=vis.toFixed(3);
+  el.style.transform='translate3d(0,'+((1-vis)*18).toFixed(1)+'px,0)';
+  el.classList.toggle('visible',vis>.04);
+ });
+ setAct(act);
 }
 function drawPage(cx,cy,ww,hh,rot,alpha,pattern,fold=0,full=false){if(alpha<=.005)return;ctx.save();ctx.globalAlpha*=alpha;ctx.translate(cx,cy);ctx.rotate(rot);ctx.shadowColor='#06131a80';ctx.shadowBlur=full?21:10;ctx.shadowOffsetY=full?16:6;ctx.fillStyle=pattern%4===0?'#f8f6ef':pattern%3===0?'#eceee5':'#f5f1e8';ctx.beginPath();ctx.moveTo(-ww/2+2,-hh/2);ctx.lineTo(ww/2-10,-hh/2);ctx.lineTo(ww/2,-hh/2+10);ctx.lineTo(ww/2,hh/2-2);ctx.lineTo(-ww/2,hh/2);ctx.closePath();ctx.fill();ctx.shadowBlur=0;ctx.shadowOffsetY=0;
  ctx.strokeStyle='#c7cfc7';ctx.lineWidth=.7;ctx.stroke();ctx.fillStyle='#eee9db';ctx.beginPath();ctx.moveTo(ww/2-10,-hh/2);ctx.lineTo(ww/2-10,-hh/2+10);ctx.lineTo(ww/2,-hh/2+10);ctx.fill();
@@ -183,7 +198,7 @@ function drawPapers(p,t){
 }
 
 function frame(t){tick=0;target=scrollProgress();const rate=reduce.matches?1:.18;position=mix(position,target,rate);if(Math.abs(position-target)<.00008)position=target;
- const p=position;const day=smooth((p-.65)/.22),end=smooth((p-.77)/.14);stage.classList.toggle('is-day',day>.68);stage.style.setProperty('--p',p.toFixed(4));stage.style.setProperty('--day',day.toFixed(4));stage.style.setProperty('--end',end.toFixed(4));updateText(p);drawPapers(p,t);
+ const p=position;const day=smooth((p-.81)/.135),end=smooth((p-.85)/.13);stage.classList.toggle('is-day',day>.68);stage.style.setProperty('--p',p.toFixed(4));stage.style.setProperty('--day',day.toFixed(4));stage.style.setProperty('--end',end.toFixed(4));updateText(p);drawPapers(p,t);
  if(isVisible)tick=requestAnimationFrame(frame)}
 function goTo(p){const distance=journey.offsetHeight-h;const y=journey.getBoundingClientRect().top+scrollY+distance*p;window.scrollTo({top:y,behavior:reduce.matches?'instant':'smooth'})}
 dots.forEach(dot=>dot.addEventListener('click',()=>goTo(Number(dot.dataset.jump))));document.getElementById('restart').addEventListener('click',()=>goTo(0));
