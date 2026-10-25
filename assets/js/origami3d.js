@@ -154,74 +154,139 @@ const dev={sheetMesh,boatDetail};
 
 /* Continuous mirror-symmetric paper folding.
    The left/right corners share ONE exact isosceles triangle destination. */
-function mapFold(x0,y0,p){
- // A single 3D sheet moves through the hinge, not an instant shape swap.
- const hinge=smooth(.575,.666,p),angle=Math.PI*hinge;
- const yy=y0<0?y0*Math.cos(angle):y0;
- // Give folded paper layers real separation in Z. This removes self-occlusion
- // and the depth-buffer "blinking" seen in the triangle's lower edge.
- let zz=(y0<0?y0*Math.sin(angle)+.066*hinge:-.024*hinge);
- const v=clamp(Math.abs(y0)/(H*.5),0,.995);
- const fold=x0<0?smooth(.658,.724,p):smooth(.689,.750,p);
- const xx=mix(x0,x0*(1-v),fold);
- zz+=.020*fold+.10*Math.sin(v*Math.PI)*(1-v)*fold;
- const pocket=smooth(.754,.834,p);
- zz+=pocket*(.16+.10*(1-v))*Math.sin(Math.PI*(x0/W+.5));
- return [xx,yy-pocket*.08,zz];
+/* Transform points around REAL 3D hinge axes. Every rotation can run forwards
+   and backwards with scrolling; no opacity cut between folded forms. */
+function hinge3D(point,ax,ay,az,bx,by,bz,angle){
+ const ux=bx-ax,uy=by-ay,uz=bz-az,len=Math.hypot(ux,uy,uz)||1,
+   vx=ux/len,vy=uy/len,vz=uz/len;
+ const x=point[0]-ax,y=point[1]-ay,z=point[2]-az,
+   c=Math.cos(angle),si=Math.sin(angle),
+   dot=x*vx+y*vy+z*vz,crossX=vy*z-vz*y,
+   crossY=vz*x-vx*z,crossZ=vx*y-vy*x;
+ return [ax+x*c+crossX*si+vx*dot*(1-c),
+         ay+y*c+crossY*si+vy*dot*(1-c),
+         az+z*c+crossZ*si+vz*dot*(1-c)];
 }
-function updateSheet(p){
- const reveal=smooth(.552,.575,p);
- const tuck=smooth(.843,.885,p);
- const sheetFade=1-smooth(.858,.900,p);
- const {mesh,geo,original}=halves[0];
- const pos=geo.attributes.position,col=geo.attributes.color;
- const tone=smooth(.69,.83,p);
- for(let i=0;i<pos.count;i++){
-  const a=i*3,x0=original[a],y0=original[a+1];
-  const b=mapFold(x0,y0,p);
-  // Do not collapse the triangle to a line during the vessel hand-off.
-  const remap=[b[0]*.90,b[1]*.91-.16,b[2]+.21];
-  pos.setXYZ(i,mix(b[0],remap[0],tuck),
-    mix(b[1],remap[1],tuck),mix(b[2],remap[2],tuck));
-  const q=x0<0?leftShade:rightShade;
-  const blend=tone*.35;
-  col.setXYZ(i,mix(neutral.r,q.r,blend),mix(neutral.g,q.g,blend),
-    mix(neutral.b,q.b,blend));
+function foldPoint(x0,y0,p){
+ const first=smooth(.563,.657,p);
+ const angle=Math.PI*first;
+ // First exact hinge along y=0; no brightness/opacity change.
+ let P=[x0,y0<0?y0*Math.cos(angle):y0,
+    y0<0?y0*Math.sin(angle)+.061*first:-.027*first];
+ const b=H/2,a=W/2;
+ // Two genuine diagonal crease hinges fold the left and right top corners.
+ const left=smooth(.658,.732,p),right=smooth(.688,.757,p);
+ const lineX=-a+(a/b)*Math.max(0,y0);
+ if(y0>0&&x0<lineX){
+  P=hinge3D(P,-a,0,0,0,b,0,-Math.PI*.94*left);
+  P[2]+=.016*left; // paper thickness between overlapping triangular panels
  }
- pos.needsUpdate=true;col.needsUpdate=true;geo.computeVertexNormals();
- mesh.material.opacity=reveal*sheetFade;
- mesh.material.polygonOffset=true;
- mesh.material.polygonOffsetFactor=-1.2;
- mesh.material.polygonOffsetUnits=-1.2;
- mesh.visible=p>.551&&mesh.material.opacity>.003;
- // No giant empty rectangular "ghost frame" before the paper appears.
- outline.material.opacity=.23*smooth(.570,.582,p)*(1-smooth(.611,.637,p));
- outline.visible=p>.570&&p<.638;
- const sailTurn=smooth(.85,.99,p);
- sailGroup.rotation.set(mix(.016,-.08,sailTurn),
-   mix(-.03,-.19,sailTurn),mix(-.012,.004,sailTurn));
- sailGroup.scale.setScalar(.92);
-
- const hull=smooth(.854,.925,p),
-       port=smooth(.887,.955,p),
-       star=smooth(.918,.982,p),
-       depart=smooth(.946,1,p);
- boatGroup.visible=p>.852;
- hullGroup.scale.set(mix(.62,1,hull),mix(.20,1,hull),mix(.84,1,hull));
- // Pivoting sail panels around their creases—not inserting a final triangle.
- portSail.scale.x=Math.max(.002,Math.sin(port*Math.PI/2));
- portSail.rotation.y=mix(-1.42,-.04,port);
- portSail.rotation.z=mix(-.08,0,port);
- starboardSail.scale.x=Math.max(.002,Math.sin(star*Math.PI/2));
- starboardSail.rotation.y=mix(1.42,.06,star);
- starboardSail.rotation.z=mix(.09,0,star);
- boatGroup.position.set(.24*depart,-.14*depart,.27*(1-depart));
- boatGroup.rotation.y=-.06*depart;
- hullGroup.visible=hull>.002;
- portSail.visible=port>.002;starboardSail.visible=star>.002;
- // Separate sailor-shaped surfaces have smooth cross-fade from the paper.
- for(const m of vesselMaterials)m.opacity=hull;
- for(const m of vesselCreases)m.opacity=hull*.83;
+ if(y0>0&&x0>-lineX){
+  P=hinge3D(P,a,0,0,0,b,0,Math.PI*.94*right);
+  P[2]+=.042*right;
+ }
+ // Lock the corners into an exact isosceles triangle, keeping the movement
+ // in the vertices rather than replacing or fading a separate shape.
+ const settle=smooth(.739,.797,p);
+ const v=clamp(Math.abs(y0)/b,0,.996);
+ const target=[x0*(1-v),Math.abs(y0)-.055,
+    (x0<0?.047:-.036)+.06*Math.sin(Math.PI*v)];
+ P[0]=mix(P[0],target[0],settle);
+ P[1]=mix(P[1],target[1],settle);
+ P[2]=mix(P[2],target[2],settle);
+ // Third physical hinge: fold the upper remaining paper lip towards the
+ // interior. This stage is visible, not another triangle shape swap.
+ const lip=smooth(.800,.853,p);
+ if(y0<-(H*.37)){
+  const pivotY=b*.73;
+  P=hinge3D(P,-a,pivotY,.04,a,pivotY,.04,Math.PI*.68*lip);
+ }
+ // Final triangular pocket opens toward the viewer before the vessel rises.
+ const pocket=smooth(.837,.901,p);
+ P[2]+=.19*pocket*Math.sin(Math.PI*(x0/W+.5));
+ P[1]-=.065*pocket;
+ return P;
+}
+/* An elegant volumetric origami yacht formed by the very same sheet mesh.
+   Patch boundaries duplicate coincident crease vertices, not entire objects.
+   They can therefore rise independently without introducing a second sheet. */
+function yachtPoint(x0,y0){
+ const u=clamp(x0/W+.5),v=clamp(y0/H+.5);
+ if(v<=.34+.00001){
+  const h=clamp(v/.34),long=2*u-1;
+  const width=(.68+.32*h)*(1-.09*Math.pow(Math.abs(long),6));
+  return [long*2.13*width,
+   -.73-.77*(1-h)*(1-.12*Math.pow(Math.abs(long),3)),
+   .15+.59*(1-h)*(1-long*long)+.21*h*Math.sin(Math.PI*u)];
+ }
+ const height=(v-.34)/.66;
+ const taper=Math.pow(Math.max(.003,1-height),.91);
+ if(u<=.5){
+  const side=(.5-u)*2;
+  return [-.045-1.76*side*taper*(1+.045*Math.sin(Math.PI*height)),
+   -.69+3.24*height,
+   .11+.42*Math.sin(side*Math.PI)*taper+.12*Math.sin(height*Math.PI)];
+ }
+ const side=(u-.5)*2;
+ return [.115+1.19*side*taper*(1+.025*Math.sin(Math.PI*height)),
+  -.70+2.54*height,
+  -.015+.31*Math.sin(side*Math.PI)*taper+.11*Math.sin(height*Math.PI)];
+}
+let selectedPaperPose=null;
+function updateSheet(p,time){
+ const {mesh,geo,original}=halves[0],pos=geo.attributes.position,col=geo.attributes.color;
+ // Individual sculpting phases. The hull opens before either sail;
+ // then large sail rotates out, followed by the smaller sail.
+ const hull=smooth(.851,.925,p);
+ const port=smooth(.887,.961,p);
+ const starboard=smooth(.921,.998,p);
+ const ink=smooth(.834,.974,p);
+ if(sheetMat.userData.shader)sheetMat.userData.shader.uniforms.uInkToFiber.value=ink;
+ for(let i=0;i<pos.count;i++){
+  const index=i*3,x0=original[index],y0=original[index+1],
+        uvx=clamp(x0/W+.5),uvy=clamp(y0/H+.5);
+  const folded=foldPoint(x0,y0,p);
+  const final=yachtPoint(x0,y0);
+  const morph=uvy<.34-.00001?hull:uvx<=.5?port:starboard;
+  const x=mix(folded[0],final[0],morph),
+        y=mix(folded[1],final[1],morph),
+        z=mix(folded[2],final[2],morph);
+  pos.setXYZ(i,x,y,z);
+  let c=neutral.clone();
+  if(uvy<.34){c.lerp(uvx<.52?jade:paleCopper,hull*.89);c.multiplyScalar(1-.10*(1-uvy/.34)*hull)}
+  else if(uvx<=.5){c.lerp(forest,port*(.27+.54*(.5-uvx)*2))}
+  else{c.lerp(sand,starboard*(.16+.58*(uvx-.5)*2))}
+  col.setXYZ(i,c.r,c.g,c.b);
+ }
+ pos.needsUpdate=true;col.needsUpdate=true;
+ geo.computeVertexNormals();geo.computeBoundingSphere();
+ // Never fade the sheet out; it becomes the boat through its own vertices.
+ mesh.visible=true;
+ mesh.material.opacity=1;
+ const mobile=width<670;
+ const doc=docs[0];
+ const pose=selectedPaperPose||{x:0,y:0,z:0,rx:0,ry:0,rz:0};
+ const align=smooth(.448,.554,p);
+ const settledX=mobile?0:1.8,settledY=mobile?-.74:-.19;
+ sailGroup.position.set(
+  mix(vortex.position.x+pose.x,settledX,align),
+  mix(vortex.position.y+pose.y,settledY,align),
+  mix(pose.z,0,align));
+ const startScale=.94*doc.pw/W;
+ const fullScale=.92;
+ const targetScale=mix(startScale,fullScale,align);
+ sailGroup.scale.setScalar(targetScale);
+ sailGroup.rotation.set(
+  mix(pose.rx,.016,align)+mix(0,-.09,smooth(.89,1,p)),
+  mix(pose.ry,-.03,align)+mix(0,-.18,smooth(.90,1,p)),
+  mix(pose.rz,-.012,align));
+ const details=smooth(.888,.973,p);
+ boatDetail.visible=details>.002;
+ mast.scale.y=Math.max(.002,details);
+ mast.position.y=-.71+1.575*details;
+ detailMaterials.forEach(({mat,initial})=>mat.opacity=initial*details);
+ boatDetail.rotation.z=reduce.matches?0:Math.sin(time*.72)*.007*smooth(.973,1,p);
+ boatDetail.position.y=reduce.matches?0:Math.sin(time*.79)*.014*smooth(.978,1,p);
 }
 
 /* Curated 3D documents — no ribbons, stretched paper, duplicate surfaces
