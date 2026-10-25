@@ -6,6 +6,21 @@
 <meta name="theme-color" content="#12232a">
 <meta name="robots" content="noindex,nofollow">
 <meta name="description" content="Інтерактивний кінематографічний прототип сайту Наталії: папери, вихор, порядок і свобода.">
+<link rel="canonical" href="https://mrschljakhta-max.github.io/natalia-scroll-site/">
+<script>
+/* Keep platform referral tracking out of the visible address bar, without
+   disrupting other query parameters or scroll anchors. */
+(function () {
+  try {
+    const url = new URL(window.location.href);
+    const source = url.searchParams.get('utm_source');
+    if (source && /chatgpt|openai/i.test(source)) {
+      url.searchParams.delete('utm_source');
+      window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash);
+    }
+  } catch (_) { /* No effect on site content if the History API is restricted. */ }
+})();
+</script>
 <title>Наталія — паперовий вихор · Демоверсія сайту</title>
 <style>
 :root{color-scheme:dark;--ink:#12232a;--sage:#a1b9ab;--cream:#f5f1e8;--copper:#be957a;--p:0;--day:0;--ease:0;--end:0}
