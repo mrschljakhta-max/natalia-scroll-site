@@ -134,13 +134,17 @@ function scrollProgress(){const r=journey.getBoundingClientRect();return clamp(-
 function setAct(act){if(act===lastAct)return;lastAct=act;const names=['ХАОС','ВИХОР','ОРІГАМІ','СВОБОДА'];counter.textContent=String(act+1).padStart(2,'0')+' / 04 — '+names[act];label.textContent='THE TRANSFORMATION / '+String(act+1).padStart(2,'0');hint.textContent=act===3?'ПРОКРУТІТЬ ДО ФІНАЛУ':'ПРОКРУЧУЙТЕ, ЩОБ ПРОДОВЖИТИ';dots.forEach((dot,i)=>{const ok=i===act;dot.classList.toggle('active',ok);if(ok)dot.setAttribute('aria-current','step');else dot.removeAttribute('aria-current')})}
 function actFor(p){return p<.245?0:p<.56?1:p<.815?2:3}
 function updateText(p){
- const boundaries=[.245,.56,.815],blend=.020,act=actFor(p);
+ const boundaries=[.245,.56,.815],act=actFor(p);
  copies.forEach(function(el,i){
   const a=i===0?0:boundaries[i-1],b=i===3?1:boundaries[i];
-  const vis=(i===0?1:smooth((p-a+blend)/(blend*2)))*(i===3?1:1-smooth((p-b+blend)/(blend*2)));
+  // Never draw two full-page story headings on top of each other.
+  // The outgoing chapter fades completely BEFORE the incoming starts.
+  const enter=i===0?1:smooth((p-a-.005)/.019);
+  const leave=i===3?1:1-smooth((p-b+.025)/.014);
+  const vis=enter*leave;
   el.style.opacity=vis.toFixed(3);
-  el.style.transform='translate3d(0,'+((1-vis)*18).toFixed(1)+'px,0)';
-  el.classList.toggle('visible',vis>.04);
+  el.style.transform='translate3d(0,'+((1-vis)*16).toFixed(1)+'px,0)';
+  el.classList.toggle('visible',vis>.003);
  });
  setAct(act);
 }
