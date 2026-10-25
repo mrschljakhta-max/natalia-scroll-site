@@ -174,17 +174,17 @@ function ribbonPath({name,from,to,color,width=.014,alpha=.8,begin=.93,finish=.98
  sailGroup.add(mesh);
  creaseRibbons.push({name,mesh,segments,from,to,width,alpha,begin,finish,kind});
 }
-ribbonPath({name:'port-silhouette',from:[0,.34],to:[0,1],color:0x557c6c,width:.017,alpha:.87,begin:.90,finish:.963});
-ribbonPath({name:'port-mast-fold',from:[.5,.34],to:[.5,1],color:0x607e6d,width:.013,alpha:.73,begin:.90,finish:.963});
+ribbonPath({name:'port-silhouette',from:[0,.346],to:[0,1],color:0x557c6c,width:.017,alpha:.87,begin:.90,finish:.963});
+ribbonPath({name:'port-mast-fold',from:[.5,.346],to:[.5,1],color:0x607e6d,width:.013,alpha:.73,begin:.90,finish:.963});
 ribbonPath({name:'port-inner-crease',from:[.22,.35],to:[.385,.93],color:0x7f9f8a,width:.012,alpha:.56,begin:.925,finish:.982});
-ribbonPath({name:'starboard-silhouette',from:[1,.34],to:[1,1],color:0xa9795d,width:.017,alpha:.87,begin:.936,finish:.996});
-ribbonPath({name:'starboard-mast-fold',from:[.5,.34],to:[.5,1],color:0x95735c,width:.011,alpha:.68,begin:.936,finish:.996});
+ribbonPath({name:'starboard-silhouette',from:[1,.346],to:[1,1],color:0xa9795d,width:.017,alpha:.87,begin:.936,finish:.996});
+ribbonPath({name:'starboard-mast-fold',from:[.5,.346],to:[.5,1],color:0x95735c,width:.011,alpha:.68,begin:.936,finish:.996});
 ribbonPath({name:'starboard-inner-crease',from:[.78,.35],to:[.64,.90],color:0xc19b7c,width:.011,alpha:.56,begin:.942,finish:.996});
-ribbonPath({name:'hull-upper-lip',from:[0,.34],to:[1,.34],color:0x6f9180,width:.019,alpha:.89,begin:.861,finish:.944,kind:'hull'});
+ribbonPath({name:'hull-upper-lip',from:[0,.335],to:[1,.335],color:0x6f9180,width:.019,alpha:.89,begin:.861,finish:.944,kind:'hull'});
 ribbonPath({name:'hull-keel',from:[0,0],to:[1,0],color:0x89998d,width:.020,alpha:.82,begin:.866,finish:.941,kind:'hull'});
-ribbonPath({name:'hull-central-fold',from:[.5,0],to:[.5,.34],color:0xb1a087,width:.012,alpha:.67,begin:.865,finish:.952,kind:'hull'});
-ribbonPath({name:'hull-fold-left',from:[0,.12],to:[.5,.34],color:0x9aad9b,width:.012,alpha:.64,begin:.868,finish:.944,kind:'hull'});
-ribbonPath({name:'hull-fold-right',from:[.5,.34],to:[1,.12],color:0xbda484,width:.012,alpha:.61,begin:.868,finish:.944,kind:'hull'});
+ribbonPath({name:'hull-central-fold',from:[.5,0],to:[.5,.335],color:0xb1a087,width:.012,alpha:.67,begin:.865,finish:.952,kind:'hull'});
+ribbonPath({name:'hull-fold-left',from:[0,.12],to:[.5,.335],color:0x9aad9b,width:.012,alpha:.64,begin:.868,finish:.944,kind:'hull'});
+ribbonPath({name:'hull-fold-right',from:[.5,.335],to:[1,.12],color:0xbda484,width:.012,alpha:.61,begin:.868,finish:.944,kind:'hull'});
 
 function positionFromUV(u,v,p){
  const x0=W*(u-.5),y0=H*(v-.5),folded=foldPoint(x0,y0,p),
