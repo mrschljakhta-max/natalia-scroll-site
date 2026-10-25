@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
+<title>Наталія і Анна — кінематографічне небо над тихим морем</title>
+<defs>
+ <linearGradient id="sky" x1="0" y1="0" x2=".04" y2="1"><stop offset="0" stop-color="#719d9f"/><stop offset=".25" stop-color="#9dbdbc"/><stop offset=".51" stop-color="#c9d1c5"/><stop offset=".66" stop-color="#ead9bf"/><stop offset=".78" stop-color="#f0dabe"/><stop offset="1" stop-color="#d7c9b6"/></linearGradient>
+ <radialGradient id="warmth"><stop offset="0" stop-color="#fff6db" stop-opacity=".92"/><stop offset=".14" stop-color="#f7e4b8" stop-opacity=".48"/><stop offset=".54" stop-color="#f5e2bb" stop-opacity=".16"/><stop offset="1" stop-color="#f4e3c5" stop-opacity="0"/></radialGradient>
+ <radialGradient id="sun"><stop offset=".64" stop-color="#fff7dc" stop-opacity=".98"/><stop offset=".82" stop-color="#fff4dc" stop-opacity=".92"/><stop offset="1" stop-color="#fff6dd" stop-opacity="0"/></radialGradient>
+ <linearGradient id="haze" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e4d8c3" stop-opacity="0"/><stop offset=".7" stop-color="#fff3d9" stop-opacity=".42"/><stop offset="1" stop-color="#f7e6cb" stop-opacity=".72"/></linearGradient>
+ <linearGradient id="cloudA"><stop stop-color="#eaf0dd" stop-opacity="0"/><stop offset=".48" stop-color="#f7eedb" stop-opacity=".43"/><stop offset="1" stop-color="#e7e8da" stop-opacity="0"/></linearGradient>
+ <linearGradient id="cloudB"><stop stop-color="#d1e0d5" stop-opacity="0"/><stop offset=".52" stop-color="#e7ece0" stop-opacity=".49"/><stop offset="1" stop-color="#b9d4cd" stop-opacity="0"/></linearGradient>
+ <filter id="cloudblur" x="-20%" y="-100%" width="140%" height="300%"><feGaussianBlur stdDeviation="26 18"/></filter>
+ <filter id="cirrusblur" x="-25%" y="-100%" width="150%" height="300%"><feGaussianBlur stdDeviation="42 26"/></filter>
+ <filter id="atmosgrit"><feTurbulence type="fractalNoise" baseFrequency=".31 .37" numOctaves="3" seed="29" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter>
+</defs>
+<rect width="1920" height="1080" fill="url(#sky)"/>
+<ellipse cx="1537" cy="360" rx="660" ry="610" fill="url(#warmth)"/>
+<!-- Atmospheric bands are translucent, blurred cloud banks, not decorative wave lines. -->
+<g filter="url(#cirrusblur)" opacity=".58">
+ <path d="M-250 155Q110 112 340 157T820 135Q1110 108 1290 151T2150 109L2150 210Q1770 174 1480 220T760 187Q320 216-250 190Z" fill="url(#cloudB)"/>
+ <path d="M-150 338Q120 300 330 329T835 315Q1090 270 1300 313T2130 278L2130 366Q1630 342 1240 383T430 365Q70 387-150 360Z" fill="url(#cloudA)"/>
+ <path d="M-200 498Q220 453 520 491T1100 476Q1410 444 2160 479L2160 530Q1580 504 1290 540T580 534Q120 553-200 519Z" fill="#eef0df" opacity=".27"/>
+</g>
+<g filter="url(#cloudblur)" opacity=".64">
+ <ellipse cx="250" cy="282" rx="290" ry="22" fill="#e4ede4" opacity=".44"/>
+ <ellipse cx="470" cy="312" rx="370" ry="20" fill="#edf0de" opacity=".36"/>
+ <ellipse cx="1150" cy="250" rx="355" ry="25" fill="#f0f0dc" opacity=".30"/>
+ <ellipse cx="1710" cy="210" rx="425" ry="23" fill="#e5ede2" opacity=".43"/>
+ <ellipse cx="890" cy="464" rx="475" ry="19" fill="#f5eddd" opacity=".40"/>
+ <ellipse cx="1510" cy="493" rx="465" ry="25" fill="#fff5de" opacity=".39"/>
+</g>
+<!-- Sea air thickens gradually at the horizon. -->
+<rect x="0" y="370" width="1920" height="480" fill="url(#haze)"/>
+<ellipse cx="1540" cy="356" rx="670" ry="625" fill="url(#warmth)" opacity=".82"/>
+<circle cx="1540" cy="364" r="62" fill="url(#sun)"/>
+<ellipse cx="1552" cy="639" rx="260" ry="44" fill="#fff2d6" opacity=".08" filter="url(#cirrusblur)"/>
+<rect width="1920" height="1080" filter="url(#atmosgrit)" opacity=".045" style="mix-blend-mode:soft-light"/>
+</svg>
