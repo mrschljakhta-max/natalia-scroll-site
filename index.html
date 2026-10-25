@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#12232a">
+<link rel="preload" as="image" type="image/svg+xml" href="./assets/images/forest-paper-texture.svg">
 <meta name="robots" content="noindex,nofollow">
 <meta name="description" content="Тривимірний скролітелінг Наталії та Анни: паперові документи у вихорі та складання орігамі-вітрильника.">
 <link rel="canonical" href="https://mrschljakhta-max.github.io/natalia-scroll-site/">
@@ -28,8 +29,10 @@
 .skip{position:absolute;left:-9999px;top:5px;z-index:20;background:white;color:black;padding:12px}.skip:focus{left:10px}
 .journey{height:610svh;position:relative;min-height:2900px}.stage{width:100%;height:100svh;min-height:530px;position:sticky;top:0;isolation:isolate;overflow:hidden;background:#13282c;--daylight:0}
 .stage::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:3;background:linear-gradient(90deg,#101f25df 0%,#101f2575 29%,#101f2514 58%,transparent 83%);opacity:calc(1 - var(--day)*.96)}
-.dark-world{position:absolute;inset:0;z-index:0;background:radial-gradient(ellipse 74% 77% at 59% 57%,#42635a 0%,#223e3b 44%,#12232a 87%)}
-.dark-world::before{content:'';position:absolute;inset:0;opacity:.18;background:repeating-linear-gradient(90deg,transparent 0 78px,#c1d1b927 79px 80px),repeating-linear-gradient(0deg,transparent 0 78px,#c1d1b927 79px 80px);mask-image:linear-gradient(to bottom,transparent,#0008 20%,#0008 76%,transparent)}
+.dark-world{position:absolute;inset:0;z-index:0;background-color:#142f2e;
+background-image:linear-gradient(90deg,#0619218a 0%,#0923232b 42%,#122f2914 100%),url("./assets/images/forest-paper-texture.svg");
+background-position:center,center;background-size:cover,cover;background-repeat:no-repeat}
+.dark-world::before{content:none}
 .dark-world::after{content:'';position:absolute;inset:-15%;background:radial-gradient(ellipse 56% 49% at 65% 56%,#8db6a817 0%,transparent 73%),radial-gradient(ellipse 15% 44% at 80% 37%,#efcba915 0%,transparent 100%);opacity:calc(1 - var(--day));pointer-events:none}
 .paper-glow{position:absolute;width:84vmin;aspect-ratio:1;border-radius:50%;top:13%;left:34%;z-index:1;background:radial-gradient(circle,#f5d9aa22,transparent 67%);filter:blur(35px);pointer-events:none;opacity:calc(1 - var(--day))}
 #paperCanvas{position:absolute;inset:0;width:100%;height:100%;z-index:4;pointer-events:none;opacity:0}
@@ -77,6 +80,14 @@ html.canvas-fallback #origami3d{opacity:0}
 .story-copy p{text-shadow:0 1px 12px #071e2390}
 .stage.is-day .brand .sail-mark{background:#f9f2decc;border-color:#3f6f6470}
 @media(max-width:670px){.sail-mark{width:44px;height:44px;flex-basis:44px}.sail-mark svg{width:37px;height:37px}.brand-name{font-size:11px}.brand-name small{font-size:7px}.stage.is-day .headline-area{top:18%}}
+
+/* Art-directed crop and ink wash for narrow screens: one responsive paper asset. */
+@media(max-width:670px){
+ .dark-world{
+  background-image:linear-gradient(180deg,#071d2380 0%,#071d2344 54%,#071d2326 100%),url("./assets/images/forest-paper-texture.svg");
+  background-position:center,61% center
+ }
+}
 </style>
 </head>
 <body>
