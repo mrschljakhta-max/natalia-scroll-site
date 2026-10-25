@@ -44,7 +44,7 @@ const paperTexture=(variant=0)=>{
  const vg=g.createLinearGradient(0,0,512,704);
  vg.addColorStop(0,"#fffdf8");vg.addColorStop(.72,"#f8f6ed");vg.addColorStop(1,"#e7ece2");
  g.fillStyle=vg;g.fillRect(0,0,512,704);
- g.strokeStyle="#c4d4c6";g.lineWidth=1.5;g.strokeRect(17,17,478,669);
+ // No printed document frame: the paper itself is the only outline.
  g.fillStyle="#315b4b";g.font="bold 22px Arial";g.fillText("N / A",39,62);
  g.fillStyle="#678b7a";g.font="12px Arial";g.fillText(["ACCOUNTING REPORT","FINANCIAL SUMMARY","DOCUMENT REGISTER","RECONCILIATION"][variant%4],134,59);
  g.fillStyle="#b78d6e";g.fillRect(39,84,55,3);
@@ -77,153 +77,80 @@ const paperTexture=(variant=0)=>{
 const textures=[0,1,2,3].map(paperTexture);
 const texture=textures[0];
 
-/* One intact document mesh: prevents the duplicated two-column paper bug.
-   A central vertex line is deliberately retained for clean symmetric folds. */
+/* ONE REAL WEBGL SHEET throughout the entire story.
+   The sheet starts as the selected document inside the vortex, unfolds
+   through physical hinges, then its own vertices become the yacht.
+   Three UV atlas patches share the same Mesh/material/texture; split
+   seam vertices allow the two sail tips to have independent heights. */
 const sailGroup=new THREE.Group();scene.add(sailGroup);
-const sheetGeo=new THREE.PlaneGeometry(W,H,36,54);
-const sheetMat=new THREE.MeshStandardMaterial({
- map:texture,vertexColors:true,side:THREE.DoubleSide,
- roughness:.83,metalness:0,transparent:true,opacity:1,depthWrite:true
+const buildPaperGeometry=()=>{
+ const positions=[],uvs=[],indices=[],add=(u0,u1,v0,v1,nx,ny)=>{
+  const first=positions.length/3;
+  for(let iy=0;iy<=ny;iy++)for(let ix=0;ix<=nx;ix++){
+   const u=mix(u0,u1,ix/nx),v=mix(v0,v1,iy/ny);
+   positions.push(W*(u-.5),H*(v-.5),0);uvs.push(u,v);
+  }
+  for(let iy=0;iy<ny;iy++)for(let ix=0;ix<nx;ix++){
+   const i=first+iy*(nx+1)+ix;
+   indices.push(i,i+1,i+nx+2,i,i+nx+2,i+nx+1);
+  }
+ };
+ add(0,1,0,.34,36,18);     // V-folded paper keel
+ add(0,.5,.34,1,18,36);    // large sage sail
+ add(.5,1,.34,1,18,36);    // smaller copper sail
+ const g=new THREE.BufferGeometry();
+ g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+ g.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));
+ g.setAttribute('color',new THREE.BufferAttribute(new Float32Array(positions.length),3));
+ g.setIndex(indices);g.computeVertexNormals();return g;
+};
+const sheetGeo=buildPaperGeometry();
+const sheetMat=new THREE.MeshPhysicalMaterial({
+ map:textures[0],vertexColors:true,side:THREE.DoubleSide,
+ roughness:.83,metalness:0,clearcoat:.06,clearcoatRoughness:.88,
+ transparent:false,opacity:1,depthWrite:true,polygonOffset:true,
+ polygonOffsetFactor:-.4,polygonOffsetUnits:-.4
 });
-sheetGeo.setAttribute("color",new THREE.BufferAttribute(
- new Float32Array(sheetGeo.attributes.position.count*3),3));
+// Original financial text softens while the same fibers fold into sails.
+// Shader only blends the *ink*, never the sheet's geometry or transparency.
+sheetMat.onBeforeCompile=(shader)=>{
+ shader.uniforms.uInkToFiber={value:0};
+ shader.fragmentShader=shader.fragmentShader.replace(
+  'void main() {','uniform float uInkToFiber;\nvoid main() {');
+ shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',
+  '#ifdef USE_MAP\nvec4 inkSample = texture2D(map,vMapUv);\ninkSample.rgb = mix(inkSample.rgb,vec3(1.0),uInkToFiber);\ndiffuseColor *= inkSample;\n#endif');
+ sheetMat.userData.shader=shader;
+};
 const sheetMesh=new THREE.Mesh(sheetGeo,sheetMat);
 sheetMesh.castShadow=true;sheetMesh.receiveShadow=true;sailGroup.add(sheetMesh);
 const halves=[{mesh:sheetMesh,geo:sheetGeo,original:new Float32Array(sheetGeo.attributes.position.array)}];
-const leftShade=new THREE.Color("#b1c8b4"),rightShade=new THREE.Color("#d9ae8a"),neutral=new THREE.Color("#f8f6e9");
-const creaseMat=new THREE.LineBasicMaterial({color:0x9ab6a2,transparent:true,opacity:.38});
-const outline=new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints([
- new THREE.Vector3(-W/2,-H/2,.015),new THREE.Vector3(W/2,-H/2,.015),
- new THREE.Vector3(W/2,H/2,.015),new THREE.Vector3(-W/2,H/2,.015)
-]),creaseMat);sailGroup.add(outline);
+const neutral=new THREE.Color('#f8f5e9');
+const ivory=new THREE.Color('#f7f5e9');
+const forest=new THREE.Color('#85ad97');
+const jade=new THREE.Color('#e1eadd');
+const sand=new THREE.Color('#d49f75');
+const paleCopper=new THREE.Color('#f8e1c1');
 
-/* V6 / Atelier origami yacht. A recognisable folded-paper sculpture, with a
-   long double-keel hull, soft asymmetric sails, crease-lines and rim-light.
-   Contrasting surfaces remain legible against both sea and green studio. */
-const boatGroup=new THREE.Group();sailGroup.add(boatGroup);
-const hullGroup=new THREE.Group();boatGroup.add(hullGroup);
-const portSail=new THREE.Group(),starboardSail=new THREE.Group();
-boatGroup.add(portSail,starboardSail);
-const V=(x,y,z)=>new THREE.Vector3(x,y,z);
-const mat=(color,opts={})=>new THREE.MeshPhysicalMaterial({
- color,roughness:.77,metalness:0,side:THREE.DoubleSide,
- clearcoat:.12,clearcoatRoughness:.79,flatShading:true,
- transparent:true,opacity:1,depthWrite:true,
- ...opts
-});
-function facet(parent,ps,color){
- const g=new THREE.BufferGeometry();
- g.setAttribute("position",new THREE.Float32BufferAttribute(ps.flatMap(v=>v.toArray()),3));
- g.setIndex(ps.length===4?[0,1,2,0,2,3]:[0,1,2]);
- g.computeVertexNormals();const o=new THREE.Mesh(g,mat(color));
- o.castShadow=true;o.receiveShadow=true;parent.add(o);return o;
-}
-function seam(parent,ps,color=0xdde8d6,alpha=.82){
- let curve=new THREE.BufferGeometry().setFromPoints(ps);
- const line=new THREE.Line(curve,new THREE.LineBasicMaterial({
-  color,transparent:true,opacity:alpha,depthWrite:false,depthTest:true
- }));
- parent.add(line);return line;
-}
-// Origami hull: tapered stern/bow, an open upper fold, and a genuine V keel.
-// All front/back planes have different Z so they do not z-fight.
-const P={
- stern:V(-1.92,-.79,-.08),L:V(-1.30,-.91,.22),
- aft:V(-.75,-.95,.30),C:V(-.06,-.78,.55),
- fore:V(.83,-.88,.31),R:V(1.43,-.83,.21),
- bow:V(1.94,-.70,-.14),depth:V(.05,-1.40,.81),
- back:V(-.06,-.94,-.37),front:V(.13,-1.04,.64)
+// Slim physical crease details appear only when they exist on the same sail.
+const boatDetail=new THREE.Group();sailGroup.add(boatDetail);
+const detailMaterials=[];
+const makeLine=(pts,color,alpha=1)=>{
+ const material=new THREE.LineBasicMaterial({color,transparent:true,opacity:alpha,depthTest:true,depthWrite:false});
+ const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints(
+  pts.map(p=>new THREE.Vector3(...p))),material);
+ boatDetail.add(line);detailMaterials.push({mat:material,initial:alpha});
+ return line;
 };
-facet(hullGroup,[P.stern,P.L,P.aft],0xe2eadd);
-facet(hullGroup,[P.stern,P.aft,P.depth],0xb4cbb8);
-facet(hullGroup,[P.aft,P.C,P.depth],0xeaf0df);
-facet(hullGroup,[P.C,P.fore,P.depth],0xf6e9d4);
-facet(hullGroup,[P.fore,P.bow,P.depth],0xc79c79);
-facet(hullGroup,[P.fore,P.R,P.bow],0xe4c4a2);
-facet(hullGroup,[P.stern,P.back,P.C],0x88a996);
-facet(hullGroup,[P.C,P.back,P.bow],0x997f69);
-facet(hullGroup,[P.stern,P.L,P.C],0xf4f5e8);
-facet(hullGroup,[P.C,P.R,P.bow],0xf3e1c4);
-facet(hullGroup,[P.L,P.front,P.C],0xd7e5d4);
-facet(hullGroup,[P.C,P.front,P.R],0xf7edda);
-seam(hullGroup,[P.stern,P.L,P.aft,P.C,P.fore,P.R,P.bow],0xffffff,.84);
-seam(hullGroup,[P.aft,P.depth,P.fore],0x779e86,.75);
-seam(hullGroup,[P.stern,P.back,P.bow],0x63877c,.66);
-seam(hullGroup,[P.L,P.front,P.R],0xe1eddc,.64);
-seam(hullGroup,[P.depth,P.front],0xfdf6e9,.57);
-
-// A narrow folded paper mast and a subtle shadow behind the sails.
-facet(boatGroup,[V(-.047,-.77,-.06),V(.055,-.77,-.06),
- V(.043,2.63,-.05),V(-.035,2.63,-.05)],0x9db8a4);
-seam(boatGroup,[V(.016,-.76,.015),V(.011,2.60,.015)],0xfaf7e9,.75);
-
-// Sail surfaces are lofted in 3D. Vertical bands form an origami "ridge",
-// subtly curved in silhouette with a continuous, never-flashing mesh.
-function loftSail(parent,{
- height,width,direction,baseY=-.70,mastX=.04,
- colorInner,colorOuter,colorRidge
-}){
- const rows=18,cols=3;
- const pts=[],colors=[],ids=[];
- const ci=new THREE.Color(colorInner),co=new THREE.Color(colorOuter),
-       cr=new THREE.Color(colorRidge);
- function getPoint(u,v){
-  const y=baseY+height*v;
-  const spread=Math.pow(Math.max(.004,1-v),.88);
-  const outer=direction*width*spread*(1+.065*Math.sin(Math.PI*v));
-  const xx=mastX+outer*u+(u===0?0:direction*.025*Math.sin(Math.PI*v));
-  const z=-.025+.34*Math.sin(Math.PI*u)*spread
-       +.09*Math.sin(Math.PI*v)*(1-u)
-       +(u===1?-.10*spread:0);
-  return [xx,y,z];
- }
- for(let j=0;j<=rows;j++)for(let i=0;i<=cols;i++){
-  const u=i/cols,v=j/rows;
-  const [x,y,z]=getPoint(u,v);pts.push(x,y,z);
-  const cc=ci.clone().lerp(co,u*.64).lerp(cr,Math.sin(Math.PI*u)*.17);
-  // Lower and outer regions pick up richer ink for visual weight.
-  cc.multiplyScalar(1-.085*(1-v)*u);
-  colors.push(cc.r,cc.g,cc.b);
- }
- for(let j=0;j<rows;j++)for(let i=0;i<cols;i++){
-  const n=j*(cols+1)+i;ids.push(n,n+1,n+cols+2,n,n+cols+2,n+cols+1);
- }
- const geo=new THREE.BufferGeometry();
- geo.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));
- geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
- geo.setIndex(ids);geo.computeVertexNormals();
- const surface=new THREE.Mesh(geo,mat(0xffffff,{
-  vertexColors:true,flatShading:false,roughness:.86,clearcoat:.06
- }));
- surface.castShadow=true;surface.receiveShadow=true;parent.add(surface);
- const pt=(u,v)=>{const a=getPoint(u,v);return V(...a)};
- // Raised creases, not drawn lines. Their slight Z-lift avoids surface flicker.
- for(const u of [0,.333,1]){
-  let ps=[];for(let j=0;j<=rows;j++){
-   const p=pt(u,j/rows);p.z+=.014;ps.push(p);
-  }
-  seam(parent,ps,u===1?(direction<0?0x759986:0xa87e62):0xfffcf0,u===1?.66:.82);
- }
- const accent=[pt(1,0),pt(.5,.07),pt(0,1)];for(const pt0 of accent)pt0.z+=.025;
- seam(parent,accent,0xffffff,.28);
- return surface;
-}
-loftSail(portSail,{
- height:3.22,width:1.63,direction:-1,
- colorInner:0xfff9e9,colorOuter:0x8ab39b,colorRidge:0xd9e6d5
-});
-loftSail(starboardSail,{
- height:2.53,width:1.14,direction:1,mastX:.12,baseY:-.71,
- colorInner:0xf8e8cc,colorOuter:0xb57e59,colorRidge:0xf1d1ac
-});
-// Thin paper folds near the foot of each sail tie it into the hull.
-facet(portSail,[V(-.03,-.70,.08),V(-.81,-.71,.27),V(-1.30,-.70,-.13)],0xc7dbcb);
-facet(starboardSail,[V(.12,-.72,.08),V(.75,-.70,.19),V(1.12,-.69,-.12)],0xe9cba9);
-const vesselMaterials=[],vesselCreases=[];
-boatGroup.traverse(o=>{
- if(o.isMesh&&o.material)vesselMaterials.push(o.material);
- if(o.isLine&&o.material)vesselCreases.push(o.material);
-});
+// Origami-mast is folded paper tubing, not a separate glossy metal pole.
+const mastMaterial=new THREE.MeshStandardMaterial({color:0xc5d7c5,roughness:.88,side:THREE.DoubleSide});
+const mast=new THREE.Mesh(new THREE.CylinderGeometry(.024,.038,3.15,5,1),mastMaterial);
+mast.position.set(.05,.79,.025);mast.castShadow=true;boatDetail.add(mast);
+makeLine([[-1.91,-.82,.14],[0,-1.47,.75],[1.89,-.82,.14]],0xfdf9e9,.64);
+makeLine([[-1.91,-.82,.14],[0,-.76,.58],[1.89,-.82,.14]],0x9eb4a0,.50);
+makeLine([[-.02,-.67,.36],[-.69,-.67,.42],[-1.58,-.67,.16]],0xeaf5e5,.62);
+makeLine([[.13,-.67,.33],[.56,-.67,.43],[1.25,-.67,.10]],0xfff0d9,.58);
+// Scroll state can be inspected for QA without revealing implementation/UI internals.
+const dev={sheetMesh,boatDetail};
 
 /* Continuous mirror-symmetric paper folding.
    The left/right corners share ONE exact isosceles triangle destination. */
