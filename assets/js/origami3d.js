@@ -108,6 +108,7 @@ const V=(x,y,z)=>new THREE.Vector3(x,y,z);
 const mat=(color,opts={})=>new THREE.MeshPhysicalMaterial({
  color,roughness:.77,metalness:0,side:THREE.DoubleSide,
  clearcoat:.12,clearcoatRoughness:.79,flatShading:true,
+ transparent:true,opacity:1,depthWrite:true,
  ...opts
 });
 function facet(parent,ps,color){
@@ -203,7 +204,8 @@ function loftSail(parent,{
   }
   seam(parent,ps,u===1?(direction<0?0x759986:0xa87e62):0xfffcf0,u===1?.66:.82);
  }
- seam(parent,[pt(1,0),pt(.5,.07),pt(0,1)],0xffffff,.35);
+ const accent=[pt(1,0),pt(.5,.07),pt(0,1)];for(const pt0 of accent)pt0.z+=.025;
+ seam(parent,accent,0xffffff,.28);
  return surface;
 }
 loftSail(portSail,{
@@ -390,6 +392,10 @@ function tick(time){
  camera.position.x=mix(-.10,.14,smooth(.58,.94,p));
  camera.position.y=mix(.13,-.15,smooth(.76,1,p));
  camera.lookAt(0,0,0);
+ // At rest the sculpture floats with a barely perceptible paper-boat roll.
+ const afloat=smooth(.954,1,p);
+ boatGroup.rotation.z=reduce.matches?0:Math.sin(time*.63)*.011*afloat;
+ boatGroup.position.y-=reduce.matches?0:Math.sin(time*.81)*.012*afloat;
  renderer.render(scene,camera);
  window.__origami3DProgress=p;
 }
