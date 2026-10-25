@@ -25,16 +25,16 @@ renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.6));
 renderer.setClearColor(0x12232a,0);
 renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure=1.24;
+renderer.toneMappingExposure=1.08;
 renderer.shadowMap.enabled=true;
 renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 renderer.domElement.setAttribute("aria-hidden","true");
 target.appendChild(renderer.domElement);
-const hemi=new THREE.HemisphereLight(0xf4ead5,0x24483f,2.15);scene.add(hemi);
-const key=new THREE.DirectionalLight(0xffe6bf,3.8);
+const hemi=new THREE.HemisphereLight(0xf4ead5,0x24483f,1.64);scene.add(hemi);
+const key=new THREE.DirectionalLight(0xffe6bf,2.65);
 key.position.set(3.5,5.6,6.5);scene.add(key);
-const fill=new THREE.DirectionalLight(0xa6d2c3,2.0);fill.position.set(-5,-2,3);scene.add(fill);
-const rim=new THREE.PointLight(0xfac9a0,22,13);rim.position.set(-3,3.5,2);scene.add(rim);
+const fill=new THREE.DirectionalLight(0xa6d2c3,1.35);fill.position.set(-5,-2,3);scene.add(fill);
+const rim=new THREE.PointLight(0xfac9a0,12,13);rim.position.set(-3,3.5,2);scene.add(rim);
 
 /* Editorial financial sheets: restrained detail, ink hierarchy, generous white space. */
 const paperTexture=(variant=0)=>{
@@ -107,7 +107,7 @@ const buildPaperGeometry=()=>{
 const sheetGeo=buildPaperGeometry();
 const sheetMat=new THREE.MeshPhysicalMaterial({
  map:textures[0],vertexColors:true,side:THREE.DoubleSide,
- roughness:.83,metalness:0,clearcoat:.06,clearcoatRoughness:.88,
+ roughness:.92,metalness:0,clearcoat:.02,clearcoatRoughness:.97,
  transparent:false,opacity:1,depthWrite:true,polygonOffset:true,
  polygonOffsetFactor:-.4,polygonOffsetUnits:-.4
 });
@@ -124,12 +124,14 @@ sheetMat.onBeforeCompile=(shader)=>{
 const sheetMesh=new THREE.Mesh(sheetGeo,sheetMat);
 sheetMesh.castShadow=true;sheetMesh.receiveShadow=true;sailGroup.add(sheetMesh);
 const halves=[{mesh:sheetMesh,geo:sheetGeo,original:new Float32Array(sheetGeo.attributes.position.array)}];
-const neutral=new THREE.Color('#f8f5e9');
-const ivory=new THREE.Color('#f7f5e9');
-const forest=new THREE.Color('#85ad97');
-const jade=new THREE.Color('#e1eadd');
-const sand=new THREE.Color('#d49f75');
-const paleCopper=new THREE.Color('#f8e1c1');
+const neutral=new THREE.Color('#ede9dd');
+const ivory=new THREE.Color('#e9e6da');
+const forest=new THREE.Color('#739b85');
+const jade=new THREE.Color('#b9d0bf');
+const sand=new THREE.Color('#c18b68');
+const paleCopper=new THREE.Color('#e7c19c');
+const keelColor=new THREE.Color('#b4b9ac');
+const edgeShadow=new THREE.Color('#789486');
 
 // Slim physical crease details appear only when they exist on the same sail.
 const boatDetail=new THREE.Group();sailGroup.add(boatDetail);
@@ -151,6 +153,86 @@ makeLine([[-.02,-.67,.36],[-.69,-.67,.42],[-1.58,-.67,.16]],0xeaf5e5,.62);
 makeLine([[.13,-.67,.33],[.56,-.67,.43],[1.25,-.67,.10]],0xfff0d9,.58);
 // Scroll state can be inspected for QA without revealing implementation/UI internals.
 const dev={sheetMesh,boatDetail};
+
+/* Vector-exact crease ribbons. Each path is sampled from the SAME animated
+   geometry as the paper, so edges never float independently of the sheet.
+   Plane ribbons have real width in WebGL (LineBasicMaterial ignores lineWidth).
+   No outline is drawn during document / triangle folding. */
+const creaseRibbons=[];
+function ribbonPath({name,from,to,color,width=.014,alpha=.8,begin=.93,finish=.985,kind='sail'}){
+ const segments=30,arr=new Float32Array((segments+1)*2*3),idx=[];
+ for(let i=0;i<segments;i++){const j=i*2;idx.push(j,j+1,j+2,j+1,j+3,j+2);}
+ const geometry=new THREE.BufferGeometry();
+ geometry.setAttribute('position',new THREE.BufferAttribute(arr,3));
+ geometry.setIndex(idx);
+ const material=new THREE.MeshBasicMaterial({
+  color,transparent:true,opacity:0,depthTest:true,depthWrite:false,
+  side:THREE.DoubleSide,toneMapped:false
+ });
+ const mesh=new THREE.Mesh(geometry,material);
+ mesh.frustumCulled=false;mesh.renderOrder=4;mesh.visible=false;
+ sailGroup.add(mesh);
+ creaseRibbons.push({name,mesh,segments,from,to,width,alpha,begin,finish,kind});
+}
+ribbonPath({name:'port-silhouette',from:[0,.346],to:[0,1],color:0x557c6c,width:.017,alpha:.87,begin:.90,finish:.963});
+ribbonPath({name:'port-mast-fold',from:[.5,.346],to:[.5,1],color:0x607e6d,width:.013,alpha:.73,begin:.90,finish:.963});
+ribbonPath({name:'port-inner-crease',from:[.22,.35],to:[.385,.93],color:0x7f9f8a,width:.012,alpha:.56,begin:.925,finish:.982});
+ribbonPath({name:'starboard-silhouette',from:[1,.346],to:[1,1],color:0xa9795d,width:.017,alpha:.87,begin:.936,finish:.996});
+ribbonPath({name:'starboard-mast-fold',from:[.5,.346],to:[.5,1],color:0x95735c,width:.011,alpha:.68,begin:.936,finish:.996});
+ribbonPath({name:'starboard-inner-crease',from:[.78,.35],to:[.64,.90],color:0xc19b7c,width:.011,alpha:.56,begin:.942,finish:.996});
+ribbonPath({name:'hull-upper-lip',from:[0,.335],to:[1,.335],color:0x6f9180,width:.019,alpha:.89,begin:.861,finish:.944,kind:'hull'});
+ribbonPath({name:'hull-keel',from:[0,0],to:[1,0],color:0x89998d,width:.020,alpha:.82,begin:.866,finish:.941,kind:'hull'});
+ribbonPath({name:'hull-central-fold',from:[.5,0],to:[.5,.335],color:0xb1a087,width:.012,alpha:.67,begin:.865,finish:.952,kind:'hull'});
+ribbonPath({name:'hull-fold-left',from:[0,.12],to:[.5,.335],color:0x9aad9b,width:.012,alpha:.64,begin:.868,finish:.944,kind:'hull'});
+ribbonPath({name:'hull-fold-right',from:[.5,.335],to:[1,.12],color:0xbda484,width:.012,alpha:.61,begin:.868,finish:.944,kind:'hull'});
+
+function positionFromUV(u,v,p){
+ const x0=W*(u-.5),y0=H*(v-.5),folded=foldPoint(x0,y0,p),
+       final=yachtPoint(x0,y0),morph=v<.34-.00001?smooth(.851,.925,p):
+         u<=.5?smooth(.887,.961,p):smooth(.921,.998,p);
+ return [mix(folded[0],final[0],morph),mix(folded[1],final[1],morph),
+    mix(folded[2],final[2],morph)];
+}
+function updateRibbons(p){
+ for(const r of creaseRibbons){
+  const a=smooth(r.begin,r.finish,p);
+  r.mesh.visible=a>.006;
+  if(!r.mesh.visible)continue;
+  r.mesh.material.opacity=r.alpha*a;
+  const attr=r.mesh.geometry.attributes.position;
+  for(let i=0;i<=r.segments;i++){
+   const t=i/r.segments,ta=Math.max(0,(i-.35)/r.segments),
+     tb=Math.min(1,(i+.35)/r.segments);
+   const point=(tt)=>positionFromUV(mix(r.from[0],r.to[0],tt),mix(r.from[1],r.to[1],tt),p);
+   const pt=point(t),before=point(ta),after=point(tb);
+   const dx=after[0]-before[0],dy=after[1]-before[1],l=Math.hypot(dx,dy)||1;
+   // Lift the ink slightly toward the camera above the physical face.
+   const lift=.038+(r.kind==='hull'?.012:0);
+   const ex=-dy/l*r.width*.5,ey=dx/l*r.width*.5;
+   attr.setXYZ(i*2,pt[0]+ex,pt[1]+ey,pt[2]+lift);
+   attr.setXYZ(i*2+1,pt[0]-ex,pt[1]-ey,pt[2]+lift);
+  }
+  attr.needsUpdate=true;
+ }
+}
+// Diffuse contact shadow over the sea, kept separate from folding geometry.
+const shadowCanvas=document.createElement('canvas');
+shadowCanvas.width=128;shadowCanvas.height=128;
+const sc=shadowCanvas.getContext('2d');
+const radial=sc.createRadialGradient(64,64,4,64,64,64);
+radial.addColorStop(0,'rgba(19,55,52,.39)');
+radial.addColorStop(.48,'rgba(23,60,54,.20)');
+radial.addColorStop(1,'rgba(23,60,54,0)');
+sc.fillStyle=radial;sc.fillRect(0,0,128,128);
+const contactShadow=new THREE.Sprite(new THREE.SpriteMaterial({
+ map:new THREE.CanvasTexture(shadowCanvas),color:0x355b52,
+ transparent:true,opacity:0,depthWrite:false,depthTest:false
+}));
+contactShadow.scale.set(4.5,.68,1);
+contactShadow.position.set(.04,-1.80,-.6);
+contactShadow.renderOrder=1;
+sailGroup.add(contactShadow);
+
 
 /* Continuous mirror-symmetric paper folding.
    The left/right corners share ONE exact isosceles triangle destination. */
@@ -253,9 +335,26 @@ function updateSheet(p,time){
         z=mix(folded[2],final[2],morph);
   pos.setXYZ(i,x,y,z);
   let c=neutral.clone();
-  if(uvy<.34){c.lerp(uvx<.52?jade:paleCopper,hull*.89);c.multiplyScalar(1-.10*(1-uvy/.34)*hull)}
-  else if(uvx<=.5){c.lerp(forest,port*(.27+.54*(.5-uvx)*2))}
-  else{c.lerp(sand,starboard*(.16+.58*(uvx-.5)*2))}
+  if(uvy<.34){
+   // Under-rim occlusion, keel gradient, and split sage/copper hull facets.
+   c.lerp(uvx<.5?jade:paleCopper,hull*.94);
+   const keelDepth=1-clamp(uvy/.24);
+   const foldedLip=1-clamp(Math.abs(uvy-.34)/.065);
+   c.lerp(keelColor,hull*.24*keelDepth);
+   c.multiplyScalar(1-hull*(.17*keelDepth+.075*foldedLip));
+  }else if(uvx<=.5){
+   // Large port sail: ivory inner face and deeper sage outer paper panel.
+   c.lerp(jade,port*.62);
+   c.lerp(forest,port*(.11+.53*(.5-uvx)*2));
+   const foldShadow=1-clamp(Math.abs(uvx-.245)/.065);
+   c.lerp(edgeShadow,foldShadow*port*.20);
+  }else{
+   // Starboard sail: distinctly warm copper, without flat white glare.
+   c.lerp(paleCopper,starboard*.66);
+   c.lerp(sand,starboard*(.17+.49*(uvx-.5)*2));
+   const foldShadow=1-clamp(Math.abs(uvx-.77)/.065);
+   c.multiplyScalar(1-starboard*.13*foldShadow);
+  }
   col.setXYZ(i,c.r,c.g,c.b);
  }
  pos.needsUpdate=true;col.needsUpdate=true;
@@ -285,6 +384,11 @@ function updateSheet(p,time){
  mast.scale.y=Math.max(.002,details);
  mast.position.y=-.71+1.575*details;
  detailMaterials.forEach(({mat,initial})=>mat.opacity=initial*details);
+ updateRibbons(p);
+ const seaContact=smooth(.951,.996,p);
+ contactShadow.visible=seaContact>.008;
+ contactShadow.material.opacity=.54*seaContact;
+ contactShadow.position.y=-1.83+(reduce.matches?0:Math.sin(time*.79)*.012*seaContact);
  boatDetail.rotation.z=reduce.matches?0:Math.sin(time*.72)*.007*smooth(.973,1,p);
  boatDetail.position.y=reduce.matches?0:Math.sin(time*.79)*.014*smooth(.978,1,p);
 }
@@ -405,7 +509,7 @@ try{
   target.style.display="none";
   window.__enableCanvasFallback?.("webgl-context-lost");
 },{passive:true});
- window.__origami3DDiagnostics={engine:"Three.js WebGL",controller:"GSAP ScrollTrigger",sheetMeshes:halves.length,sheetVertices:halves.reduce((n,o)=>n+o.geo.attributes.position.count,0),vortexMeshes:docs.length,boatFacets:8,sailFacets:4,geometryVersion:"v7-one-mesh-no-swap",oneContinuousSheet:true};
+ window.__origami3DDiagnostics={engine:"Three.js WebGL",controller:"GSAP ScrollTrigger",sheetMeshes:halves.length,sheetVertices:halves.reduce((n,o)=>n+o.geo.attributes.position.count,0),vortexMeshes:docs.length,boatFacets:8,sailFacets:4,geometryVersion:"v8-sculpted-contours",oneContinuousSheet:true,contourPaths:creaseRibbons.length,contactShadow:true};
 }catch(err){
  window.__origami3DReady=false;window.__natalia3d=false;
  target.style.display="none";
