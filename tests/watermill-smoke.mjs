@@ -49,6 +49,9 @@ async function check(viewport,reducedMotion='no-preference'){
   assert.equal(pbr.brassRoughnessMap,true);
   assert.equal(pbr.contactOcclusion,true);
   assert.equal(real3D.frontFacing,true);
+  assert.equal(real3D.wheelDirection,'clockwise');
+  assert.ok(real3D.rotationRadians<=0 && real3D.rotationRadians>=-Math.PI*2,
+    'rotor should rotate clockwise from the front camera');
   assert.equal(real3D.seaLinked,true);
   assert.match(real3D.waterfall,/3D mesh/);
   assert.ok(real3D.waterLevel>.75,'WebGL ocean water should visibly rise');
