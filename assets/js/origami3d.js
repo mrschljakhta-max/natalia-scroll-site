@@ -281,7 +281,7 @@ function updatePaperEdges(p,time){
    edgeNormal.crossVectors(edgeTangent,edgeInward).normalize();
    // Winding is consistent over the original flat sheet, and this local
    // orientation tracks the surface as real hinges fold it in 3D.
-   if(r.name==="keel-left"||r.name==="copper-right"||r.name==="sage-left"||
+   if(r.name==="keel-left"||r.name==="sage-left"||r.name==="sage-top"||
       r.name==="copper-top")edgeNormal.negate();
    const thickness=.014;
    pos.setXYZ(i*2,pt[0]+edgeNormal.x*.0025,
