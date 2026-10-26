@@ -603,10 +603,6 @@ const docs=[];
 let seed=1317;
 function rng(){seed=(1664525*seed+1013904223)>>>0;return seed/4294967296}
 const VORTEX_COUNT=25,GOLDEN_ANGLE=Math.PI*(3-Math.sqrt(5));
-// Document 23 lands over the bottom-right "scroll to continue" hint in
-// the opening desktop layout. Hide ONLY that sheet; keep it in the seeded
-// generation loop so every other document retains its exact original pose.
-const SCROLL_HINT_OVERLAP_DOC_INDEX=23;
 for(let i=0;i<VORTEX_COUNT;i++){
  const pw=.80+rng()*.31,ph=pw*1.36;
  // Subdivided real sheet, not a flat billboard: enough vertices for mild air flutter.
@@ -824,7 +820,7 @@ function updateVortex(p,t){
    const baseSize=(.87+.20*d.order)*(d.layer===0?.82:d.layer===2?1.19:1);
    m.scale.setScalar(baseSize*(1-.27*shrink)*mix(1,.70,recession));
    m.material.opacity=(1-smooth(.447,.513,p))*d.focusTint*mix(1,.70,focus);
-   m.visible=p<.514&&(!mobile||idx<18)&&idx!==SCROLL_HINT_OVERLAP_DOC_INDEX;
+   m.visible=p<.514&&(!mobile||idx<18);
    m.position.set(x,y,z);
    m.rotation.set(rx,ry,rz);
    if(m.visible){
@@ -909,7 +905,7 @@ try{
   return {scrollProgress:progress,poseProgress:yachtPoseProgress(progress),
    samples:[0,.17,.34,.51,.68,.85,1].map(r=>at(Math.min(a.count-1,Math.floor(r*(a.count-1)))))};
  };
-  window.__origami3DDiagnostics={engine:"Three.js WebGL",controller:"GSAP ScrollTrigger",sheetMeshes:halves.length,sheetVertices:halves.reduce((n,o)=>n+o.geo.attributes.position.count,0),vortexMeshes:docs.length,boatFacets:8,sailFacets:4,geometryVersion:"v8-sculpted-contours",oneContinuousSheet:true,contourPaths:creaseRibbons.length,contactShadow:true,seaShader:"v18-worldspace-animated-surface",atmosphericSky:true,paperPBR:"v11-cotton-stock",paperMaps:["albedo","normal","roughness"],paperMapResolution:paperMaps.dimensions,physicalPaperEdges:paperEdges.length,edgeThickness:.014,airFlex:"reversible-pre-fold",documentImages:documentImageStatus,documentTypes:DOCUMENT_IMAGE_FILES.length,paperPhysics:"v16-visible-paper-flaps",finalScene:"v20-approved-yacht-shape-locked",waveVertices:finale.waveVertices,finale:finale.diagnostics,finalPoseProgress:FINAL_YACHT_POSE_PROGRESS,paperPhysicsStats,heroWind:true,vortexDirection:"v14-cinematic-parallax",depthTiers:3,focusOnSameSheet:true,vortexDocumentCount:VORTEX_COUNT,excludedOpeningDocument:SCROLL_HINT_OVERLAP_DOC_INDEX};
+  window.__origami3DDiagnostics={engine:"Three.js WebGL",controller:"GSAP ScrollTrigger",sheetMeshes:halves.length,sheetVertices:halves.reduce((n,o)=>n+o.geo.attributes.position.count,0),vortexMeshes:docs.length,boatFacets:8,sailFacets:4,geometryVersion:"v8-sculpted-contours",oneContinuousSheet:true,contourPaths:creaseRibbons.length,contactShadow:true,seaShader:"v18-worldspace-animated-surface",atmosphericSky:true,paperPBR:"v11-cotton-stock",paperMaps:["albedo","normal","roughness"],paperMapResolution:paperMaps.dimensions,physicalPaperEdges:paperEdges.length,edgeThickness:.014,airFlex:"reversible-pre-fold",documentImages:documentImageStatus,documentTypes:DOCUMENT_IMAGE_FILES.length,paperPhysics:"v16-visible-paper-flaps",finalScene:"v20-approved-yacht-shape-locked",waveVertices:finale.waveVertices,finale:finale.diagnostics,finalPoseProgress:FINAL_YACHT_POSE_PROGRESS,paperPhysicsStats,heroWind:true,vortexDirection:"v14-cinematic-parallax",depthTiers:3,focusOnSameSheet:true,vortexDocumentCount:VORTEX_COUNT};
 }catch(err){
  window.__origami3DReady=false;window.__natalia3d=false;
  target.style.display="none";
