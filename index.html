@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#12232a">
 <link rel="preload" as="image" type="image/svg+xml" href="./assets/images/forest-paper-texture.svg">
-<link rel="preload" as="image" type="image/svg+xml" href="./assets/images/cinematic-sea-sky.svg">
+<link rel="preload" as="image" type="image/svg+xml" href="./assets/images/cinematic-sea-sky.svg?v=28-mist-sky">
 <link rel="preload" as="image" href="./assets/images/documents/accounting-policy.webp" type="image/webp">
 <link rel="preload" as="image" href="./assets/images/documents/financial-charts.webp" type="image/webp">
 <link rel="preload" as="image" href="./assets/images/documents/handwritten-review.webp" type="image/webp">
 <link rel="preload" as="image" href="./assets/images/documents/handwritten-summary.webp" type="image/webp">
 <meta name="robots" content="noindex,nofollow">
 <meta name="description" content="Тривимірний скролітелінг Наталії та Анни: паперові документи у вихорі та складання орігамі-вітрильника.">
-<meta name="site-revision" content="v24-clean-overlay">
+<meta name="site-revision" content="v28-mist-sky-ocean">
 <link rel="canonical" href="https://mrschljakhta-max.github.io/natalia-scroll-site/">
 <script>
 /* Keep platform referral tracking out of the visible address bar, without
@@ -55,16 +55,16 @@ html.canvas-fallback #origami3d{opacity:0}
  transform:translateY(calc((1 - var(--day))*14px)) scale(calc(1.012 - var(--day)*.012));
  transform-origin:center;pointer-events:none;will-change:opacity,transform;overflow:hidden}
 .sea-sky{position:absolute;inset:0;
- background:#a9c3bd url("./assets/images/cinematic-sea-sky.svg") center center/cover no-repeat}
+ background:#9EBFC1 url("./assets/images/cinematic-sea-sky.svg?v=28-mist-sky") center center/cover no-repeat}
 .sea-haze{position:absolute;left:0;right:0;top:49%;height:28%;
- background:linear-gradient(180deg,transparent 0%,#fff2d013 28%,#f2e6cb46 54%,transparent 93%);
+ background:linear-gradient(180deg,transparent 0%,#F2E7CF18 28%,#E8DCC74A 54%,transparent 93%);
  filter:blur(16px);opacity:.60}
 .sun-bloom{position:absolute;right:1%;top:9%;width:min(53vw,780px);height:min(53vw,780px);
- border-radius:50%;background:radial-gradient(circle,#fff4d080 0%,#fff0bc27 29%,transparent 67%);
+ border-radius:50%;background:radial-gradient(circle,#F3E8C890 0%,#EEDDB735 29%,transparent 67%);
  mix-blend-mode:screen;filter:blur(26px);pointer-events:none;opacity:calc(var(--day)*.56)}
 .fallback-ocean{display:none;position:absolute;inset:61% 0 0;
- background:radial-gradient(ellipse 12% 85% at 80% 0%,#eadbbb39,transparent 100%),
-  linear-gradient(180deg,#79a5a0 0%,#55908c 34%,#2c696b 100%)}
+ background:radial-gradient(ellipse 12% 85% at 80% 0%,#D8B08B39,transparent 100%),
+  linear-gradient(180deg,#4B9CA3 0%,#2A7F88 34%,#1E6873 100%)}
 html.canvas-fallback .fallback-ocean{display:block}
 .topbar{position:absolute;left:clamp(18px,4.5vw,76px);right:clamp(18px,4.5vw,76px);top:clamp(17px,3vw,37px);display:flex;justify-content:space-between;align-items:center;gap:20px;z-index:12}
 .brand{display:flex;align-items:center;gap:12px;color:#f5f1e8;text-decoration:none;transition:color .3s}.monogram{font:400 24px Georgia,serif;width:45px;height:45px;border:1px solid currentColor;display:grid;place-items:center;border-radius:50%}.brand-name{display:grid;gap:2px;font-size:13px;letter-spacing:.22em;font-weight:700}.brand-name small{font:500 9px 'DM Sans',sans-serif;letter-spacing:.16em;opacity:.65}
@@ -78,9 +78,21 @@ html.canvas-fallback .fallback-ocean{display:block}
 .story-copy[data-act="2"]{top:-25px}
 /* Preserve the approved two-line typography on the longer third heading. */
 .story-copy[data-act="2"] h2{font-size:clamp(38px,4.75vw,74px)}
-@media(max-width:670px){.story-copy[data-act="2"] h2{font-size:clamp(28px,8vw,41px)}}.story-copy[data-act="3"] h2 em{color:#a57854}.story-copy[data-act="3"] p{color:#234c47}
-.ending-copy{color:#163338!important}.ending-copy .eyebrow{color:#516963}.ending-copy h2{color:#163338}.ending-copy h2 em{color:#a57854}
-.end-signature{display:flex;gap:14px;align-items:center;margin-top:31px;color:#2e5549;font-size:11px;letter-spacing:.11em;font-weight:800}.end-signature::before{content:'';width:38px;height:1px;background:#2e5549}
+@media(max-width:670px){.story-copy[data-act="2"] h2{font-size:clamp(28px,8vw,41px)}}
+/* Scene 04: dark title on pale sky; ivory copy on deep teal water.
+   No cards or hard overlays, just delicate shadows and feathered local contrast. */
+.ending-copy{color:#163E43!important}
+.ending-copy .eyebrow{color:#24585D}
+.ending-copy h2{color:#163E43}
+.ending-copy h2 em{color:#A96349;text-shadow:0 1px 12px #F2E7CF44}
+.ending-copy p{color:#F5F1E8;text-shadow:0 2px 10px #062B30D9,0 0 20px #062B3061;
+ background:radial-gradient(ellipse 95% 83% at 42% 51%,#093A452E 0%,transparent 88%)}
+.end-signature{display:flex;gap:14px;align-items:center;margin-top:31px;
+ color:#E7E1D4;text-shadow:0 2px 12px #062B30CF;
+ font-size:11px;letter-spacing:.11em;font-weight:800}
+.end-signature::before{content:'';width:38px;height:1px;background:#E7E1D4}
+@media(min-width:671px){.story-copy[data-act="3"]{top:-63px}}
+@media(max-width:670px){.story-copy[data-act="3"]{top:0}}
 .chapter-rail{position:absolute;right:clamp(18px,3.4vw,58px);top:50%;transform:translateY(-50%);display:grid;gap:18px;z-index:10}.chapter-dot{display:flex;align-items:center;gap:12px;justify-content:flex-end;padding:7px 0;border:0;color:#e5eee6a0;background:none}.chapter-dot span{font-size:9px;letter-spacing:.12em;font-weight:700;opacity:0;transform:translateX(7px);transition:.25s}.chapter-dot::after{content:'';display:block;width:5px;height:5px;border-radius:100px;background:#d9e9d688;transition:.25s}.chapter-dot.active span,.chapter-dot:hover span,.chapter-dot:focus-visible span{opacity:1;transform:none}.chapter-dot.active{color:#f6f2e9}.chapter-dot.active::after{width:11px;height:11px;background:#f0e4c9;box-shadow:0 0 0 5px #fff7}
 /* Floating first-scroll hint. No card, frame, wash, or blur: the papers
    remain the artwork, the scroll cue is just a lightweight editorial label. */
@@ -611,6 +623,6 @@ resize();position=scrollProgress();tick=requestAnimationFrame(frame);
  },12000);
 })();
 </script>
-<script type="module" src="./assets/js/origami3d.js?v=22-centered-scroll-guide" onerror="window.__enableCanvasFallback?.('module-load-error')"></script>
+<script type="module" src="./assets/js/origami3d.js?v=28-mist-ocean" onerror="window.__enableCanvasFallback?.('module-load-error')"></script>
 </body>
 </html>

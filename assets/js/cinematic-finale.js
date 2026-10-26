@@ -8,10 +8,26 @@ export function createCinematicFinale(THREE,{scene,paperMaps,reduce,mobile=false
  const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
  const smooth=(a,b,v)=>{const t=clamp((v-a)/(b-a));return t*t*(3-2*t);};
  const seaLevel=-1.79;
+ // Scene 04 palette uses raw sRGB for this transparent, un-tonemapped shader.
+ // The original moving waves, wake, normals and highlights remain intact.
+ const OCEAN_PALETTE=Object.freeze({
+  deep:"#1E6873",mid:"#2A7F88",horizon:"#4B9CA3",
+  highlight:"#86BEC1",warmReflection:"#D8B08B"
+ });
+ const rgb=hex=>new THREE.Vector3(
+  parseInt(hex.slice(1,3),16)/255,
+  parseInt(hex.slice(3,5),16)/255,
+  parseInt(hex.slice(5,7),16)/255
+ );
  const u={
   uTime:{value:0},uReveal:{value:0},
   uBoat:{value:new THREE.Vector2(1.8,.12)},
-  uSunX:{value:5.0}
+  uSunX:{value:5.0},
+  uWaterDeep:{value:rgb(OCEAN_PALETTE.deep)},
+  uWaterMid:{value:rgb(OCEAN_PALETTE.mid)},
+  uWaterHorizon:{value:rgb(OCEAN_PALETTE.horizon)},
+  uWaterHighlight:{value:rgb(OCEAN_PALETTE.highlight)},
+  uWarmReflection:{value:rgb(OCEAN_PALETTE.warmReflection)}
  };
  const common=[
   "uniform float uTime;",
@@ -45,6 +61,11 @@ export function createCinematicFinale(THREE,{scene,paperMaps,reduce,mobile=false
   common,
   "uniform float uReveal;",
   "uniform float uSunX;",
+  "uniform vec3 uWaterDeep;",
+  "uniform vec3 uWaterMid;",
+  "uniform vec3 uWaterHorizon;",
+  "uniform vec3 uWaterHighlight;",
+  "uniform vec3 uWarmReflection;",
   "varying vec3 vWorld;",
   "varying float vDistance;",
   "float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}",
@@ -60,19 +81,18 @@ export function createCinematicFinale(THREE,{scene,paperMaps,reduce,mobile=false
   " float fresnel=pow(1.0-max(dot(N,V),0.0),3.0);",
   " float lambert=max(dot(N,L),0.0);",
   " float deep=clamp(vDistance/62.0,0.0,1.0);",
-  " vec3 nearColor=vec3(.064,.28,.305);",
-  " vec3 farColor=vec3(.33,.53,.49);",
-  " vec3 color=mix(nearColor,farColor,smoothstep(4.0,66.0,vDistance));",
+  " vec3 color=mix(uWaterDeep,uWaterMid,smoothstep(4.0,30.0,vDistance));",
+  " color=mix(color,uWaterHorizon,smoothstep(20.0,66.0,vDistance)*.78);",
   " float crest=waves(q);",
-  " color+=vec3(.09,.14,.12)*lambert*.43;",
-  " color+=vec3(.07,.16,.16)*fresnel*.62;",
-  " color+=vec3(.075,.10,.083)*crest;",
+  " color+=uWaterHighlight*lambert*.083;",
+  " color+=uWaterHighlight*fresnel*.12;",
+  " color+=uWaterHighlight*crest*.095;",
   " float spec=pow(max(dot(reflect(-L,N),V),0.0),84.0);",
   " float glitter=pow(max(dot(reflect(-L,N),V),0.0),270.0);",
   " float breakup=.60+.40*sin(q.x*3.4+q.y*8.9+uTime*.46);",
   " breakup*=.72+.28*sin(q.x*13.2-q.y*4.7-uTime*.75);",
   " float stripe=exp(-pow((q.x-uSunX)/(1.25+max(0.0,-q.y)*.09),2.0));",
-  " color+=vec3(1.0,.76,.46)*(spec*.50+glitter*.65)*stripe*breakup;",
+  " color+=uWarmReflection*(spec*.50+glitter*.65)*stripe*breakup;",
   " float ring=distance(q,uBoat);",
   " float wake=exp(-ring*1.65)*(0.5+0.5*sin(ring*13.5-uTime*2.25));",
   " color+=vec3(.16,.25,.23)*wake*.25;",
@@ -117,7 +137,9 @@ export function createCinematicFinale(THREE,{scene,paperMaps,reduce,mobile=false
    geometry:"world-space PlaneGeometry",waveFamilies:4,wake:true,
    normals:"analytic finite difference",
    boat:"original continuous paper yacht (unchanged)",
-   scrollReversible:true
+   scrollReversible:true,
+   colorPalette:"v28-mist-sky-deep-teal-ocean",
+   oceanColors:OCEAN_PALETTE
   }
  };
 }
