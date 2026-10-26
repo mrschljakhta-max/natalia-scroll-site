@@ -16,6 +16,7 @@ if(stage&&target){
  let splash=null,seaTop=null,active=false,visible=false,scheduled=false,prev=0,frameCount=0,rotation=0,speed=0;
  let width=1,height=1,W=16;
  const materials=[],geometries=[];
+ let assembly=null;
  try{
   renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:"high-performance"});
   renderer.setPixelRatio(Math.min(devicePixelRatio||1,matchMedia("(max-width:670px)").matches?1.1:1.4));
@@ -32,13 +33,14 @@ if(stage&&target){
   const key=new THREE.DirectionalLight(0xFFF0CE,3.8);key.position.set(-5,8,13);scene.add(key);
   const edge=new THREE.DirectionalLight(0x98C8C5,2.1);edge.position.set(8,1,-7);scene.add(edge);
   const glow=new THREE.PointLight(0xFFDDB4,46,18,1.4);glow.position.set(3,2,8);scene.add(glow);
+  assembly=new THREE.Group();scene.add(assembly);
   const gold=new THREE.MeshPhysicalMaterial({color:0xCBA06A,metalness:.56,roughness:.25,clearcoat:.88,clearcoatRoughness:.19});
   const lightGold=new THREE.MeshPhysicalMaterial({color:0xF0D6AB,metalness:.46,roughness:.28,clearcoat:.7});
   const darkGold=new THREE.MeshStandardMaterial({color:0x8E633E,metalness:.5,roughness:.43});
   const porcelain=new THREE.MeshPhysicalMaterial({color:0xE8DDCB,roughness:.57,metalness:.12,clearcoat:.15});
   const porcelainEdge=new THREE.MeshStandardMaterial({color:0xFAF4E5,roughness:.56});
   materials.push(gold,lightGold,darkGold,porcelain,porcelainEdge);
-  function mesh(geo,mat,parent=scene){
+  function mesh(geo,mat,parent=assembly){
    geometries.push(geo);
    const m=new THREE.Mesh(geo,mat);parent.add(m);return m;
   }
@@ -70,7 +72,7 @@ if(stage&&target){
   shadow.position.set(0,-4.97,-.45);
   // Actual 3D rotating rotor: two concentric raised rims, spoke barrels
   // in different depth planes and 12 individually extruded water-catching cups.
-  rotor=new THREE.Group();scene.add(rotor);
+  rotor=new THREE.Group();assembly.add(rotor);
   torus(2.31,.18,-.37,darkGold,rotor);
   torus(2.31,.18,.38,gold,rotor);
   torus(2.15,.046,.57,lightGold,rotor);
@@ -148,7 +150,7 @@ if(stage&&target){
   sea=mesh(new THREE.PlaneGeometry(1,10,70,68),new THREE.ShaderMaterial({
    uniforms:waterUniforms,vertexShader:waterVertex,fragmentShader:waterFragment,
    transparent:true,depthWrite:false,side:THREE.DoubleSide,toneMapped:false
-  }));
+  }),scene);
   materials.push(sea.material);
   sea.position.z=-.30;
   // A moving three-dimensional curtain of water drops from the sea surface
@@ -182,14 +184,14 @@ if(stage&&target){
   fall=mesh(new THREE.PlaneGeometry(.47,2.6,24,64),new THREE.ShaderMaterial({
    uniforms:streamUniforms,vertexShader:fallVertex,fragmentShader:fallFragment,
    transparent:true,side:THREE.DoubleSide,depthWrite:false,toneMapped:false
-  }));
+  }),scene);
   materials.push(fall.material);
   fall.position.set(0,3.74,1.04);
   // Secondary translucent thickness catches the sun in front of the flow.
   crest=mesh(new THREE.PlaneGeometry(.18,2.48,12,48),new THREE.MeshBasicMaterial({
    color:0xD6FAF0,transparent:true,opacity:.11,depthWrite:false,
    side:THREE.DoubleSide
-  }));
+  }),scene);
   materials.push(crest.material);
   crest.position.set(.15,3.72,1.1);
   // Surface of the SEA ABOVE this scene is also 3D, with continuous
@@ -216,7 +218,7 @@ if(stage&&target){
   seaTop=mesh(new THREE.PlaneGeometry(1,.91,100,8),new THREE.ShaderMaterial({
    uniforms:topUniforms,vertexShader:waterVertex,fragmentShader:topFrag,
    transparent:true,depthWrite:false,toneMapped:false,side:THREE.DoubleSide
-  }));
+  }),scene);
   materials.push(seaTop.material);seaTop.position.set(0,4.70,.53);
   // Light spray where the stream strikes the upper paddles.
   const drops=96;
@@ -241,6 +243,17 @@ if(stage&&target){
    sea.position.x=(W*.5+start)*.5;
    seaTop.scale.x=W;
    seaTop.position.x=0;
+   // Narrow screens keep the centered water source and smaller sculpture
+   // beneath the intro while preserving a separate column for service choices.
+   const mobile=width<=670;
+   assembly.scale.setScalar(mobile?.54:width<1120?.82:1);
+   assembly.position.set(mobile?-W*.22:width<1120?-.05:0,mobile?-2.35:width<1120?-.54:0,0);
+   const top=assembly.position.y+2.31*assembly.scale.x;
+   const length=5.05-top;
+   fall.position.set(assembly.position.x,(5.05+top)*.5,1.04);
+   fall.scale.y=length/2.6;
+   crest.position.set(assembly.position.x+.15,(5.05+top)*.5,1.1);
+   crest.scale.y=length/2.48;
   }
   let lastFrame=0;
   function schedule(){if(active&&!scheduled&&visible){scheduled=true;requestAnimationFrame(frame)}}
@@ -265,8 +278,10 @@ if(stage&&target){
    for(let i=0;i<drops;i++){
     const seed=i*2.399963;
     const q=(i*.618+time*.00047*(.4+i%7*.1))%1;
-    array.setXYZ(i,Math.sin(seed)*q*.66,
-     2.54+q*.56-Math.pow(q,1.4)*.9,
+    const hitX=assembly.position.x;
+    const hitY=assembly.position.y+2.31*assembly.scale.x;
+    array.setXYZ(i,hitX+Math.sin(seed)*q*.66,
+     hitY+.22+q*.56-Math.pow(q,1.4)*.9,
      1.25+Math.cos(seed)*q*.29);
    }
    array.needsUpdate=true;
