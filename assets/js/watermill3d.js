@@ -23,22 +23,57 @@ if(stage&&target){
   renderer.setClearColor(0xFFFFFF,0);
   renderer.outputColorSpace=THREE.SRGBColorSpace;
   renderer.toneMapping=THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure=1.2;
+  renderer.toneMappingExposure=1.05;
   renderer.domElement.setAttribute("aria-hidden","true");
   target.appendChild(renderer.domElement);
   scene=new THREE.Scene();
   camera=new THREE.OrthographicCamera(-8,8,5,-5,.1,60);
   camera.position.set(0,0,23);camera.lookAt(0,0,0);
-  const ambient=new THREE.HemisphereLight(0xFFFAEC,0x356D68,2.0);scene.add(ambient);
-  const key=new THREE.DirectionalLight(0xFFF0CE,3.8);key.position.set(-5,8,13);scene.add(key);
-  const edge=new THREE.DirectionalLight(0x98C8C5,2.1);edge.position.set(8,1,-7);scene.add(edge);
-  const glow=new THREE.PointLight(0xFFDDB4,46,18,1.4);glow.position.set(3,2,8);scene.add(glow);
+  // Broad warm studio keys replace chrome-like lighting.
+  const ambient=new THREE.HemisphereLight(0xF7F5EA,0x466C69,1.45);scene.add(ambient);
+  const key=new THREE.DirectionalLight(0xFFF0D7,2.65);key.position.set(-7,9,13);scene.add(key);
+  const edge=new THREE.DirectionalLight(0xA9C9C2,1.45);edge.position.set(7,3,-6);scene.add(edge);
+  const glow=new THREE.PointLight(0xF8DBB9,17,20,2);glow.position.set(4,5,7);scene.add(glow);
   assembly=new THREE.Group();scene.add(assembly);
-  const gold=new THREE.MeshPhysicalMaterial({color:0xCBA06A,metalness:.56,roughness:.25,clearcoat:.88,clearcoatRoughness:.19});
-  const lightGold=new THREE.MeshPhysicalMaterial({color:0xF0D6AB,metalness:.46,roughness:.28,clearcoat:.7});
-  const darkGold=new THREE.MeshStandardMaterial({color:0x8E633E,metalness:.5,roughness:.43});
-  const porcelain=new THREE.MeshPhysicalMaterial({color:0xE8DDCB,roughness:.57,metalness:.12,clearcoat:.15});
-  const porcelainEdge=new THREE.MeshStandardMaterial({color:0xFAF4E5,roughness:.56});
+  // Satin brushed brass; restrained reflections make the circular form
+  // feel machined and substantial instead of plastic or mirror-chrome.
+  const gold=new THREE.MeshPhysicalMaterial({color:0xBA8750,metalness:.72,roughness:.48,clearcoat:.14,clearcoatRoughness:.55});
+  const lightGold=new THREE.MeshPhysicalMaterial({color:0xD8B17A,metalness:.64,roughness:.39,clearcoat:.20,clearcoatRoughness:.56});
+  const darkGold=new THREE.MeshStandardMaterial({color:0x765539,metalness:.65,roughness:.57});
+  // A gently varied mineral surface, authored procedurally and only once.
+  // Fine warm flecks and subtle grain replace the previous flat cream fill.
+  const stoneCanvas=document.createElement("canvas");
+  stoneCanvas.width=stoneCanvas.height=384;
+  const stoneContext=stoneCanvas.getContext("2d",{willReadFrequently:true});
+  stoneContext.fillStyle="#e9e0d2";stoneContext.fillRect(0,0,384,384);
+  const stonePixels=stoneContext.getImageData(0,0,384,384);
+  let seed=421381;
+  const random=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};
+  for(let y=0;y<384;y++)for(let x=0;x<384;x++){
+   const i=(y*384+x)*4;
+   const mineral=3*Math.sin(x*.031+y*.012)+2*Math.sin(y*.047-x*.008);
+   const fleck=(random()-.5)*11;
+   const tone=mineral+fleck;
+   stonePixels.data[i]=Math.round(Math.max(0,Math.min(255,229+tone)));
+   stonePixels.data[i+1]=Math.round(Math.max(0,Math.min(255,220+tone)));
+   stonePixels.data[i+2]=Math.round(Math.max(0,Math.min(255,205+tone)));
+   stonePixels.data[i+3]=255;
+  }
+  stoneContext.putImageData(stonePixels,0,0);
+  stoneContext.strokeStyle="rgba(143,122,93,.055)";
+  for(let i=0;i<30;i++){
+   const x=random()*390,y=random()*390;
+   stoneContext.beginPath();stoneContext.moveTo(x,y);
+   stoneContext.bezierCurveTo(x+8,y-3,x+24,y+5,x+34,y+2);
+   stoneContext.lineWidth=.6+random()*.8;stoneContext.stroke();
+  }
+  const stoneMap=new THREE.CanvasTexture(stoneCanvas);
+  stoneMap.colorSpace=THREE.SRGBColorSpace;
+  stoneMap.wrapS=stoneMap.wrapT=THREE.RepeatWrapping;
+  stoneMap.repeat.set(1.5,2.2);
+  const porcelain=new THREE.MeshPhysicalMaterial({color:0xFFFFFF,map:stoneMap,
+    bumpMap:stoneMap,bumpScale:.028,roughness:.83,metalness:0,clearcoat:.06});
+  const porcelainEdge=new THREE.MeshStandardMaterial({color:0xF0E5D4,roughness:.78});
   materials.push(gold,lightGold,darkGold,porcelain,porcelainEdge);
   function mesh(geo,mat,parent=assembly){
    geometries.push(geo);
@@ -73,33 +108,39 @@ if(stage&&target){
   // Actual 3D rotating rotor: two concentric raised rims, spoke barrels
   // in different depth planes and 12 individually extruded water-catching cups.
   rotor=new THREE.Group();assembly.add(rotor);
-  torus(2.31,.18,-.37,darkGold,rotor);
-  torus(2.31,.18,.38,gold,rotor);
-  torus(2.15,.046,.57,lightGold,rotor);
-  torus(1.87,.052,.25,darkGold,rotor);
-  torus(1.89,.032,.30,lightGold,rotor);
-  torus(2.31,.042,.59,lightGold,rotor);
+  torus(2.31,.215,-.45,darkGold,rotor);
+  torus(2.31,.19,.40,gold,rotor);
+  torus(2.15,.036,.55,lightGold,rotor);
+  torus(1.89,.055,.19,darkGold,rotor);
+  torus(1.90,.027,.26,lightGold,rotor);
+  torus(2.31,.038,.61,lightGold,rotor);
   const up=new THREE.Vector3(0,1,0);
-  for(let i=0;i<12;i++){
-   const a=i*Math.PI/6;
+  const PADDLE_COUNT=10;
+  const boltGeometry=new THREE.SphereGeometry(.066,12,8);
+  geometries.push(boltGeometry);
+  for(let i=0;i<PADDLE_COUNT;i++){
+   const a=i*Math.PI*2/PADDLE_COUNT;
    const radial=new THREE.Vector3(Math.sin(a),Math.cos(a),0);
-   const spoke=mesh(new THREE.CylinderGeometry(.070,.084,2.19,10,1),i%3===0?lightGold:gold,rotor);
+   const spoke=mesh(new THREE.CylinderGeometry(.062,.083,2.19,12,1),i%3===0?lightGold:gold,rotor);
    spoke.position.set(radial.x*1.17,radial.y*1.17,.17);
    spoke.quaternion.setFromUnitVectors(up,radial);
    const spokeBack=mesh(new THREE.CylinderGeometry(.034,.044,2.08,8),darkGold,rotor);
    spokeBack.position.set(radial.x*1.17,radial.y*1.17,-.33);
    spokeBack.quaternion.setFromUnitVectors(up,radial);
-   const bucket=mesh(new THREE.BoxGeometry(.52,.36,.86,2,1,2),i%2?gold:lightGold,rotor);
+   const bucket=mesh(new THREE.BoxGeometry(.57,.35,.95,2,2,2),i%2?gold:lightGold,rotor);
    bucket.position.set(radial.x*2.3,radial.y*2.3,.03);
    bucket.rotation.z=-a;
    const innerCup=mesh(new THREE.BoxGeometry(.42,.08,.72),darkGold,rotor);
    innerCup.position.set(radial.x*2.44,radial.y*2.44,.05);
    innerCup.rotation.z=-a;
+   const rivet=new THREE.Mesh(boltGeometry,lightGold);
+   rivet.position.set(radial.x*2.29,radial.y*2.29,.625);
+   rotor.add(rivet);
   }
   const hubBack=mesh(new THREE.CylinderGeometry(.59,.59,.67,64),darkGold,rotor);
   hubBack.rotation.x=Math.PI/2;
   hubBack.position.z=.12;
-  const hubFront=mesh(new THREE.CylinderGeometry(.42,.47,.68,64),gold,rotor);
+  const hubFront=mesh(new THREE.CylinderGeometry(.46,.49,.69,64),gold,rotor);
   hubFront.rotation.x=Math.PI/2;hubFront.position.z=.58;
   const hubDisc=mesh(new THREE.CylinderGeometry(.25,.25,.055,64),lightGold);
   hubDisc.rotation.x=Math.PI/2;hubDisc.position.z=1.02;
