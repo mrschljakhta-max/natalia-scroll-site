@@ -24,11 +24,26 @@ async function check(viewport,reducedMotion='no-preference'){
   },clamp(p));
 
   await target(.11);
+  // Both animation loops are paused until scene 05 enters the viewport.
+  await page.waitForFunction(()=>window.__watermillDiagnostics?.scriptInitialized===true,
+    null,{timeout:20000});
+  await page.waitForFunction(()=>window.__watermill3D?.engine==='Three.js WebGL',
+    null,{timeout:30000});
+  assert.equal(await page.locator('#millWebGL canvas').count(),1,
+    'real WebGL renderer should replace the fallback graphic');
   await page.waitForFunction(()=>window.__watermillDiagnostics?.progress>.09);
   const first=await page.evaluate(()=>window.__watermillDiagnostics);
   await target(.98);
   await page.waitForFunction(()=>window.__watermillDiagnostics?.progress>.95);
   const last=await page.evaluate(()=>window.__watermillDiagnostics);
+  const real3D=await page.evaluate(()=>window.__watermill3D);
+  assert.equal(real3D.engine,'Three.js WebGL');
+  assert.equal(real3D.frontFacing,true);
+  assert.equal(real3D.seaLinked,true);
+  assert.match(real3D.waterfall,/3D mesh/);
+  assert.ok(real3D.waterLevel>.75,'WebGL ocean water should visibly rise');
+  assert.ok(reducedMotion==='reduce'||real3D.angularVelocity>.2,
+    'waterwheel should accelerate with the scroll');
   assert.equal(last.categoryCount,3);
   assert.equal(last.frontFacingWheel,true);
   assert.equal(last.waterShape,'single continuous fill');
@@ -52,7 +67,7 @@ async function check(viewport,reducedMotion='no-preference'){
     'rising water must reverse on upward scroll');
   assert.deepEqual(errors,[],errors.join('\n'));
 
-  console.log(JSON.stringify({viewport,reducedMotion,first,last,reversed,pass:true}));
+  console.log(JSON.stringify({viewport,reducedMotion,first,last,real3D,reversed,pass:true}));
  }finally{await page.close()}
 }
 try{

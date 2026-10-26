@@ -5,7 +5,7 @@
  */
 (()=>{
  'use strict';
- const journey=document.getElementById('watermillJourney');
+ const journey=document.getElementById('conclusion'); // Real section ID; v29 exited before initializing any animation.
  const stage=document.getElementById('watermillStage');
  const fill=document.getElementById('millFillCanvas');
  const fall=document.getElementById('millFallCanvas');
@@ -167,9 +167,15 @@
   const targetSpeed=reduce.matches?0:motion*(.16+3.75*Math.pow(motion,1.6));
   angularSpeed=lerp(angularSpeed,targetSpeed,1-Math.exp(-delta/280));
   rot=(rot+angularSpeed*delta/1000)%(Math.PI*2);
-  rotor.setAttribute('transform','rotate('+(rot*180/Math.PI).toFixed(3)+' 300 290)');
-  const surface=drawFill(progress,t);
-  drawFall(progress,t);
+  const real3D=stage.classList.contains("is-mill-webgl");
+  if(!real3D)rotor.setAttribute('transform','rotate('+(rot*180/Math.PI).toFixed(3)+' 300 290)');
+  const surface=real3D
+   ?h*(1-.865*smooth(.17,.975,progress))
+   :drawFill(progress,t);
+  if(!real3D)drawFall(progress,t);
+  // Lightweight state bridge. The 3D renderer owns its wheel and water meshes;
+  // this controller owns only scroll position, semantics and category buttons.
+  window.__watermillState={progress,waterTop:surface,active:real3D};
   stage.style.setProperty('--mill-progress',progress.toFixed(4));
   stage.style.setProperty('--wheel-activity',motion.toFixed(3));
   cards.forEach((card)=>{
@@ -182,7 +188,8 @@
   window.__watermillDiagnostics={
    progress:Number(progress.toFixed(3)),wheelRpm:Number((angularSpeed*60/(2*Math.PI)).toFixed(2)),
    risingWaterTop:Number(surface.toFixed(1)),categoryCount:cards.length,
-   flowFromPreviousSea:true,frontFacingWheel:true,waterShape:'single continuous fill'
+   flowFromPreviousSea:true,frontFacingWheel:true,waterShape:'single continuous fill',
+   engine:real3D?'Three.js':'Canvas / SVG fallback',scriptInitialized:true
   };
   schedule();
  }

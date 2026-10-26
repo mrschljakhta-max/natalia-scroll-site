@@ -12,7 +12,7 @@
 <link rel="preload" as="image" href="./assets/images/documents/handwritten-summary.webp" type="image/webp">
 <meta name="robots" content="noindex,nofollow">
 <meta name="description" content="Тривимірний скролітелінг Наталії та Анни: паперові документи у вихорі та складання орігамі-вітрильника.">
-<meta name="site-revision" content="v29-scroll-watermill">
+<meta name="site-revision" content="v30-true-3d-watermill">
 <link rel="canonical" href="https://mrschljakhta-max.github.io/natalia-scroll-site/">
 <script>
 /* Keep platform referral tracking out of the visible address bar, without
@@ -153,6 +153,16 @@ html.canvas-fallback .fallback-ocean{display:block}
 .mill-sea-ribbon{position:absolute;top:-1px;left:0;width:100%;height:clamp(58px,9svh,104px);z-index:5;pointer-events:none;filter:drop-shadow(0 5px 7px #2C78701A)}
 .mill-fill-canvas,.mill-fall-canvas{position:absolute;inset:0;display:block;width:100%;height:100%;pointer-events:none}
 .mill-fill-canvas{z-index:2}.mill-fall-canvas{z-index:5}
+/* Actual Three.js is layered over the fallback graphic, under real text. */
+.mill-webgl{position:absolute;inset:0;z-index:4;pointer-events:none;opacity:0;
+ transition:opacity .55s ease;contain:layout paint style}
+.mill-webgl canvas{display:block;width:100%;height:100%;pointer-events:none}
+.watermill-stage.is-mill-webgl .mill-webgl{opacity:1}
+.watermill-stage.is-mill-webgl .mill-wheel,
+.watermill-stage.is-mill-webgl .mill-sea-ribbon,
+.watermill-stage.is-mill-webgl .mill-fill-canvas,
+.watermill-stage.is-mill-webgl .mill-fall-canvas{opacity:0;visibility:hidden}
+
 .mill-wheel{position:absolute;z-index:3;left:50%;bottom:0;transform:translateX(-50%);
  height:min(88svh,790px);width:auto;aspect-ratio:600/780;pointer-events:none;
  filter:drop-shadow(0 18px 21px #62503A23)}
@@ -170,7 +180,7 @@ html.canvas-fallback .fallback-ocean{display:block}
 .mill-explore:hover,.mill-explore:focus-visible{transform:translateY(-2px);border-color:#C3905B;background:#FDF6EA}
 .mill-categories{position:absolute;z-index:8;inset:0;pointer-events:none}
 .mill-category{position:absolute;right:clamp(24px,6vw,105px);width:clamp(178px,18vw,320px);
- display:flex;align-items:center;gap:15px;text-align:left;opacity:.10;transform:translateY(20px);
+ display:flex;align-items:center;gap:15px;text-align:left;opacity:.39;transform:translateY(12px);
  color:#1C4D4E;background:none;border:none;padding:8px 0;cursor:pointer;
  transition:opacity .65s ease,transform .65s cubic-bezier(.2,.8,.2,1),color .35s;
  pointer-events:none;filter:drop-shadow(0 1px 2px #113A4020)}
@@ -306,6 +316,7 @@ html.canvas-fallback .fallback-ocean{display:block}
  <g fill="none" stroke-linecap="round"><path d="M0 18Q140 4 300 21T610 17T920 15T1260 20T1600 12" stroke="#F1EDD1" opacity=".35" stroke-width="2"/><path d="M0 43Q130 28 255 44T490 42T735 40T1040 45T1290 37T1600 40" stroke="#C4EAE0" opacity=".5" stroke-width="2.5"/><path d="M0 67Q130 55 260 65T600 62T955 65T1310 61T1600 67" stroke="#FDF0D6" opacity=".38" stroke-width="1.7"/></g>
  <ellipse cx="820" cy="22" rx="390" ry="55" fill="url(#millShimmer)" opacity=".32"/>
 </svg>
+  <div id="millWebGL" class="mill-webgl" aria-hidden="true"></div>
   <canvas id="millFillCanvas" class="mill-fill-canvas" aria-hidden="true"></canvas>
   <div class="mill-wheel" id="millWheel" aria-hidden="true">
  <svg viewBox="0 0 600 780" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg">
@@ -795,6 +806,7 @@ resize();position=scrollProgress();tick=requestAnimationFrame(frame);
 })();
 </script>
 <script type="module" src="./assets/js/origami3d.js?v=28-mist-ocean" onerror="window.__enableCanvasFallback?.('module-load-error')"></script>
-<script src="./assets/js/watermill-scene.js?v=29-continuous-water" defer></script>
+<script src="./assets/js/watermill-scene.js?v=30-fixed-scroll-state" defer></script>
+<script type="module" src="./assets/js/watermill3d.js?v=30-real-webgl-sea"></script>
 </body>
 </html>
