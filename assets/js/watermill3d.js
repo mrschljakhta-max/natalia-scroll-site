@@ -95,13 +95,13 @@ if(stage&&target){
   const brassNormal=mapFrom(normalData),brassRoughness=mapFrom(roughData);
   // Satin brushed brass; restrained reflections make the circular form
   // feel machined and substantial instead of plastic or mirror-chrome.
-  const gold=new THREE.MeshPhysicalMaterial({color:0xBC925D,metalness:.86,roughness:.53,
-   roughnessMap:brassRoughness,normalMap:brassNormal,normalScale:new THREE.Vector2(.22,.22),
+  const gold=new THREE.MeshPhysicalMaterial({color:0xBC925D,metalness:.82,roughness:.80,
+   roughnessMap:brassRoughness,normalMap:brassNormal,normalScale:new THREE.Vector2(.15,.15),
    envMapIntensity:.86,clearcoat:.055,clearcoatRoughness:.65});
-  const lightGold=new THREE.MeshPhysicalMaterial({color:0xD9B582,metalness:.72,roughness:.49,
-   roughnessMap:brassRoughness,normalMap:brassNormal,normalScale:new THREE.Vector2(.17,.17),
+  const lightGold=new THREE.MeshPhysicalMaterial({color:0xD9B582,metalness:.73,roughness:.74,
+   roughnessMap:brassRoughness,normalMap:brassNormal,normalScale:new THREE.Vector2(.12,.12),
    envMapIntensity:.88,clearcoat:.075,clearcoatRoughness:.68});
-  const darkGold=new THREE.MeshStandardMaterial({color:0x755338,metalness:.72,roughness:.67,
+  const darkGold=new THREE.MeshStandardMaterial({color:0x755338,metalness:.64,roughness:.86,
    roughnessMap:brassRoughness,envMapIntensity:.60});
   // A gently varied mineral surface, authored procedurally and only once.
   // Fine warm flecks and subtle grain replace the previous flat cream fill.
