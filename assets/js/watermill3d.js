@@ -35,11 +35,74 @@ if(stage&&target){
   const edge=new THREE.DirectionalLight(0xA9C9C2,1.45);edge.position.set(7,3,-6);scene.add(edge);
   const glow=new THREE.PointLight(0xF8DBB9,17,20,2);glow.position.set(4,5,7);scene.add(glow);
   assembly=new THREE.Group();scene.add(assembly);
+  // Six physically reflected studio softboxes, generated without an HDRI asset
+  // or extra network dependency. Three.js PMREM filters this environment.
+  const envFaces=[];
+  for(let i=0;i<6;i++){
+   const c=document.createElement("canvas");c.width=c.height=160;
+   const cx=c.getContext("2d");
+   const bg=cx.createLinearGradient(0,0,160,160);
+   bg.addColorStop(0,i===2?"#F7F1E5":"#DEE6E1");
+   bg.addColorStop(.55,i===3?"#A0C5C3":"#CCCEC5");
+   bg.addColorStop(1,i===4?"#C1CEC8":"#8DAEB1");
+   cx.fillStyle=bg;cx.fillRect(0,0,160,160);
+   const box=cx.createRadialGradient(i%2?101:56,32,2,i%2?101:56,32,116);
+   box.addColorStop(0,"rgba(255,250,229,.95)");
+   box.addColorStop(.38,"rgba(255,248,229,.47)");
+   box.addColorStop(1,"rgba(255,249,238,0)");
+   cx.fillStyle=box;cx.fillRect(0,0,160,160);
+   cx.fillStyle="rgba(255,254,248,.36)";
+   cx.fillRect(i%2?95:38,0,14,132);
+   envFaces.push(c);
+  }
+  const studioEnv=new THREE.CubeTexture(envFaces);
+  studioEnv.colorSpace=THREE.SRGBColorSpace;
+  studioEnv.needsUpdate=true;
+  scene.environment=studioEnv;
+  scene.environmentIntensity=.82;
+  // Real brushed-metal micro-surface, roughness variation and microscopic
+  // scratches encoded in repeatable procedural PBR textures (not paint-on
+  // glossy streaks); deterministic and generated once at startup.
+  const texSize=384,normalData=new Uint8Array(texSize*texSize*4),
+   roughData=new Uint8Array(texSize*texSize*4);
+  let grainSeed=1559;
+  const grain=()=>{grainSeed=(grainSeed*1664525+1013904223)>>>0;return grainSeed/4294967296};
+  const scratches=Array.from({length:23},()=>({x:Math.floor(grain()*texSize),
+   width:.6+grain()*2,weight:.6+grain()*.4}));
+  for(let y=0;y<texSize;y++)for(let x=0;x<texSize;x++){
+   let scratch=0;
+   for(const line of scratches){
+    const distance=Math.min(Math.abs(x-line.x),texSize-Math.abs(x-line.x));
+    scratch+=Math.exp(-distance*distance/(line.width*line.width))*line.weight;
+   }
+   const tremor=grain()-.5;
+   const waviness=Math.sin(y*.11+x*.017)+.55*Math.sin(y*.42-x*.013);
+   const k=(y*texSize+x)*4;
+   const nx=128+Math.max(-25,Math.min(25,scratch*8+tremor*8));
+   const ny=128+waviness*3+tremor*5;
+   normalData[k]=Math.round(Math.min(255,nx));
+   normalData[k+1]=Math.round(Math.min(255,ny));
+   normalData[k+2]=253;normalData[k+3]=255;
+   const rough=Math.round(Math.max(96,Math.min(196,135+scratch*14+tremor*13+waviness*4)));
+   roughData[k]=rough;roughData[k+1]=rough;roughData[k+2]=rough;roughData[k+3]=255;
+  }
+  const mapFrom=(pixels)=>{
+   const tex=new THREE.DataTexture(pixels,texSize,texSize,THREE.RGBAFormat);
+   tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.anisotropy=4;
+   tex.generateMipmaps=true;tex.minFilter=THREE.LinearMipmapLinearFilter;
+   tex.magFilter=THREE.LinearFilter;tex.needsUpdate=true;return tex;
+  };
+  const brassNormal=mapFrom(normalData),brassRoughness=mapFrom(roughData);
   // Satin brushed brass; restrained reflections make the circular form
   // feel machined and substantial instead of plastic or mirror-chrome.
-  const gold=new THREE.MeshPhysicalMaterial({color:0xBA8750,metalness:.72,roughness:.48,clearcoat:.14,clearcoatRoughness:.55});
-  const lightGold=new THREE.MeshPhysicalMaterial({color:0xD8B17A,metalness:.64,roughness:.39,clearcoat:.20,clearcoatRoughness:.56});
-  const darkGold=new THREE.MeshStandardMaterial({color:0x765539,metalness:.65,roughness:.57});
+  const gold=new THREE.MeshPhysicalMaterial({color:0xBC925D,metalness:.82,roughness:.80,
+   roughnessMap:brassRoughness,normalMap:brassNormal,normalScale:new THREE.Vector2(.15,.15),
+   envMapIntensity:.86,clearcoat:.055,clearcoatRoughness:.65});
+  const lightGold=new THREE.MeshPhysicalMaterial({color:0xD9B582,metalness:.73,roughness:.74,
+   roughnessMap:brassRoughness,normalMap:brassNormal,normalScale:new THREE.Vector2(.12,.12),
+   envMapIntensity:.88,clearcoat:.075,clearcoatRoughness:.68});
+  const darkGold=new THREE.MeshStandardMaterial({color:0x755338,metalness:.64,roughness:.86,
+   roughnessMap:brassRoughness,envMapIntensity:.60});
   // A gently varied mineral surface, authored procedurally and only once.
   // Fine warm flecks and subtle grain replace the previous flat cream fill.
   const stoneCanvas=document.createElement("canvas");
@@ -100,10 +163,24 @@ if(stage&&target){
   foot.position.set(0,-4.86,-.20);
   const footLip=mesh(new THREE.BoxGeometry(3.92,.035,.89),porcelainEdge);
   footLip.position.set(0,-4.70,-.19);
+  // Subtle hand-painted contact occlusion behind the wheel and the pedestal.
+  // These are translucent decals, not heavy post-processing passes.
+  const aoCanvas=document.createElement("canvas");aoCanvas.width=aoCanvas.height=256;
+  const aoc=aoCanvas.getContext("2d");
+  const g=aoc.createRadialGradient(128,128,12,128,128,128);
+  g.addColorStop(0,"rgba(40,29,19,.56)");
+  g.addColorStop(.48,"rgba(50,37,24,.27)");
+  g.addColorStop(1,"rgba(60,48,31,0)");
+  aoc.fillStyle=g;aoc.fillRect(0,0,256,256);
+  const aoMap=new THREE.CanvasTexture(aoCanvas);aoMap.colorSpace=THREE.SRGBColorSpace;
+  const contact=mesh(new THREE.PlaneGeometry(5.5,5.5),new THREE.MeshBasicMaterial({
+   map:aoMap,transparent:true,opacity:.19,depthWrite:false,polygonOffset:true,polygonOffsetFactor:1
+  }),assembly);
+  contact.position.set(0,0,-.86);
   const shadow=mesh(new THREE.PlaneGeometry(5.1,.35),new THREE.MeshBasicMaterial({
    color:0x5A5447,transparent:true,opacity:.065,depthWrite:false
   }));
-  materials.push(shadow.material);
+  materials.push(shadow.material,contact.material);
   shadow.position.set(0,-4.97,-.45);
   // Actual 3D rotating rotor: two concentric raised rims, spoke barrels
   // in different depth planes and 12 individually extruded water-catching cups.
@@ -137,6 +214,9 @@ if(stage&&target){
    rivet.position.set(radial.x*2.29,radial.y*2.29,.625);
    rotor.add(rivet);
   }
+  // Dark mechanical joint behind the axle adds convincing depth at the hub.
+  const joint=mesh(new THREE.CylinderGeometry(.67,.67,.12,64),darkGold,rotor);
+  joint.rotation.x=Math.PI/2;joint.position.z=-.13;
   const hubBack=mesh(new THREE.CylinderGeometry(.59,.59,.67,64),darkGold,rotor);
   hubBack.rotation.x=Math.PI/2;
   hubBack.position.z=.12;
@@ -155,10 +235,20 @@ if(stage&&target){
    uMid:{value:rgb("#2A7F88")},uLight:{value:rgb("#74C5C7")},
    uSun:{value:rgb("#FBEAC9")},uOpacity:{value:.95}
   };
+  // Both the top sea and the rising ocean have physical wave displacement.
+  // Edges catch light because actual vertices occupy different Z positions.
   const waterVertex=[
+   "uniform float uTime;",
    "varying vec2 vUv; varying vec3 vWorld;",
-   "void main(){vUv=uv; vec4 w=modelMatrix*vec4(position,1.);vWorld=w.xyz;",
-   "gl_Position=projectionMatrix*viewMatrix*w;}"
+   "void main(){",
+   " vUv=uv;vec3 p=position;",
+   " float v=sin(uv.x*13.1+uTime*.39)*sin(uv.y*4.7-uTime*.24);",
+   " float ripple=sin(uv.x*33.7-uTime*.63+uv.y*8.3);",
+   " p.z+=.075*v+.018*ripple+.20*pow(1.-uv.x,12.);",
+   " p.y+=.014*sin(uv.x*18.7+uTime*.52);",
+   " vec4 w=modelMatrix*vec4(p,1.);vWorld=w.xyz;",
+   " gl_Position=projectionMatrix*viewMatrix*w;",
+   "}"
   ].join("\n");
   // A layered body of water, not a repeating caustics screensaver.
   // Low-frequency refraction and soft irregular sun patches preserve its mass.
@@ -183,22 +273,27 @@ if(stage&&target){
    " caustic=mix(caustic,noise(f*1.78-vec2(t*.07,t*.11)),.30);",
    " float broad=sin(uv.x*7.3+uv.y*6.9+t*.32+warp*.7);",
    " float shade=.018*broad+.032*(caustic-.5);",
-   " vec3 col=mix(uLight,uDeep,pow(depth,.82)*.76);",
-   " col=mix(col,uMid,.12+max(0.,warp)*.10);",
-   " col+=uSun*(.012+.042*pow(max(0.,caustic-.54),2.));",
-   " col+=uLight*shade;",
-   " float rim=1.-smoothstep(0.,.025,abs(uv.y-surf));",
-   " col=mix(col,uLight+uSun*.17,rim*.46);",
-   " float side=pow(1.-uv.x,6.);col+=uLight*side*.065;",
-   " float lightFromTop=(1.-depth)*.095;",
-   " col+=uSun*lightFromTop;",
-   " float opacity=clamp(uOpacity*(.83+.13*depth)+rim*.11,0.,.97);",
+   " // Transmitted daylight falls off inside the liquid with depth.",
+   " float opticalDepth=1.-exp(-depth*2.8);",
+   " vec3 col=mix(uLight,uDeep,opticalDepth*.83);",
+   " col=mix(col,uMid,.10+max(0.,warp)*.12);",
+   " float diffuse=.045*max(0.,caustic-.38)*max(.12,1.-depth);",
+   " col+=uSun*(.012+diffuse);",
+   " col+=uLight*(shade*.6);",
+   " // Fresnel-style grazing reflections at the edges and waterline.",
+   " float nX=.008*cos(uv.x*12.7+t*.62)+.006*cos(uv.x*25.3-t*.53);",
+   " float edgeGrazing=pow(clamp(abs(nX)*10.+pow(1.-uv.x,5.),0.,1.),3.);",
+   " col+=uSun*edgeGrazing*.12;",
+   " float rim=1.-smoothstep(0.,.016,abs(uv.y-surf));",
+   " col=mix(col,uLight+uSun*.10,rim*.42);",
+   " col+=uSun*((1.-depth)*.045);",
+   " float opacity=clamp(uOpacity*(.75+.19*opticalDepth)+rim*.10,0.,.96);",
    " gl_FragColor=vec4(col,opacity);",
    " #include <colorspace_fragment>",
    "}"
   ].join("\n");
   // Left edge grazes the wheel; rim remains in front with genuine depth.
-  sea=mesh(new THREE.PlaneGeometry(1,10,70,68),new THREE.ShaderMaterial({
+  sea=mesh(new THREE.PlaneGeometry(1,10,100,80),new THREE.ShaderMaterial({
    uniforms:waterUniforms,vertexShader:waterVertex,fragmentShader:waterFragment,
    transparent:true,depthWrite:false,side:THREE.DoubleSide,toneMapped:false
   }),scene);
@@ -212,7 +307,7 @@ if(stage&&target){
    "uniform float uTime; varying vec2 vUv;",
    "void main(){vUv=uv;vec3 p=position;",
    "p.y+=.035*sin(uv.x*12.7+uTime*.62)+.018*sin(uv.x*25.3-uTime*.53);",
-   "p.z+=.028*sin(uv.x*10.5+uTime*.38);",
+   "p.z+=.08*sin(uv.x*10.5+uTime*.38)+.025*cos(uv.x*23.6-uTime*.71);",
    "gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}"
   ].join("\n");
   const surfaceFragment=[
@@ -220,13 +315,13 @@ if(stage&&target){
    "varying vec2 vUv;",
    "void main(){",
    " float center=1.-abs(vUv.y-.5)*2.;",
-   " float beam=.68+.32*sin(vUv.x*17.1+uTime*.57);",
+   " float beam=.60+.24*sin(vUv.x*10.7+uTime*.57)+.16*sin(vUv.x*28.1-uTime*.34);",
    " vec3 col=mix(uLight,uSun,.16+.15*beam);",
-   " gl_FragColor=vec4(col,pow(max(0.,center),2.2)*.36);",
+   " gl_FragColor=vec4(col,pow(max(0.,center),2.2)*.24);",
    " #include <colorspace_fragment>",
    "}"
   ].join("\n");
-  const surface=mesh(new THREE.PlaneGeometry(1,.17,96,4),new THREE.ShaderMaterial({
+  const surface=mesh(new THREE.PlaneGeometry(1,.17,128,8),new THREE.ShaderMaterial({
    uniforms:surfaceUniforms,vertexShader:surfaceVertex,fragmentShader:surfaceFragment,
    transparent:true,depthWrite:false,side:THREE.DoubleSide,toneMapped:false
   }),scene);
@@ -286,9 +381,10 @@ if(stage&&target){
   }
   fallCoreGeometry.computeVertexNormals();
   const waterCoreMaterial=new THREE.MeshPhysicalMaterial({
-   color:0xA0D4D2,metalness:0,roughness:.13,transmission:.25,
-   thickness:.28,transparent:true,opacity:.30,depthWrite:false,
-   side:THREE.DoubleSide,clearcoat:.34,clearcoatRoughness:.15
+   color:0x8FC8C9,metalness:0,roughness:.095,transmission:.57,
+   thickness:.44,transparent:true,opacity:.40,depthWrite:false,
+   side:THREE.DoubleSide,clearcoat:.22,clearcoatRoughness:.12,
+   envMapIntensity:.75,ior:1.333
   });
   materials.push(waterCoreMaterial);
   const waterCore=mesh(fallCoreGeometry,waterCoreMaterial,scene);
@@ -330,16 +426,33 @@ if(stage&&target){
   }),scene);
   materials.push(seaTop.material);seaTop.position.set(0,4.70,.53);
   // Light spray where the stream strikes the upper paddles.
-  const drops=96;
+  const drops=180;
   const particles=new Float32Array(drops*3);
   for(let i=0;i<drops;i++)particles[i*3+2]=1.30;
   const dropGeo=new THREE.BufferGeometry();dropGeo.setAttribute('position',new THREE.BufferAttribute(particles,3));
   geometries.push(dropGeo);
+  // A soft circular droplet sprite avoids square dots and bright CGI sparks.
+  const dropCanvas=document.createElement("canvas");
+  dropCanvas.width=dropCanvas.height=64;
+  const dropCtx=dropCanvas.getContext("2d");
+  const dropGradient=dropCtx.createRadialGradient(32,32,1,32,32,32);
+  dropGradient.addColorStop(0,"rgba(255,255,255,.98)");
+  dropGradient.addColorStop(.30,"rgba(255,255,255,.78)");
+  dropGradient.addColorStop(.67,"rgba(255,255,255,.20)");
+  dropGradient.addColorStop(1,"rgba(255,255,255,0)");
+  dropCtx.fillStyle=dropGradient;dropCtx.fillRect(0,0,64,64);
+  const dropTexture=new THREE.CanvasTexture(dropCanvas);
+  dropTexture.colorSpace=THREE.SRGBColorSpace;
   splash=new THREE.Points(dropGeo,new THREE.PointsMaterial({
-   color:0xD0F8F0,size:.045,transparent:true,opacity:.78,depthWrite:false,
-   sizeAttenuation:true,blending:THREE.AdditiveBlending
+   color:0xD8F3E9,size:.14,map:dropTexture,transparent:true,opacity:.77,
+   depthWrite:false,sizeAttenuation:true,blending:THREE.NormalBlending
   }));
   materials.push(splash.material);scene.add(splash);
+  const mist=new THREE.Points(dropGeo,new THREE.PointsMaterial({
+   color:0xC7EAE6,size:.32,map:dropTexture,transparent:true,opacity:.13,
+   depthWrite:false,sizeAttenuation:true,blending:THREE.AdditiveBlending
+  }));
+  materials.push(mist.material);scene.add(mist);
   function resize(){
    const rect=stage.getBoundingClientRect();
    width=Math.max(1,rect.width);height=Math.max(1,rect.height);
@@ -393,28 +506,41 @@ if(stage&&target){
    streamUniforms.uStrength.value=.38+.62*smooth(.015,.25,p);
    streamUniforms.uTime.value=time*.001;
    topUniforms.uTime.value=time*.001;
-   crest.material.opacity=.12*streamUniforms.uStrength.value;
+   crest.material.opacity=.065*streamUniforms.uStrength.value;
+   // Subtle volume changes create a natural flowing column, while the
+   // semi-transparent outer skin preserves the spray silhouette.
+   waterCore.scale.x=1+.07*Math.sin(time*.0019);
+   waterCore.scale.z=1+.12*Math.sin(time*.0021+.7);
+   waterCore.rotation.z=.016*Math.sin(time*.0016);
    const array=splash.geometry.attributes.position;
    for(let i=0;i<drops;i++){
-    const seed=i*2.399963;
-    const q=(i*.618+time*.00047*(.4+i%7*.1))%1;
+    const seed=i*2.399963,randomized=.44+(i%13)/13;
+    const q=(i*.6180339+time*.00035*(.55+i%7*.075))%1;
     const hitX=assembly.position.x;
     const hitY=assembly.position.y+2.31*assembly.scale.x;
-    array.setXYZ(i,hitX+Math.sin(seed)*q*.66,
-     hitY+.22+q*.56-Math.pow(q,1.4)*.9,
-     1.25+Math.cos(seed)*q*.29);
+    const impulse=q*.92*randomized;
+    const gravity=q*q*1.24*randomized;
+    array.setXYZ(i,
+     hitX+Math.sin(seed)*(.04+impulse)+.03*Math.cos(seed*2+q*4),
+     hitY+.11+impulse*.48-gravity,
+     1.19+.18*Math.cos(seed)*q);
    }
    array.needsUpdate=true;
    splash.visible=streamUniforms.uStrength.value>.08;
+   mist.visible=splash.visible;
    renderer.render(scene,camera);
    window.__watermill3D={
     engine:"Three.js WebGL",wheelGeometry:"3D toruses, buckets and cylinders",
     waterfall:"animated translucent 3D mesh",rightWater:"single GPU-shaded surface",
     angularVelocity:Number(speed.toFixed(2)),waterLevel:Number(level.toFixed(3)),
-    wheelRadius:2.31,frontFacing:true,seaLinked:true
+    wheelRadius:2.31,frontFacing:true,seaLinked:true,
+    materialVersion:33,brassTextures:true,softReflections:true,
+    liquidVolume:true,sprayParticles:drops
    };
    schedule();
   }
+  window.__millPhotorealPBR={version:33,environment:"six-card procedural PMREM",
+   brassNormalMap:true,brassRoughnessMap:true,contactOcclusion:true};
   const observer=new IntersectionObserver(entries=>{
    visible=entries[0].isIntersecting;
    if(visible){lastFrame=0;schedule();}

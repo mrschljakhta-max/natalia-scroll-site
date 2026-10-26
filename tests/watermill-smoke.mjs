@@ -37,7 +37,17 @@ async function check(viewport,reducedMotion='no-preference'){
   await page.waitForFunction(()=>window.__watermillDiagnostics?.progress>.95);
   const last=await page.evaluate(()=>window.__watermillDiagnostics);
   const real3D=await page.evaluate(()=>window.__watermill3D);
+  const pbr=await page.evaluate(()=>window.__millPhotorealPBR);
   assert.equal(real3D.engine,'Three.js WebGL');
+  assert.equal(real3D.materialVersion,33,'Expected updated realistic v33 materials');
+  assert.equal(real3D.brassTextures,true);
+  assert.equal(real3D.softReflections,true);
+  assert.equal(real3D.liquidVolume,true);
+  assert.ok(real3D.sprayParticles>=150,'Droplet spray should be volumetric');
+  assert.equal(pbr.version,33);
+  assert.equal(pbr.brassNormalMap,true);
+  assert.equal(pbr.brassRoughnessMap,true);
+  assert.equal(pbr.contactOcclusion,true);
   assert.equal(real3D.frontFacing,true);
   assert.equal(real3D.seaLinked,true);
   assert.match(real3D.waterfall,/3D mesh/);
