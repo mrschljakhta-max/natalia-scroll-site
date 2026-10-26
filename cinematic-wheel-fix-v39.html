@@ -98,7 +98,7 @@ function frame(){
  ctx.clearRect(0,0,w,h);ctx.drawImage(video,0,0,w,h);
  if(mirror.checked){
   lx.globalCompositeOperation='source-over';lx.clearRect(0,0,w,h);
-  lx.save();lx.translate(2*cx,0);lx.scale(-1,1);lx.drawImage(video,0,0,w,h);lx.restore();
+  lx.save();lx.beginPath();lx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2);lx.clip();lx.translate(2*cx,0);lx.scale(-1,1);lx.drawImage(video,0,0,w,h);lx.restore();
   lx.globalCompositeOperation='destination-in';lx.save();lx.translate(cx,cy);lx.scale(rx,ry);
   const inner=Math.max(.65,1-params.feather/100);
   const g=lx.createRadialGradient(0,0,0,0,0,1);
