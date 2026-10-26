@@ -5,6 +5,7 @@
  * are updated in WebGL and remain reversible with scroll.
  */
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js";
+import {createPaperMaterialMaps} from "./paper-materials.js?v=11-pbr-paper";
 
 const stage=document.getElementById("stage");
 const journey=document.getElementById("experience");
@@ -36,13 +37,20 @@ key.position.set(3.5,5.6,6.5);scene.add(key);
 const fill=new THREE.DirectionalLight(0xa6d2c3,1.35);fill.position.set(-5,-2,3);scene.add(fill);
 const rim=new THREE.PointLight(0xfac9a0,12,13);rim.position.set(-3,3.5,2);scene.add(rim);
 
+/* The paper substrate is shared, while each document's printed marks vary.
+   A single immutable fiber map survives the document-to-origami transformation. */
+const paperMaps=createPaperMaterialMaps(THREE,renderer,{
+ mobile:matchMedia("(max-width: 670px)").matches
+});
 /* Editorial financial sheets: restrained detail, ink hierarchy, generous white space. */
 const paperTexture=(variant=0)=>{
  const c=document.createElement("canvas");c.width=512;c.height=704;
- const g=c.getContext("2d");g.fillStyle="#f9f7ef";g.fillRect(0,0,512,704);
- // Narrow paper edge, fine recycled paper grain and gentle corner shading.
+ const g=c.getContext("2d");g.drawImage(paperMaps.albedoCanvas,0,0,512,704);
+ // A restrained edge wash preserves the actual shared pulp fibers.
  const vg=g.createLinearGradient(0,0,512,704);
- vg.addColorStop(0,"#fffdf8");vg.addColorStop(.72,"#f8f6ed");vg.addColorStop(1,"#e7ece2");
+ vg.addColorStop(0,"rgba(255,254,245,.045)");
+ vg.addColorStop(.72,"rgba(250,251,239,.005)");
+ vg.addColorStop(1,"rgba(180,191,174,.085)");
  g.fillStyle=vg;g.fillRect(0,0,512,704);
  // No printed document frame: the paper itself is the only outline.
  g.fillStyle="#315b4b";g.font="bold 22px Arial";g.fillText("N / A",39,62);
@@ -107,18 +115,21 @@ const buildPaperGeometry=()=>{
 const sheetGeo=buildPaperGeometry();
 const sheetMat=new THREE.MeshPhysicalMaterial({
  map:textures[0],vertexColors:true,side:THREE.DoubleSide,
- roughness:.92,metalness:0,clearcoat:.02,clearcoatRoughness:.97,
+ normalMap:paperMaps.normal,normalScale:new THREE.Vector2(.12,.12),
+ roughnessMap:paperMaps.roughness,
+ roughness:.96,metalness:0,clearcoat:.006,clearcoatRoughness:.98,
  transparent:false,opacity:1,depthWrite:true,polygonOffset:true,
  polygonOffsetFactor:-.4,polygonOffsetUnits:-.4
 });
-// Original financial text softens while the same fibers fold into sails.
-// Shader only blends the *ink*, never the sheet's geometry or transparency.
+// Only printed financial ink fades during folding; REAL fibrous stock stays.
+// This preserves the albedo, tangent-space normal, roughness and single mesh.
 sheetMat.onBeforeCompile=(shader)=>{
  shader.uniforms.uInkToFiber={value:0};
+ shader.uniforms.uPaperFiberMap={value:paperMaps.fiber};
  shader.fragmentShader=shader.fragmentShader.replace(
-  'void main() {','uniform float uInkToFiber;\nvoid main() {');
+  'void main() {','uniform float uInkToFiber;\nuniform sampler2D uPaperFiberMap;\nvoid main() {');
  shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',
-  '#ifdef USE_MAP\nvec4 inkSample = texture2D(map,vMapUv);\ninkSample.rgb = mix(inkSample.rgb,vec3(1.0),uInkToFiber);\ndiffuseColor *= inkSample;\n#endif');
+  '#ifdef USE_MAP\nvec4 inkSample = texture2D(map,vMapUv);\nvec4 paperSubstrate = texture2D(uPaperFiberMap,vMapUv);\ninkSample.rgb = mix(inkSample.rgb,paperSubstrate.rgb,uInkToFiber);\ndiffuseColor *= inkSample;\n#endif');
  sheetMat.userData.shader=shader;
 };
 const sheetMesh=new THREE.Mesh(sheetGeo,sheetMat);
@@ -411,7 +422,9 @@ for(let i=0;i<25;i++){
  g.computeVertexNormals();
  const material=new THREE.MeshStandardMaterial({
   map:textures[i%textures.length],side:THREE.DoubleSide,
-  roughness:.86,metalness:0,transparent:true,opacity:1,depthWrite:true
+  normalMap:paperMaps.normal,normalScale:new THREE.Vector2(.085,.085),
+  roughnessMap:paperMaps.roughness,
+  roughness:.96,metalness:0,transparent:true,opacity:1,depthWrite:true
  });
  const mesh=new THREE.Mesh(g,material);mesh.castShadow=true;vortex.add(mesh);
  const theta=rng()*Math.PI*2;
@@ -539,7 +552,7 @@ try{
   target.style.display="none";
   window.__enableCanvasFallback?.("webgl-context-lost");
 },{passive:true});
- window.__origami3DDiagnostics={engine:"Three.js WebGL",controller:"GSAP ScrollTrigger",sheetMeshes:halves.length,sheetVertices:halves.reduce((n,o)=>n+o.geo.attributes.position.count,0),vortexMeshes:docs.length,boatFacets:8,sailFacets:4,geometryVersion:"v8-sculpted-contours",oneContinuousSheet:true,contourPaths:creaseRibbons.length,contactShadow:true,seaShader:"v10-gpu-water",atmosphericSky:true};
+ window.__origami3DDiagnostics={engine:"Three.js WebGL",controller:"GSAP ScrollTrigger",sheetMeshes:halves.length,sheetVertices:halves.reduce((n,o)=>n+o.geo.attributes.position.count,0),vortexMeshes:docs.length,boatFacets:8,sailFacets:4,geometryVersion:"v8-sculpted-contours",oneContinuousSheet:true,contourPaths:creaseRibbons.length,contactShadow:true,seaShader:"v10-gpu-water",atmosphericSky:true,paperPBR:"v11-cotton-stock",paperMaps:["albedo","normal","roughness"],paperMapResolution:paperMaps.dimensions};
 }catch(err){
  window.__origami3DReady=false;window.__natalia3d=false;
  target.style.display="none";
