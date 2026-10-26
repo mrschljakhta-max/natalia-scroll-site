@@ -6,6 +6,7 @@
 <meta name="theme-color" content="#12232a">
 <link rel="preload" as="image" type="image/svg+xml" href="./assets/images/forest-paper-texture.svg">
 <link rel="preload" as="image" type="image/svg+xml" href="./assets/images/cinematic-sea-sky.svg">
+<link rel="preload" as="image" type="image/webp" href="./assets/images/photoreal-origami-boat.webp">
 <link rel="preload" as="image" href="./assets/images/documents/accounting-policy.webp" type="image/webp">
 <link rel="preload" as="image" href="./assets/images/documents/financial-charts.webp" type="image/webp">
 <link rel="preload" as="image" href="./assets/images/documents/handwritten-review.webp" type="image/webp">
@@ -65,6 +66,36 @@ html.canvas-fallback #origami3d{opacity:0}
  background:radial-gradient(ellipse 12% 85% at 80% 0%,#eadbbb39,transparent 100%),
   linear-gradient(180deg,#79a5a0 0%,#55908c 34%,#2c696b 100%)}
 html.canvas-fallback .fallback-ocean{display:block}
+/* PHOTO-REFERENCE FINALE: the actual user-approved origami silhouette.
+   Overlays the WebGL sail geometry ONLY after the final fold; the ocean
+   underneath remains live, animated, and 3D-displaced. */
+.photoreal-boat-layer{position:absolute;inset:0;z-index:6;pointer-events:none;
+ opacity:var(--boat-photo,0);visibility:visible;
+ will-change:opacity}
+.photoreal-boat{position:absolute;left:65%;top:54%;width:min(48vw,735px);height:auto;
+ transform:translate(-50%,-50%);object-fit:contain;
+ filter:drop-shadow(0 17px 14px rgba(15,62,61,.24));
+ animation:photoBoatFloat 6.4s ease-in-out infinite;
+ will-change:transform}
+.photoreal-boat-contact{position:absolute;left:65%;top:70.7%;height:5.6%;width:min(45vw,675px);
+ transform:translate(-50%,-50%);pointer-events:none;mix-blend-mode:soft-light;
+ background:radial-gradient(ellipse at 50% 50%,#fff0cc55 0%,#79afb466 23%,#124f5566 49%,transparent 73%);
+ filter:blur(8px);animation:boatContactDrift 4.4s ease-in-out infinite}
+@keyframes photoBoatFloat{
+ 0%,100%{transform:translate(-50%,-50%) translateY(1px) rotate(-.45deg)}
+ 50%{transform:translate(-50%,-50%) translateY(-6px) rotate(.43deg)}
+}
+@keyframes boatContactDrift{
+ 0%,100%{transform:translate(-50%,-50%) scaleX(.97)}
+ 50%{transform:translate(-50%,-50%) scaleX(1.035)}
+}
+@media(max-width:670px){
+ .photoreal-boat{left:53%;top:65%;width:95vw}
+ .photoreal-boat-contact{left:53%;top:74.5%;width:86vw}
+}
+@media(prefers-reduced-motion:reduce){
+ .photoreal-boat,.photoreal-boat-contact{animation:none}
+}
 .topbar{position:absolute;left:clamp(18px,4.5vw,76px);right:clamp(18px,4.5vw,76px);top:clamp(17px,3vw,37px);display:flex;justify-content:space-between;align-items:center;gap:20px;z-index:12}
 .brand{display:flex;align-items:center;gap:12px;color:#f5f1e8;text-decoration:none;transition:color .3s}.monogram{font:400 24px Georgia,serif;width:45px;height:45px;border:1px solid currentColor;display:grid;place-items:center;border-radius:50%}.brand-name{display:grid;gap:2px;font-size:13px;letter-spacing:.22em;font-weight:700}.brand-name small{font:500 9px 'DM Sans',sans-serif;letter-spacing:.16em;opacity:.65}
 .pill{border:1px solid #f7f4ec4a;background:#13232b5a;backdrop-filter:blur(14px);border-radius:100px;font-size:10px;letter-spacing:.13em;padding:12px 18px;color:#e7f1e9;white-space:nowrap}
@@ -130,6 +161,12 @@ html.canvas-fallback .fallback-ocean{display:block}
   </div>
   <canvas id="paperCanvas" aria-hidden="true"></canvas>
   <div id="origami3d" aria-hidden="true"></div>
+  <div class="photoreal-boat-layer" aria-hidden="true">
+    <div class="photoreal-boat-contact"></div>
+    <img class="photoreal-boat"
+      src="./assets/images/photoreal-origami-boat.webp"
+      width="780" height="308" alt="" decoding="async">
+  </div>
   <div class="topbar">
     <a class="brand" href="#experience" aria-label="Наталія та Анна — на початок"><span class="sail-mark" aria-hidden="true"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="markA" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f2f2de"/><stop offset=".48" stop-color="#abc5b1"/><stop offset="1" stop-color="#57826f"/></linearGradient><linearGradient id="markB" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f4dbb7"/><stop offset="1" stop-color="#af7a5c"/></linearGradient></defs><path d="M40 12L40 53L16 54Z" fill="url(#markA)" stroke="#f6f0db" stroke-width="1.3"/><path d="M45 23L64 54L45 54Z" fill="url(#markB)" stroke="#f4ddc1" stroke-width="1.3"/><path d="M9 56L71 56L58 66L23 65Z" fill="#ede8d8" stroke="#d5e1d0" stroke-width="1.3"/><path d="M16 56L41 62L64 56M40 12L33 52" fill="none" stroke="#769889" stroke-width="1.5"/><path d="M13 71Q39 65 67 71" fill="none" stroke="#c99d7b" stroke-width="1.8" stroke-linecap="round"/></svg></span><span class="brand-name">НАТАЛІЯ &amp; АННА<small>БУХГАЛТЕРСЬКИЙ СУПРОВІД</small></span></a>
     <span class="pill">ІНТЕРАКТИВНА КОНЦЕПЦІЯ · 01</span>
@@ -500,7 +537,9 @@ let previousFrame=0;
 function frame(t){tick=0;target=scrollProgress();const dt=previousFrame?Math.min(50,Math.max(1,t-previousFrame)):16;previousFrame=t;
  const rate=reduce.matches?1:1-Math.exp(-dt/82);
  position=mix(position,target,rate);if(Math.abs(position-target)<.00008)position=target;
- const p=position;const day=smooth((p-.81)/.135),end=smooth((p-.85)/.13);stage.classList.toggle('is-day',day>.68);stage.style.setProperty('--p',p.toFixed(4));stage.style.setProperty('--day',day.toFixed(4));stage.style.setProperty('--end',end.toFixed(4));updateText(p);drawPapers(p,t);
+ const p=position;const day=smooth((p-.81)/.135),end=smooth((p-.85)/.13);stage.classList.toggle('is-day',day>.68);stage.style.setProperty('--p',p.toFixed(4));stage.style.setProperty('--day',day.toFixed(4));stage.style.setProperty('--end',end.toFixed(4));
+ stage.style.setProperty('--boat-photo',smooth((p-.961)/.030).toFixed(4));
+ updateText(p);drawPapers(p,t);
  if(isVisible)tick=requestAnimationFrame(frame)}
 function goTo(p){const distance=journey.offsetHeight-h;const y=journey.getBoundingClientRect().top+scrollY+distance*p;window.scrollTo({top:y,behavior:reduce.matches?'instant':'smooth'})}
 dots.forEach(dot=>dot.addEventListener('click',()=>goTo(Number(dot.dataset.jump))));document.getElementById('restart').addEventListener('click',()=>goTo(0));
@@ -538,6 +577,6 @@ resize();position=scrollProgress();tick=requestAnimationFrame(frame);
  },12000);
 })();
 </script>
-<script type="module" src="./assets/js/origami3d.js?v=16-visible-paper-folds" onerror="window.__enableCanvasFallback?.('module-load-error')"></script>
+<script type="module" src="./assets/js/origami3d.js?v=17-photo-boat-ocean" onerror="window.__enableCanvasFallback?.('module-load-error')"></script>
 </body>
 </html>
