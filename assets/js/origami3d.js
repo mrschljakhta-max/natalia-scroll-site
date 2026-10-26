@@ -342,6 +342,24 @@ contactShadow.scale.set(4.5,.68,1);
 contactShadow.position.set(.04,-1.80,-.6);
 contactShadow.renderOrder=1;
 sailGroup.add(contactShadow);
+/* A soft, lens-side photographic selection glow follows the SAME sheet.
+   This is not duplicate geometry, and vanishes before folding. */
+const haloCanvas=document.createElement("canvas");
+haloCanvas.width=128;haloCanvas.height=128;
+const hc=haloCanvas.getContext("2d");
+const hg=hc.createRadialGradient(64,64,2,64,64,64);
+hg.addColorStop(0,"rgba(255,246,217,.66)");
+hg.addColorStop(.34,"rgba(248,232,202,.26)");
+hg.addColorStop(1,"rgba(245,222,185,0)");
+hc.fillStyle=hg;hc.fillRect(0,0,128,128);
+const heroHalo=new THREE.Sprite(new THREE.SpriteMaterial({
+ map:new THREE.CanvasTexture(haloCanvas),color:0xfff0d7,
+ transparent:true,opacity:0,depthTest:true,depthWrite:false
+}));
+heroHalo.scale.set(5.1,6.9,1);
+heroHalo.position.set(0,0,-.33);
+heroHalo.visible=false;
+sailGroup.add(heroHalo);
 
 
 /* Continuous mirror-symmetric paper folding.
@@ -498,8 +516,13 @@ function updateSheet(p,time){
   mix(pose.z,0,align));
  const startScale=.94*doc.pw/W;
  const fullScale=.92;
- const targetScale=mix(startScale,fullScale,align);
+ const heroFocus=smooth(.25,.385,p)*(1-smooth(.433,.559,p));
+ // Lens push-in: still the original paper material/geometry and timeline.
+ const targetScale=mix(startScale,fullScale,align)*(1+.16*heroFocus);
  sailGroup.scale.setScalar(targetScale);
+ sailGroup.position.z+=.58*heroFocus;
+ heroHalo.visible=heroFocus>.007;
+ heroHalo.material.opacity=.19*heroFocus;
  sailGroup.rotation.set(
   mix(pose.rx,.016,align)+mix(0,-.09,smooth(.89,1,p)),
   mix(pose.ry,-.03,align)+mix(0,-.18,smooth(.90,1,p)),
@@ -701,8 +724,10 @@ function tick(time){
  updateVortex(p,time*1000);
  updateSheet(p,time);
  // Slight parallax makes the folding object read as 3D, but never hides the folds.
+ const lensFocus=smooth(.25,.385,p)*(1-smooth(.433,.559,p));
  camera.position.x=mix(-.10,.14,smooth(.58,.94,p));
  camera.position.y=mix(.13,-.15,smooth(.76,1,p));
+ camera.position.z=(mobile?12.9:13.8)-lensFocus*(mobile?.28:.52);
  camera.lookAt(0,0,0);
  // At rest, the one-paper yacht and its crease details move together.
  const afloat=smooth(.970,1,p);
@@ -734,7 +759,7 @@ try{
   target.style.display="none";
   window.__enableCanvasFallback?.("webgl-context-lost");
 },{passive:true});
- window.__origami3DDiagnostics={engine:"Three.js WebGL",controller:"GSAP ScrollTrigger",sheetMeshes:halves.length,sheetVertices:halves.reduce((n,o)=>n+o.geo.attributes.position.count,0),vortexMeshes:docs.length,boatFacets:8,sailFacets:4,geometryVersion:"v8-sculpted-contours",oneContinuousSheet:true,contourPaths:creaseRibbons.length,contactShadow:true,seaShader:"v10-gpu-water",atmosphericSky:true,paperPBR:"v11-cotton-stock",paperMaps:["albedo","normal","roughness"],paperMapResolution:paperMaps.dimensions,physicalPaperEdges:paperEdges.length,edgeThickness:.014,airFlex:"reversible-pre-fold",documentImages:documentImageStatus,documentTypes:DOCUMENT_IMAGE_FILES.length};
+ window.__origami3DDiagnostics={engine:"Three.js WebGL",controller:"GSAP ScrollTrigger",sheetMeshes:halves.length,sheetVertices:halves.reduce((n,o)=>n+o.geo.attributes.position.count,0),vortexMeshes:docs.length,boatFacets:8,sailFacets:4,geometryVersion:"v8-sculpted-contours",oneContinuousSheet:true,contourPaths:creaseRibbons.length,contactShadow:true,seaShader:"v10-gpu-water",atmosphericSky:true,paperPBR:"v11-cotton-stock",paperMaps:["albedo","normal","roughness"],paperMapResolution:paperMaps.dimensions,physicalPaperEdges:paperEdges.length,edgeThickness:.014,airFlex:"reversible-pre-fold",documentImages:documentImageStatus,documentTypes:DOCUMENT_IMAGE_FILES.length,vortexDirection:"v14-cinematic-parallax",depthTiers:3,focusOnSameSheet:true,vortexDocumentCount:VORTEX_COUNT};
 }catch(err){
  window.__origami3DReady=false;window.__natalia3d=false;
  target.style.display="none";
