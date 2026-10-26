@@ -29,18 +29,34 @@ button{font:inherit}a:focus-visible,button:focus-visible{outline:2px solid #F8D6
  border-radius:100px;background:#12474CC7;color:#F6EEE0;font-size:10px;font-weight:700;
  letter-spacing:.12em;backdrop-filter:blur(12px);white-space:nowrap;transition:background .3s}
 .topbar a:hover{background:#1C666E}
-.service-zone{position:absolute;z-index:5;display:block;background:transparent;border:1px solid transparent;
- border-radius:20px;cursor:pointer;opacity:0;pointer-events:none;transition:background .35s,box-shadow .35s,border-color .35s}
-.service-zone.is-active{pointer-events:auto}
+.cine-copy{position:absolute;z-index:6;top:23%;left:5.7%;width:31%;color:#1A4A44;pointer-events:none}
+.cine-copy .eyebrow{font-size:clamp(8px,.64vw,11px);font-weight:800;letter-spacing:.28em;color:#4E736C}
+.cine-copy h1{font:400 clamp(35px,4.45vw,79px)/1.02 Georgia,"Times New Roman",serif;
+ margin:22px 0 22px;letter-spacing:-.066em;max-width:12ch}
+.cine-copy h1 em{display:block;font-style:italic;color:#8C9E8D}
+.cine-copy p{max-width:340px;font-size:clamp(11px,.98vw,16px);line-height:1.75;color:#58766F;margin:0}
+.service-zone{position:absolute;z-index:6;display:flex;align-items:center;gap:17px;text-align:left;
+ border:1px solid transparent;border-radius:18px;padding:8px 10px;cursor:pointer;opacity:0;
+ transform:translateY(12px);pointer-events:none;color:#FFF6E3;background:#0C505012;
+ transition:opacity .55s,transform .55s,background .3s,box-shadow .3s,border-color .3s}
+.service-zone.is-active{opacity:1;pointer-events:auto;transform:translateY(0)}
 .service-zone:hover,.service-zone:focus-visible,.service-zone[aria-pressed="true"]{
- background:rgba(224,254,244,.075);border-color:#F9E2AA75;box-shadow:0 0 38px 5px #E4F8CF20}
-.service-zone:focus-visible{opacity:1;outline:2px solid #F7D297}
-.service-zone.s1{right:3.8%;top:29%;width:28%;height:14%}
-.service-zone.s2{right:3.8%;top:45.5%;width:28%;height:14%}
-.service-zone.s3{right:3.8%;top:62%;width:28%;height:14%}
-.cta-zone{position:absolute;z-index:5;left:4.5%;top:64.3%;width:19%;height:11%;border:0;
- background:transparent;border-radius:80px;cursor:pointer;opacity:0}
-.cta-zone:hover,.cta-zone:focus-visible{opacity:1;background:#E8CF9830;outline:2px solid #53776D}
+ background:#1B676F77;border-color:#F9E2AA75;box-shadow:0 0 38px 5px #E4F8CF20}
+.service-zone:focus-visible{outline:2px solid #F7D297}
+.service-zone.s1{right:4%;top:28%;width:28%;min-height:14%}
+.service-zone.s2{right:4%;top:45%;width:28%;min-height:14%}
+.service-zone.s3{right:4%;top:62%;width:28%;min-height:14%}
+.service-zone .number{font:700 clamp(11px,1.1vw,16px) Arial,sans-serif;letter-spacing:.11em;color:#E0BC80}
+.service-zone .circle{width:clamp(31px,4vw,59px);height:clamp(31px,4vw,59px);flex:none;display:grid;place-items:center;
+ border-radius:50%;color:#ECF6E7;border:1px solid #DEF4EC69;background:#D8FFF014;
+ box-shadow:inset 0 1px 4px #FFFFFF35}
+.service-zone .circle svg{width:50%;height:50%;stroke:currentColor;fill:none;stroke-width:1.5}
+.service-zone .title{font:400 clamp(19px,2.3vw,37px)/1.08 Georgia,serif;letter-spacing:-.045em;flex:1}
+.service-zone .arrow{font-size:clamp(17px,2vw,30px);opacity:.8}
+.cta-zone{position:absolute;z-index:6;left:5.7%;top:66%;padding:12px 20px;border:1px solid #53796F;
+ background:#FFF6E63D;border-radius:80px;cursor:pointer;color:#214C46;font-size:12px;font-weight:700;
+ display:flex;align-items:center;gap:21px}
+.cta-zone:hover,.cta-zone:focus-visible{background:#F7E4C4;outline:2px solid #53776D}
 .cine-meter{position:absolute;z-index:8;bottom:clamp(16px,3svh,38px);left:50%;
  transform:translateX(-50%);display:flex;align-items:center;gap:15px;min-width:310px;
  max-width:calc(100% - 24px);border:1px solid #F0E9D985;border-radius:100px;
@@ -77,7 +93,7 @@ button{font:inherit}a:focus-visible,button:focus-visible{outline:2px solid #F8D6
  .cinematic-stage{background:#D8E7DC}
  .topbar{top:13px}.mark{color:#F4EEDD;text-shadow:0 1px 8px #163E49}
  .topbar a{padding:10px 13px;font-size:8px}
- .service-zone,.cta-zone{display:none}
+ .service-zone,.cta-zone,.cine-copy{display:none}
  .mobile-copy{display:block;position:absolute;z-index:7;left:0;right:0;top:65px;padding:26px 24px 30px;
  color:#204B46;background:linear-gradient(180deg,#F8F3EDEE 0%,#F8F3EDCF 66%,transparent 100%)}
  .mobile-copy .eyebrow{letter-spacing:.2em;font-size:9px;font-weight:800;color:#54817B}
@@ -102,7 +118,7 @@ button{font:inherit}a:focus-visible,button:focus-visible{outline:2px solid #F8D6
  .cinematic-overlay{background:none}
 }
 </style>
-<script defer src="./assets/js/cinematic-v37.js?v=37-photo-compositor"></script>
+<script defer src="./assets/js/cinematic-v37.js?v=37-photographic-type"></script>
 </head>
 <body>
 <main>
@@ -112,13 +128,16 @@ button{font:inherit}a:focus-visible,button:focus-visible{outline:2px solid #F8D6
    <div class="cinematic-overlay" aria-hidden="true"></div>
    <header class="topbar"><div class="mark">НАТАЛІЯ &amp; АННА<small>БУХГАЛТЕРСЬКИЙ СУПРОВІД</small></div>
     <a href="./index.html?v=35#conclusion" aria-label="Порівняти з чинною 3D-сценою">Порівняти з 3D ↗</a></header>
-   <h1 class="sr-only">Для кожної справи — свій підхід.</h1>
-   <p class="sr-only">Бухгалтерський супровід для цифрових спеціалістів, підприємців і малого бізнесу.</p>
-   <button type="button" id="cinematicCTA" class="cta-zone" aria-label="Прокрутити до вибору бухгалтерського напряму"><span class="sr-only">Обрати свій напрям</span></button>
+   <div class="cine-copy">
+    <span class="eyebrow">КОМУ МИ ДОПОМАГАЄМО</span>
+    <h1>Для кожної<br>справи — <em>свій підхід.</em></h1>
+    <p>Бухгалтерський супровід для цифрових спеціалістів, підприємців і малого бізнесу. Оберіть напрям, який відповідає саме вашій справі.</p>
+   </div>
+   <button type="button" id="cinematicCTA" class="cta-zone" aria-label="Прокрутити до вибору бухгалтерського напряму">Обрати свій напрям <span aria-hidden="true">↗</span></button>
    <div role="group" aria-label="Категорії бухгалтерського супроводу">
-    <button data-cine-service="0" class="service-zone s1" aria-label="IT та фриланс — докладніше" aria-pressed="false" disabled><span class="sr-only">IT та фриланс</span></button>
-    <button data-cine-service="1" class="service-zone s2" aria-label="ФОП та підприємці — докладніше" aria-pressed="false" disabled><span class="sr-only">ФОП та підприємці</span></button>
-    <button data-cine-service="2" class="service-zone s3" aria-label="Малий бізнес — докладніше" aria-pressed="false" disabled><span class="sr-only">Малий бізнес</span></button>
+    <button data-cine-service="0" class="service-zone s1" aria-label="IT та фриланс — докладніше" aria-pressed="false" disabled><span class="number">01</span><span class="circle" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="12" rx="2"/><path d="M2 20h20"/></svg></span><span class="title">IT та<br>фриланс</span><span class="arrow" aria-hidden="true">→</span></button>
+    <button data-cine-service="1" class="service-zone s2" aria-label="ФОП та підприємці — докладніше" aria-pressed="false" disabled><span class="number">02</span><span class="circle" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/></svg></span><span class="title">ФОП та<br>підприємці</span><span class="arrow" aria-hidden="true">→</span></button>
+    <button data-cine-service="2" class="service-zone s3" aria-label="Малий бізнес — докладніше" aria-pressed="false" disabled><span class="number">03</span><span class="circle" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 20v-8h4v8M11 20V8h4v12M17 20V4h3v16"/></svg></span><span class="title">Малий<br>бізнес</span><span class="arrow" aria-hidden="true">→</span></button>
    </div>
    <div class="mobile-copy">
     <span class="eyebrow">КОМУ МИ ДОПОМАГАЄМО</span>
