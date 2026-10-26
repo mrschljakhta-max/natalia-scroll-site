@@ -238,25 +238,34 @@ if(stage&&target){
    uTime:{value:0},uStrength:{value:0},
    uPale:{value:rgb("#EDFFF1")},uAqua:{value:rgb("#55BBC0")}
   };
+  // Waterfall glints are slow, irregular and edge-feathered; never parallel
+  // fluorescent threads. The shader flows over a translucent 3D water core.
   const fallVertex=[
    "uniform float uTime;varying vec2 vUv;",
    "void main(){vUv=uv;vec3 p=position;",
-   "p.x+=sin(uv.y*12.+uTime*1.9)*.046+sin(uv.y*27.-uTime*2.1)*.027;",
-   "p.z+=sin(uv.y*11.+uTime*1.5)*.07;",
+   "float bend=.040*sin(uv.y*7.4+uTime*1.1)+.024*sin(uv.y*16.-uTime*1.7);",
+   "p.x+=bend+.024*sin(uv.x*9.+uv.y*12.+uTime*1.2);",
+   "p.z+=.045*cos(uv.y*8.-uTime*1.13);",
    "gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}"
   ].join("\n");
   const fallFragment=[
    "uniform float uTime;uniform float uStrength;",
    "uniform vec3 uPale;uniform vec3 uAqua;varying vec2 vUv;",
+   "float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}",
+   "float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);",
+   "return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),",
+   "mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),f.x),f.y);}",
    "void main(){",
-   " float stripes=sin(vUv.x*49.+vUv.y*16.-uTime*2.7);",
-   " float strands=sin(vUv.x*90.-vUv.y*30.+uTime*2.4);",
-   " float curl=pow(1.-abs(vUv.x-.5)*2.,.75);",
-   " float light=.4+.28*stripes+.14*strands;",
-   " vec3 col=mix(uAqua,uPale,clamp(light+.29,0.,1.));",
-   " float sides=smoothstep(0.,.12,vUv.x)*(1.-smoothstep(.85,1.,vUv.x));",
-   " float alpha=(.50+.42*curl)*sides*uStrength;",
-   " gl_FragColor=vec4(col,alpha);",
+   " vec2 uv=vUv;float t=uTime;",
+   " float distort=noise(uv*vec2(4.,9.)+vec2(t*.3,-t*.68));",
+   " float curl=.5+.5*sin((uv.x+distort*.12)*10.5+uv.y*5.-t*.67);",
+   " float droplets=noise(uv*vec2(9.,17.)+vec2(t*.26,-t*1.15));",
+   " float light=.24+.25*curl+.22*droplets;",
+   " vec3 col=mix(uAqua,uPale,clamp(light,0.,.9));",
+   " float sides=smoothstep(0.,.16,uv.x)*(1.-smoothstep(.86,1.,uv.x));",
+   " float center=1.-abs(uv.x-.5)*2.;",
+   " float alpha=(.36+.25*center+.13*droplets)*sides*uStrength;",
+   " gl_FragColor=vec4(col,clamp(alpha,0.,.75));",
    " #include <colorspace_fragment>",
    "}"
   ].join("\n");
@@ -266,6 +275,24 @@ if(stage&&target){
   }),scene);
   materials.push(fall.material);
   fall.position.set(0,3.74,1.04);
+  // Slightly warped cylindrical volume behind the fluid skin. Reflections
+  // travel over curved faces and convey thickness without pipes or machinery.
+  const fallCoreGeometry=new THREE.CylinderGeometry(.155,.205,2.6,20,38,true);
+  const corePos=fallCoreGeometry.attributes.position;
+  for(let i=0;i<corePos.count;i++){
+   const x=corePos.getX(i),y=corePos.getY(i),z=corePos.getZ(i);
+   const turbulence=1+.085*Math.sin(y*5.3)+.044*Math.sin(y*13.7);
+   corePos.setXYZ(i,x*turbulence+.035*Math.sin(y*3.4),y,z*turbulence);
+  }
+  fallCoreGeometry.computeVertexNormals();
+  const waterCoreMaterial=new THREE.MeshPhysicalMaterial({
+   color:0xA0D4D2,metalness:0,roughness:.13,transmission:.25,
+   thickness:.28,transparent:true,opacity:.30,depthWrite:false,
+   side:THREE.DoubleSide,clearcoat:.34,clearcoatRoughness:.15
+  });
+  materials.push(waterCoreMaterial);
+  const waterCore=mesh(fallCoreGeometry,waterCoreMaterial,scene);
+  waterCore.position.set(0,3.74,.86);
   // Secondary translucent thickness catches the sun in front of the flow.
   crest=mesh(new THREE.PlaneGeometry(.18,2.48,12,48),new THREE.MeshBasicMaterial({
    color:0xD6FAF0,transparent:true,opacity:.11,depthWrite:false,
@@ -279,18 +306,21 @@ if(stage&&target){
    uTime:{value:0},uDark:{value:rgb("#216D75")},
    uBright:{value:rgb("#9AD5CD")},uSun:{value:rgb("#FFF0D4")}
   };
+  // Sea inherited from scene 04: broad glints and moving wavelets,
+  // avoiding the previous repeated diagonal-wireframe appearance.
   const topFrag=[
    "uniform float uTime;uniform vec3 uDark;uniform vec3 uBright;uniform vec3 uSun;",
    "varying vec2 vUv;varying vec3 vWorld;",
    "void main(){",
-   " float wave=sin(vUv.x*31.+uTime*.95)*.022+sin(vUv.x*71.-uTime*1.3)*.012;",
-   " if(vUv.y<.11+wave)discard;",
-   " float lines=pow(max(0.,sin(vUv.x*38.+vUv.y*37.+uTime*.73)),13.);",
-   " float sheen=pow(max(0.,sin(vUv.x*83.-vUv.y*13.-uTime*1.2)),19.);",
-   " vec3 color=mix(uBright,uDark,clamp(vUv.y*.78,0.,1.));",
-   " color+=uSun*(lines*.15+sheen*.30);",
-   " float alpha=1.-smoothstep(.91,1.,vUv.y)*.12;",
-   " gl_FragColor=vec4(color,alpha);",
+   " float t=uTime;vec2 uv=vUv;",
+   " float wave=.014*sin(uv.x*18.3+t*.59)+.008*sin(uv.x*37.4-t*.76);",
+   " if(uv.y<.13+wave)discard;",
+   " float broad=.5+.5*sin(uv.x*16.5+sin(uv.y*10.7+t*.23)*.49+t*.59);",
+   " float ripple=.5+.5*sin(uv.x*29.4-uv.y*8.3-t*.71);",
+   " vec3 color=mix(uDark,uBright,clamp(.38+.30*(1.-uv.y)+.08*broad,0.,1.));",
+   " float diffuseGlow=.018+.045*pow(broad,7.)*ripple;",
+   " color+=uSun*diffuseGlow;",
+   " gl_FragColor=vec4(color,.96);",
    " #include <colorspace_fragment>",
    "}"
   ].join("\n");
@@ -333,6 +363,8 @@ if(stage&&target){
    const length=5.05-top;
    fall.position.set(assembly.position.x,(5.05+top)*.5,1.04);
    fall.scale.y=length/2.6;
+   waterCore.position.set(assembly.position.x,(5.05+top)*.5,.86);
+   waterCore.scale.y=length/2.6;
    crest.position.set(assembly.position.x+.15,(5.05+top)*.5,1.1);
    crest.scale.y=length/2.48;
   }
