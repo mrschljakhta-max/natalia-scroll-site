@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#122F30">
+<meta name="description" content="Наталія & Анна — експериментальна кінематографічна версія сцени водяного млина з керуванням прокручуванням.">
+<title>Наталія & Анна — Cinematic Lab / 36</title>
+<style>
+:root{color-scheme:light;--ink:#183D3B;--pearl:#F5F1E8;--teal:#1F727C;--gold:#B88B61}
+*{box-sizing:border-box}html{scroll-behavior:auto}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#101F22;color:#FBF5E9;overflow-x:hidden}
+.journey{height:520svh;position:relative}.screen{height:100svh;position:sticky;top:0;overflow:hidden;background:#EFEDE4}
+.underlay{position:absolute;inset:0;display:block;width:100%;height:100%;border:0;pointer-events:none;filter:saturate(.87) contrast(1.065) sepia(.035);transform:scale(1.001);transform-origin:center}
+.lightwash{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 49% 88% at 56% 25%,#FFF0CE17 0%,transparent 85%),linear-gradient(90deg,#0C28291A,transparent 23%,transparent 81%,#113E481B);mix-blend-mode:multiply}
+.grain{position:absolute;inset:-50%;pointer-events:none;opacity:.13;mix-blend-mode:multiply;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 140 140' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.78' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Cpath fill='%23000' filter='url(%23n)' d='M0 0h140v140H0z'/%3E%3C/svg%3E");background-size:150px 150px}
+.cinebar{position:absolute;left:0;right:0;height:clamp(5px,1.2svh,12px);background:#121D1E;pointer-events:none;opacity:var(--cinema,.9);z-index:3}.cinebar.top{top:0}.cinebar.bottom{bottom:0}
+.labhead{position:fixed;top:24px;right:28px;z-index:6;border:1px solid #FFF9E67A;background:#173337AD;backdrop-filter:blur(18px);border-radius:50px;padding:10px 15px;color:#FFF5E1;font-size:10px;letter-spacing:.15em;text-transform:uppercase;text-decoration:none}
+.controls{position:fixed;z-index:6;bottom:25px;left:50%;transform:translateX(-50%);background:#173438EB;backdrop-filter:blur(22px);color:#FFF4E2;border:1px solid #E7D8B253;border-radius:15px;padding:14px 17px;display:flex;align-items:center;gap:19px;width:min(620px,calc(100vw - 24px));box-shadow:0 14px 45px #092E3045}
+.controls h1{font-family:Georgia,serif;font-size:17px;font-weight:400;margin:0 0 4px;white-space:nowrap}.small{font-size:10px;letter-spacing:.035em;color:#CFDDD5}.line{height:2px;flex:1;background:#6A8F8C67;min-width:36px;border-radius:2px;position:relative;overflow:hidden}.line span{height:100%;display:block;width:calc(var(--progress,0)*100%);background:linear-gradient(90deg,#78C0BB,#F0CAA0)}.counter{font:600 12px ui-monospace,monospace;font-variant-numeric:tabular-nums;color:#E5D6B6}
+.footer{padding:45px 24px 100px;background:#F5F1E8;color:#173B3B;text-align:center}.footer h2{font:normal clamp(27px,5vw,45px) Georgia,serif;margin:0 0 15px}.footer p{max-width:630px;margin:0 auto 20px;line-height:1.7;color:#57716C;font-size:14px}.footer a{display:inline-block;color:#184A48;border:1px solid #5D817B;border-radius:30px;text-decoration:none;padding:10px 18px;font-size:13px}
+.no-motion .underlay{filter:none}.no-motion .grain{display:none}
+@media(max-width:650px){.labhead{top:15px;right:12px;font-size:9px;padding:9px}.controls{bottom:10px;gap:10px}.controls h1{font-size:13px}.controls .small{font-size:9px}.counter{font-size:10px}}
+</style>
+</head>
+<body>
+<div class="journey" id="journey">
+ <section class="screen" id="screen" aria-label="Інтерактивний кінематографічний експеримент">
+  <iframe class="underlay" id="live" src="./index.html?v=35#conclusion" title="Інтерактивна 3D-сцена млина, підключена до основного сайту"></iframe>
+  <div class="lightwash" aria-hidden="true"></div><div class="grain" aria-hidden="true"></div>
+  <div class="cinebar top"></div><div class="cinebar bottom"></div>
+ </section>
+</div>
+<a href="./index.html?v=35#conclusion" class="labhead">↗ Робоча сцена v35</a>
+<div class="controls" role="status" aria-live="off"><div><h1>Cinematic Lab / 36</h1><span class="small" id="caption">Прокручуй: вода → колесо → напрямки</span></div><div class="line" aria-hidden="true"><span></span></div><span class="counter" id="counter">00%</span></div>
+<footer class="footer"><h2>Від руху — до ясності.</h2><p>Це окремий експериментальний перегляд існуючої інтерактивної 3D-сцени з кінематографічною тональною обробкою. Високоякісні CGI-кадри ще не створені: поточне зображення формується існуючим WebGL-рушієм. Жодна зміна з цього експерименту не замінює основний сайт.</p><a href="./index.html?v=35#conclusion">Повернутися на основний сайт ↗</a></footer>
+<script>
+(()=>{
+ const root=document.getElementById("journey"),frame=document.getElementById("live");
+ const count=document.getElementById("counter"),caption=document.getElementById("caption");
+ const reduced=matchMedia("(prefers-reduced-motion: reduce)").matches;
+ if(reduced)document.body.classList.add("no-motion");
+ let ready=false,target=0,current=0,scheduled=false;
+ const clamp=x=>Math.max(0,Math.min(1,x));
+ function calculate(){const r=root.getBoundingClientRect();target=clamp(-r.top/Math.max(1,root.offsetHeight-innerHeight));request();}
+ function request(){if(!scheduled){scheduled=true;requestAnimationFrame(tick)}}
+ function tick(){scheduled=false;current=reduced?target:current+(target-current)*.15;
+ if(Math.abs(current-target)<.0004)current=target;
+ document.documentElement.style.setProperty("--progress",current.toFixed(4));
+ count.textContent=String(Math.round(current*100)).padStart(2,"0")+"%";
+ caption.textContent=current<.15?"Море стає потоком":current<.43?"Колесо набирає швидкість":current<.77?"Вода відкриває напрями":"Обери свій напрям";
+ if(ready){
+  try{
+   const win=frame.contentWindow,doc=win.document,scene=doc.getElementById("conclusion");
+   if(scene){
+    const base=scene.getBoundingClientRect().top+win.scrollY;
+    const span=Math.max(1,scene.offsetHeight-win.innerHeight);
+    win.scrollTo({top:base+current*span,behavior:"instant"});
+   }
+  }catch(error){window.__cinematicLabIssue=String(error)}
+ }
+ if(Math.abs(current-target)>.0004)request();
+ }
+ frame.addEventListener("load",()=>{ready=true;request()});
+ addEventListener("scroll",calculate,{passive:true});
+ addEventListener("resize",calculate,{passive:true});
+ calculate();
+ window.__cinematicLab={version:36,mode:"non-destructive cinematic experiment",get progress(){return current},get iframeReady(){return ready}};
+})();
+</script>
+</body></html>
