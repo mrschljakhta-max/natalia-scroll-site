@@ -26,13 +26,23 @@ async function exercise(name,viewport,reducedMotion='no-preference'){
   }));
   assert.equal(ready.active,true,name+': WebGL never initialized ('+JSON.stringify(errors)+')');
   assert.equal(ready.fallback,false,name+': Unexpected fallback');
-  assert.match(ready.diagnostics?.finalScene||'',/v19/);
+  assert.match(ready.diagnostics?.finalScene||'',/v20/);
   assert.ok(ready.diagnostics?.waveVertices>5000,name+': no tessellated world sea');
+  // First inspect the approved cinematic pose just before the very last scroll.
+  await page.evaluate(()=>{
+   const el=document.querySelector('#experience');
+   window.scrollTo({top:el.offsetTop+(el.offsetHeight-innerHeight)*.979,behavior:'instant'});
+  });
+  await page.waitForFunction(()=>window.__origami3DProgress>.975,{timeout:12000});
+  const before=await page.evaluate(()=>window.__origami3DSilhouetteProbe());
+  assert.equal(before.poseProgress,.965,name+': unexpected final pose cutoff');
   await page.evaluate(()=>{
    const el=document.querySelector('#experience');
    window.scrollTo({top:el.offsetTop+el.offsetHeight-innerHeight-2,behavior:'instant'});
   });
-  await page.waitForFunction(()=>window.__origami3DProgress>.96,{timeout:12000});
+  await page.waitForFunction(()=>window.__origami3DProgress>.995,{timeout:12000});
+  const after=await page.evaluate(()=>window.__origami3DSilhouetteProbe());
+  assert.deepEqual(after.samples,before.samples,name+': boat changes into a different silhouette on final scroll');
   await page.waitForTimeout(1000);
   await mkdir('screenshots',{recursive:true});
   const canvas=page.locator('#origami3d canvas');
