@@ -26,7 +26,7 @@ async function exercise(name,viewport,reducedMotion='no-preference'){
   }));
   assert.equal(ready.active,true,name+': WebGL never initialized ('+JSON.stringify(errors)+')');
   assert.equal(ready.fallback,false,name+': Unexpected fallback');
-  assert.match(ready.diagnostics?.finalScene||'',/v18/);
+  assert.match(ready.diagnostics?.finalScene||'',/v19/);
   assert.ok(ready.diagnostics?.waveVertices>5000,name+': no tessellated world sea');
   await page.evaluate(()=>{
    const el=document.querySelector('#experience');
