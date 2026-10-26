@@ -357,8 +357,11 @@ if(stage&&target){
    // Narrow screens keep the centered water source and smaller sculpture
    // beneath the intro while preserving a separate column for service choices.
    const mobile=width<=670;
-   assembly.scale.setScalar(mobile?.54:width<1120?.82:1);
-   assembly.position.set(mobile?-W*.22:width<1120?-.05:0,mobile?-2.35:width<1120?-.54:0,0);
+   const sculptureScale=mobile?.54:width<1120?.82:1;
+   assembly.scale.setScalar(sculptureScale);
+   // This exactly anchors the sculptural plinth to the viewport bottom
+   // at every aspect ratio instead of leaving a tablet-sized floating gap.
+   assembly.position.set(mobile?-W*.22:width<1120?-.05:0,-5+5*sculptureScale,0);
    const top=assembly.position.y+2.31*assembly.scale.x;
    const length=5.05-top;
    fall.position.set(assembly.position.x,(5.05+top)*.5,1.04);
