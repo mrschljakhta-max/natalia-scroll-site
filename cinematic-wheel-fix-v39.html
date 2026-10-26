@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cinematic Film Lab v39 — точне виправлення колеса</title>
+<meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#11272b">
+<style>
+:root{--bg:#0d2226;--panel:#143035;--panel2:#1b3b40;--gold:#e1c18d;--ivory:#f6f0e5;--muted:#9bb9b2;--sea:#68b7b2}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 74% 7%,#244b4c 0,transparent 46%),var(--bg);color:var(--ivory);font:14px/1.6 Arial,system-ui,sans-serif}
+button,input{font:inherit}button{cursor:pointer}a{color:inherit}button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--gold);outline-offset:4px}
+.wrap{max-width:1450px;margin:auto;padding:30px clamp(16px,3.5vw,56px) 80px}
+nav{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:65px}
+.brand{font-size:12px;letter-spacing:.15em;font-weight:700;text-decoration:none}.brand small{display:block;font-size:9px;font-weight:400;letter-spacing:.1em;color:var(--muted)}
+.back{font-size:12px;color:var(--muted);text-decoration:none;border:1px solid #66857c6c;padding:10px 16px;border-radius:50px}
+.intro{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(250px,.6fr);align-items:end;gap:28px;margin-bottom:32px}
+.eyebrow{color:var(--gold);letter-spacing:.24em;font-size:10px;font-weight:bold}
+h1{font:400 clamp(39px,5.2vw,83px)/1.04 Georgia,serif;letter-spacing:-.05em;margin:13px 0 0}h1 em{color:var(--gold);font-weight:400}
+.lead{color:#b6d0c7;font-size:14px;max-width:390px}
+.studio{background:#082023;border:1px solid #577d7959;border-radius:22px;overflow:hidden;box-shadow:0 36px 85px #0005}
+.toolbar{padding:13px 20px;display:flex;gap:15px;align-items:center;justify-content:space-between;background:#18393e}
+.toolbar .label{font-size:10px;letter-spacing:.12em;color:#cbd9d1}.toolbar .label strong{color:var(--gold)}
+.indicator{font-size:10px;display:flex;align-items:center;gap:9px;color:#a3bbb5}.indicator:before{content:'';width:7px;height:7px;background:#9ca5a1;border-radius:50%}.indicator.ready:before{background:#7bd2ac;box-shadow:0 0 16px #7bd2aca3}
+.stage{position:relative;aspect-ratio:16/9;background:linear-gradient(100deg,#e9e1d2,#9fccc7);overflow:hidden}
+canvas{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:contain}
+.empty{position:absolute;inset:0;display:grid;align-content:center;justify-items:center;gap:13px;color:#154c4b;text-align:center;background:radial-gradient(circle at 62% 49%,#ffffff2d,transparent 45%)}
+.empty strong{font:400 clamp(24px,3.3vw,48px)/1.1 Georgia,serif;max-width:500px}.empty span{font-size:13px;max-width:420px;padding:0 20px}
+.wheel-guide{position:absolute;box-sizing:border-box;border:2px dashed #f5d390;box-shadow:0 0 0 1px #093e46;border-radius:50%;pointer-events:none;display:none;transform:translate(-50%,-50%)}
+.stage.loaded .empty{display:none}
+.playback{display:flex;align-items:center;gap:16px;padding:14px 20px;background:#123238;flex-wrap:wrap}
+.playback button{border:1px solid #819c945d;background:transparent;color:#e9ede2;border-radius:70px;padding:7px 14px}
+input[type=range]{accent-color:var(--gold);width:100%;cursor:pointer}
+.playback input[type=range]{flex:1;min-width:160px}.time{font:12px ui-monospace,monospace;color:var(--gold);min-width:88px;text-align:right}
+.body{display:grid;grid-template-columns:1.45fr 1fr;gap:25px;margin-top:25px}
+.panel{padding:24px;border:1px solid #6a9b8c46;border-radius:19px;background:#15343aa9}
+.panel h2{font:400 28px Georgia,serif;margin:0 0 13px}
+.panel p{color:#b3c9c0;font-size:13px;margin:0 0 20px}
+.fileBtn,.primary,.minor{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:12px 20px;border-radius:50px;font-weight:bold;font-size:12px;text-decoration:none;cursor:pointer}
+.fileBtn{color:#143035;background:var(--gold);border:1px solid var(--gold)}
+.fileBtn input{position:absolute;width:1px;height:1px;opacity:0}
+.primary{background:var(--gold);color:#173337;border:1px solid var(--gold)}
+.minor{background:transparent;color:#e7dbbd;border:1px solid #b0aa917d}
+button:disabled{opacity:.42;cursor:not-allowed}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+.status{padding:12px 15px;margin-top:18px;border:1px solid #7b9d8b4b;border-radius:12px;background:#1e3d3e;color:#c7d5c8;font-size:12px}
+.controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px 19px}
+.field label{display:flex;justify-content:space-between;gap:8px;font-size:11px;color:#c2d4ce;margin-bottom:6px}.field output{font-family:monospace;color:var(--gold)}
+.opt{display:flex;align-items:center;gap:10px;margin-top:12px;color:#d4dfd5}
+.opt input{accent-color:var(--gold)}
+.warning{margin-top:22px;color:#abbfb8;font-size:12px;max-width:1100px}
+footer{margin-top:80px;border-top:1px solid #74928c3c;padding-top:25px;font-size:11px;color:#90afa5;display:flex;gap:18px;justify-content:space-between}
+@media(max-width:930px){.intro,.body{grid-template-columns:1fr}.wrap{padding-top:16px}nav{margin-bottom:32px}.panel{padding:18px}.stage{min-height:180px}}
+@media(max-width:470px){.controls{grid-template-columns:1fr 1fr;gap:8px}.toolbar{padding:11px}.playback{padding:10px}.body{gap:16px}.intro{gap:8px}h1{font-size:41px}}
+</style></head>
+<body><div class="wrap">
+<nav><a href="./index.html" class="brand">НАТАЛІЯ &amp; АННА<small>БУХГАЛТЕРСЬКИЙ СУПРОВІД</small></a><a class="back" href="./cinematic-video-v38.html">← Film Lab v38</a></nav>
+<div class="intro"><div><span class="eyebrow">FILM LAB / EXPERIMENT 39</span><h1>Точний напрям.<br><em>Жива кінематографія.</em></h1></div><p class="lead">Монтажне виправлення латунного колеса без повторної AI-генерації. Зберігаємо воду, світло та всі інші частини оригінального кадру.</p></div>
+<section class="studio" aria-label="Кінематографічний відеоредактор">
+<div class="toolbar"><span class="label">CINEMATIC SOURCE <strong>→</strong> MIRRORED WHEEL</span><span class="indicator" id="indicator">Очікуємо MP4</span></div>
+<div class="stage" id="stage"><canvas id="frame" width="1920" height="1080" aria-label="Перегляд відредагованого відео"></canvas><div class="wheel-guide" id="guide"></div><div class="empty"><strong>Твій CGI-рендер. Правильний рух.</strong><span>Оберіть останній відеофайл із Runway — він обробляється лише у браузері, без завантаження на сервер.</span></div></div>
+<div class="playback"><button id="toggle" disabled>▶ Відтворити</button><input type="range" id="timeline" min="0" max="1000" value="0" disabled aria-label="Час відео"><span class="time" id="time">0:00 / 0:00</span></div>
+</section>
+<div class="body">
+<section class="panel"><h2>01 / Відео</h2><p>Завантаж оригінальний MP4 із Runway. Дзеркальне відображення застосовується тільки до області колеса; потік та заповнення справа залишаються оригінальними.</p>
+<div class="actions"><label class="fileBtn" for="file">+ Відкрити CGI-відео<input id="file" type="file" accept="video/mp4,video/webm,video/quicktime"></label><button class="primary" id="export" disabled>↓ Експортувати відео</button><button class="minor" id="poster" disabled>Кадр PNG</button></div>
+<div class="status" id="status" role="status">Джерело не вибрано. Відкрий останній 10-секундний ролик Runway.</div>
+</section>
+<section class="panel"><h2>02 / Точне маскування</h2><p>Положення за замовчуванням підібрано під останній ролик. Якщо обриси колеса трохи не збігаються, відкоригуй їх повзунками.</p>
+<div class="controls">
+<div class="field"><label for="cx">Центр X <output id="xc">56%</output></label><input type="range" id="cx" min="30" max="80" step=".1" value="56"></div>
+<div class="field"><label for="cy">Центр Y <output id="yc">52.5%</output></label><input type="range" id="cy" min="20" max="80" step=".1" value="52.5"></div>
+<div class="field"><label for="rx">Радіус X <output id="xr">19%</output></label><input type="range" id="rx" min="9" max="30" step=".1" value="19"></div>
+<div class="field"><label for="ry">Радіус Y <output id="yr">32.5%</output></label><input type="range" id="ry" min="15" max="45" step=".1" value="32.5"></div>
+<div class="field"><label for="feather">М'якість краю <output id="featherv">8%</output></label><input type="range" id="feather" min="1" max="22" step="1" value="8"></div>
+</div>
+<label class="opt"><input type="checkbox" id="showguide" checked> Показувати межі колеса в редакторі</label>
+<label class="opt"><input type="checkbox" id="mirror" checked> Дзеркально відобразити тільки колесо</label>
+</section></div>
+<p class="warning">Важливо: віддзеркалення змінює напрям обертання лише тоді, коли у вихідному ролику він стабільно протилежний. Якщо модель змінює напрям посеред ролика, одного дзеркального монтажу недостатньо. Експорт використовує браузерний відеокодек і може зберігатися у форматі WebM. Вода та водоспад окремо не генеруються й не переробляються.</p>
+<footer><span>© Film Lab v39 / експериментальний монтаж</span><span>Локальна обробка · 0 кредитів Runway · без серверного завантаження</span></footer>
+</div>
+<video id="source" muted playsinline preload="auto" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none"></video>
+<script>
+(()=>{
+'use strict';
+const $=id=>document.getElementById(id),video=$('source'),canvas=$('frame'),ctx=canvas.getContext('2d',{alpha:false});
+const stage=$('stage'),guide=$('guide'),file=$('file'),status=$('status'),timeline=$('timeline'),time=$('time'),toggle=$('toggle'),exportBtn=$('export'),poster=$('poster'),indicator=$('indicator');
+const params={cx:56,cy:52.5,rx:19,ry:32.5,feather:8};const comps={cx:'xc',cy:'yc',rx:'xr',ry:'yr',feather:'featherv'};
+const mirror=$('mirror'),showguide=$('showguide');
+let ready=false,objectUrl=null,recording=false,recorded=null,originalName='waterwheel',scrubbing=false;
+const layer=document.createElement('canvas'),lx=layer.getContext('2d',{willReadFrequently:false});
+function note(s){status.textContent=s}
+function setupGuide(){
+ const x=params.cx,y=params.cy,rx=params.rx,ry=params.ry;
+ guide.style.left=x+'%';guide.style.top=y+'%';guide.style.width=(2*rx)+'%';guide.style.height=(2*ry)+'%';
+ guide.style.display=showguide.checked&&ready?'block':'none';
+}
+function frame(){
+ if(ready&&video.readyState>=2){
+ const w=canvas.width,h=canvas.height,cx=params.cx/100*w,cy=params.cy/100*h,rx=params.rx/100*w,ry=params.ry/100*h;
+ ctx.clearRect(0,0,w,h);ctx.drawImage(video,0,0,w,h);
+ if(mirror.checked){
+  lx.globalCompositeOperation='source-over';lx.clearRect(0,0,w,h);
+  lx.save();lx.translate(2*cx,0);lx.scale(-1,1);lx.drawImage(video,0,0,w,h);lx.restore();
+  lx.globalCompositeOperation='destination-in';lx.save();lx.translate(cx,cy);lx.scale(rx,ry);
+  const inner=Math.max(.65,1-params.feather/100);
+  const g=lx.createRadialGradient(0,0,0,0,0,1);
+  g.addColorStop(0,'rgba(0,0,0,1)');g.addColorStop(inner,'rgba(0,0,0,1)');g.addColorStop(1,'rgba(0,0,0,0)');
+  lx.fillStyle=g;lx.fillRect(-1,-1,2,2);lx.restore();lx.globalCompositeOperation='source-over';
+  ctx.drawImage(layer,0,0);
+ }
+ if(!scrubbing){timeline.value=(video.currentTime/video.duration*1000)||0}
+ const f=n=>{n=Math.max(0,Math.floor(n));return Math.floor(n/60)+':'+String(n%60).padStart(2,'0')};
+ time.textContent=f(video.currentTime)+' / '+f(video.duration);
+ }
+ requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+for(const k of Object.keys(params))$(k).addEventListener('input',e=>{params[k]=+e.target.value;$(comps[k]).textContent=params[k]+(k==='feather'?'%':'%');setupGuide()});
+showguide.addEventListener('change',setupGuide);
+file.addEventListener('change',()=>{
+ const f=file.files?.[0];if(!f)return;
+ if(f.type&&!f.type.startsWith('video/')){note('Обери MP4 або WebM.');return}
+ if(objectUrl)URL.revokeObjectURL(objectUrl);
+ objectUrl=URL.createObjectURL(f);originalName=f.name.replace(/\.[^.]+$/,'');
+ ready=false;stage.classList.remove('loaded');indicator.classList.remove('ready');
+ video.pause();video.src=objectUrl;video.muted=true;video.loop=true;video.load();
+ note('Читання локального відео...');
+});
+video.addEventListener('loadedmetadata',()=>{
+ if(!isFinite(video.duration)||video.duration<=0)return note('Не вдалося визначити тривалість відео.');
+ canvas.width=layer.width=video.videoWidth;canvas.height=layer.height=video.videoHeight;
+ stage.style.aspectRatio=video.videoWidth+'/'+video.videoHeight;
+ ready=true;stage.classList.add('loaded');indicator.classList.add('ready');indicator.textContent='Локальне CGI підключено';
+ timeline.disabled=false;toggle.disabled=false;exportBtn.disabled=false;poster.disabled=false;setupGuide();
+ note('Відкрито '+video.videoWidth+' × '+video.videoHeight+' / '+video.duration.toFixed(1)+' с. Редактор готовий.');
+ video.play().then(()=>{toggle.textContent='Ⅱ Пауза'}).catch(()=>{toggle.textContent='▶ Відтворити'});
+});
+video.addEventListener('error',()=>{note('Не вдалося прочитати файл. Перевір формат MP4 або WebM.');ready=false});
+toggle.addEventListener('click',async()=>{if(!ready||recording)return;if(video.paused){await video.play();toggle.textContent='Ⅱ Пауза'}else{video.pause();toggle.textContent='▶ Відтворити'}});
+timeline.addEventListener('input',()=>{if(ready&&!recording){scrubbing=true;video.currentTime=video.duration*Number(timeline.value)/1000}});
+timeline.addEventListener('change',()=>scrubbing=false);
+poster.addEventListener('click',()=>{if(!ready)return;const a=document.createElement('a');a.href=canvas.toDataURL('image/png');a.download=originalName+'-corrected-frame.png';a.click()});
+const seekTo=(v,t)=>new Promise(resolve=>{if(Math.abs(v.currentTime-t)<.03)return resolve();const cb=()=>resolve();v.addEventListener('seeked',cb,{once:true});v.currentTime=t});
+exportBtn.addEventListener('click',async()=>{
+ if(!ready||recording)return;
+ if(typeof canvas.captureStream!=='function'||typeof MediaRecorder==='undefined'){note('Експорт відео не підтримується цим браузером. Спробуй актуальний Chrome.');return}
+ const codec=['video/mp4;codecs=avc1.42E01E','video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'].find(x=>MediaRecorder.isTypeSupported(x));
+ if(!codec){note('Браузер не підтримує відеокодек для експорту.');return}
+ recording=true;exportBtn.disabled=true;file.disabled=true;toggle.disabled=true;poster.disabled=true;timeline.disabled=true;
+ note('Готуємо експорт...');video.loop=false;video.pause();await seekTo(video,0);
+ const stream=canvas.captureStream(30),bits=video.videoWidth>=1900?12000000:7500000;
+ const chunks=[];const recorder=new MediaRecorder(stream,{mimeType:codec,videoBitsPerSecond:bits});recorded=recorder;
+ let finished=false;
+ const done=()=>{if(finished)return;finished=true;video.pause();if(recorder.state!=='inactive')recorder.stop()};
+ const handleEnd=()=>done();video.addEventListener('ended',handleEnd,{once:true});
+ recorder.addEventListener('dataavailable',e=>{if(e.data.size)chunks.push(e.data)});
+ recorder.addEventListener('error',()=>{note('Помилка кодування відео.');done()});
+ recorder.addEventListener('stop',()=>{
+  const ext=codec.includes('mp4')?'mp4':'webm';
+  if(chunks.length){const blob=new Blob(chunks,{type:codec});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=originalName+'-clockwise-wheel-v39.'+ext;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),45000);note('Готово! Відео '+(blob.size/1024/1024).toFixed(1)+' МБ збережено як '+ext.toUpperCase()+'. Перевір обертання всього ролика.');}
+  else note('Відео не сформовано. Спробуй інший браузер.');
+  stream.getTracks().forEach(t=>t.stop());recording=false;exportBtn.disabled=false;file.disabled=false;toggle.disabled=false;poster.disabled=false;timeline.disabled=false;video.loop=true;
+ });
+ recorder.start(500);
+ try{await video.play();toggle.textContent='Ⅱ Експорт';note('Записуємо оброблений ролик... ('+video.duration.toFixed(1)+' с у реальному часі)')}catch(e){note('Не вдалося розпочати експорт: '+e.message);done()}
+});
+window.addEventListener('pagehide',()=>{if(objectUrl)URL.revokeObjectURL(objectUrl)});
+})();
+</script></body></html>
