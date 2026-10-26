@@ -16,12 +16,6 @@ async function check(viewport,reducedMotion='no-preference'){
   const stage=page.locator('#watermillStage');
   const wheel=page.locator('#millWheel');
   assert.equal(await page.locator('#conclusion .mill-category').count(),3);
-  await page.waitForFunction(()=>window.__watermillDiagnostics?.scriptInitialized===true,
-    {timeout:20000});
-  await page.waitForFunction(()=>window.__watermill3D?.engine==='Three.js WebGL',
-    {timeout:30000});
-  assert.equal(await page.locator('#millWebGL canvas').count(),1,
-    'real WebGL renderer should replace flat SVG wheel');
   assert.equal(await page.locator('#experience .story-copy').count(),4);
   const target=async p=>page.evaluate(v=>{
     const el=document.getElementById('watermillJourney')||document.getElementById('conclusion');
@@ -30,6 +24,13 @@ async function check(viewport,reducedMotion='no-preference'){
   },clamp(p));
 
   await target(.11);
+  // Both animation loops are paused until scene 05 enters the viewport.
+  await page.waitForFunction(()=>window.__watermillDiagnostics?.scriptInitialized===true,
+    null,{timeout:20000});
+  await page.waitForFunction(()=>window.__watermill3D?.engine==='Three.js WebGL',
+    null,{timeout:30000});
+  assert.equal(await page.locator('#millWebGL canvas').count(),1,
+    'real WebGL renderer should replace the fallback graphic');
   await page.waitForFunction(()=>window.__watermillDiagnostics?.progress>.09);
   const first=await page.evaluate(()=>window.__watermillDiagnostics);
   await target(.98);
