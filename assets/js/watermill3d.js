@@ -105,7 +105,7 @@ if(stage&&target){
   hubDisc.rotation.x=Math.PI/2;hubDisc.position.z=1.02;
   const axle=mesh(new THREE.CylinderGeometry(.105,.105,.09,32),darkGold);
   axle.rotation.x=Math.PI/2;axle.position.z=1.08;
-  torus(.28,.017,1.076,lightGold,scene);
+  torus(.28,.017,1.076,lightGold,assembly);
   // Water is GPU shaded with moving caustics, volume, refraction and real
   // wave crest. The RIGHT side is a single liquid region (no tubes or tiers).
   const rgb=x=>new THREE.Color(x);
