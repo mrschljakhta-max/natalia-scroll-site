@@ -586,12 +586,18 @@ for(let i=0;i<VORTEX_COUNT;i++){
   a.setZ(j,mainBend+cornerLift);
  }
  g.computeVertexNormals();
+ // A narrow soft band on the actual crease receives its own vertex shading.
+ // This affects PRINT and charts too; no extra fake crease stickers.
+ const vertexTone=new Float32Array(a.count*3);
+ vertexTone.fill(1);
+ g.setAttribute("color",new THREE.BufferAttribute(vertexTone,3));
  const baseShape=new Float32Array(a.array);
  const material=new THREE.MeshStandardMaterial({
   map:textures[i%textures.length],side:THREE.DoubleSide,
   normalMap:paperMaps.normal,normalScale:new THREE.Vector2(.085,.085),
   roughnessMap:paperMaps.roughness,
-  roughness:.96,metalness:0,transparent:true,opacity:1,depthWrite:true
+  roughness:.96,metalness:0,vertexColors:true,
+  transparent:true,opacity:1,depthWrite:true
  });
  const mesh=new THREE.Mesh(g,material);mesh.castShadow=true;vortex.add(mesh);
  const theta=rng()*Math.PI*2;
@@ -612,9 +618,12 @@ for(let i=0;i<VORTEX_COUNT;i++){
   drift:rng()*Math.PI*2,tempo:.62+rng()*.90,
   // Seeded individual aerodynamic response: no Math.random per frame.
   stiffness:.56+rng()*.33,
-  twistStrength:.20+rng()*.16,
-  curlStrength:.048+rng()*.056,
-  creaseStrength:.064+rng()*.050,
+  twistStrength:.65+rng()*.32,
+  curlStrength:.12+rng()*.08,
+  creaseStrength:1.22+rng()*.34,
+  foldMode:i%4,
+  creaseShift:(rng()-.5)*.26,
+  creaseSlope:(rng()-.5)*1.25,
   dragBias:rng()*2-1,
   foldDirection:rng()<.5?-1:1,
   creasePhase:rng()*Math.PI*2
@@ -659,58 +668,80 @@ DOCUMENT_IMAGE_FILES.forEach((filename,index)=>{
    The active force is scroll-controlled and fades before page selection. */
 const paperPhysicsStats={active:0,peakDisplacement:0};
 function deformVortexPaper(d,p,timeMs,orbitSpeed=1){
- const m=d.mesh;
- const pos=m.geometry.attributes.position,base=d.baseShape;
- // A little organic motion during chaos; highest bending in the actual
- // vortex, all elastic deformation disappears before origami folding.
- const turbulence=smooth(.105,.225,p)*(1-smooth(.355,.484,p));
- const ambient=.16*(1-smooth(.155,.430,p));
- const force=reduce.matches?0:Math.max(ambient,turbulence);
+ const m=d.mesh,geo=m.geometry;
+ const pos=geo.attributes.position,colors=geo.attributes.color,base=d.baseShape;
+ // The first frame used to receive only 0.16 wind — effectively invisible.
+ // Paper now has a legible resting curl, then visibly folds in the vortex.
+ // Zero deformation BEFORE the origami handoff at p=.53.
+ const ambient=.79*(1-smooth(.375,.505,p));
+ const storm=.50*smooth(.085,.22,p)*(1-smooth(.35,.485,p));
+ const force=reduce.matches?0:Math.min(1.32,ambient+storm);
  const t=timeMs*.001;
- if(force<=.0001){
+ if(force<.0001){
   if(d.physicsDirty){
    pos.array.set(base);
-   pos.needsUpdate=true;m.geometry.computeVertexNormals();
+   for(let k=0;k<colors.array.length;k++)colors.array[k]=1;
+   pos.needsUpdate=true;colors.needsUpdate=true;
+   geo.computeVertexNormals();
    d.physicsDirty=false;
   }
   return;
  }
- const flexibility=1-d.stiffness*.54;
- const intensity=force*flexibility*(.86+.14*Math.min(1.6,Math.abs(orbitSpeed)));
- const flutter=t*(1.2+d.tempo*.34)+d.creasePhase;
- const pulse=Math.pow(Math.max(0,Math.sin(flutter)),4);
- const twistPhase=t*(.80+d.tempo*.22)+d.phase;
- const curlPhase=t*(1.02+d.tempo*.33)+d.drift;
- const folds= d.foldDirection;
- const uvSweep=.23*(.5+Math.sin(curlPhase*.31)*.5)+.12*d.dragBias;
+ const flex=Math.min(1.08,force*(.90-.28*d.stiffness)*
+   (.94+.12*Math.min(1.8,Math.abs(orbitSpeed))));
+ const phase=t*(.64+d.tempo*.2)+d.creasePhase;
+ const pulse=.78+.22*Math.sin(phase);
+ const spin=t*(.52+d.tempo*.21)+d.phase;
+ const wave=t*(.70+d.tempo*.23)+d.drift;
+ const mode=d.foldMode;
+ // Distances use real local sheet dimensions: the fold is a geometric
+ // ROTATION of a paper flap around an oblique line on the sheet.
+ const slope=d.creaseSlope;
+ const nx0=1/d.pw,ny0=-slope/d.ph,norm=Math.hypot(nx0,ny0);
+ const nx=nx0/norm,ny=ny0/norm;
+ const creaseAngle=Math.min(1.23,flex*d.creaseStrength*
+   (mode===0?.47:mode===2?.88:1.15)*pulse);
  let peak=0;
  for(let j=0;j<pos.count;j++){
-  const k=j*3,x=base[k],y=base[k+1],baseZ=base[k+2];
+  const k=j*3,x=base[k],y=base[k+1],z0=base[k+2];
   const u=x/d.pw+.5,v=y/d.ph+.5;
-  const edge=Math.abs(u-.5)*2,end=Math.abs(v-.5)*2;
-  // Rows rotate differently: real axial twist, not just Z displacement.
-  const twist=intensity*d.twistStrength*(2*v-1)*
-    Math.sin(twistPhase+u*1.55);
-  const rotatedX=x*Math.cos(twist)-baseZ*Math.sin(twist);
-  let z=baseZ*Math.cos(twist)+x*Math.sin(twist);
-  const curl=intensity*d.curlStrength*Math.pow(edge,2.35)*
-    Math.sin(curlPhase+v*2.25+d.dragBias);
-  const tip=intensity*d.curlStrength*.65*Math.pow(end,2.7)*
-    Math.pow(edge,1.7)*Math.sin(curlPhase*.83+u*3.1);
-  // This shallow moving diagonal fold has a narrow crease shadow produced
-  // by the geometry's own recomputed vertex normals.
-  const creaseCoord=(u-.5)-uvSweep*(v-.5);
-  const signed=Math.max(0,folds*creaseCoord);
-  const creaseLine=Math.exp(-Math.pow(creaseCoord/.072,2));
-  const crease=intensity*d.creaseStrength*pulse*
-    (Math.min(.5,signed)*1.3-.20*creaseLine);
-  const shear=intensity*.012*(v-.5)*Math.sin(twistPhase+u*4.5);
-  z+=curl+tip+crease;
-  pos.setXYZ(j,rotatedX+shear,y,z);
-  peak=Math.max(peak,Math.abs(z-baseZ));
+  const edge=Math.abs(2*u-1),tip=Math.abs(2*v-1);
+  // Distributed twisting around a long axis. Unlike shifting only Z, X
+  // contracts too — viewers SEE curved edges and asymmetric silhouettes.
+  const twist=flex*d.twistStrength*(v-.5)*
+    (.84+.16*Math.sin(spin+u*2.0));
+  let xx=x*Math.cos(twist)-z0*Math.sin(twist);
+  let zz=z0*Math.cos(twist)+x*Math.sin(twist);
+  let yy=y;
+  // Corner fold: rotate real paper coordinates around the crease. Different
+  // sheets roll, twist, fold a flap, or fold a different corner.
+  const signed=d.foldDirection*((u-.5)-d.creaseShift-slope*(v-.5))/norm;
+  if(signed>0){
+   const foldAmount=smooth(0,.075,signed);
+   const a=creaseAngle*foldAmount;
+   const retreat=signed*(1-Math.cos(a));
+   xx-=d.foldDirection*nx*retreat;
+   yy-=d.foldDirection*ny*retreat;
+   zz+=signed*Math.sin(a)*(mode===2?-1:1);
+  }
+  // Curled free edges and corner tension independent of the main fold.
+  zz+=flex*d.curlStrength*Math.pow(edge,2.1)*
+     (.73+.27*Math.sin(wave+v*2.4+d.dragBias));
+  zz+=flex*d.curlStrength*.55*Math.pow(tip*edge,1.75)*
+     Math.sin(wave*.73+u*3.1);
+  const bend=(v-.5)*(u-.5);
+  yy+=flex*.034*bend*Math.sin(wave*.77);
+  pos.setXYZ(j,xx,yy,zz);
+  // Physical contact shading follows the crease and dims its turned flap,
+  // making shape change readable even with subdued editorial lighting.
+  const seam=Math.exp(-Math.pow(signed/.061,2));
+  const shade=1-(.25*seam+.11*smooth(.02,.20,signed))*
+    Math.min(1.0,flex*1.23)*(mode===0?.6:1);
+  colors.setXYZ(j,shade,shade*.994,shade*.978);
+  peak=Math.max(peak,Math.abs(xx-x),Math.abs(yy-y),Math.abs(zz-z0));
  }
- pos.needsUpdate=true;
- m.geometry.computeVertexNormals();
+ pos.needsUpdate=true;colors.needsUpdate=true;
+ geo.computeVertexNormals();
  d.physicsDirty=true;
  paperPhysicsStats.active++;
  paperPhysicsStats.peakDisplacement=Math.max(paperPhysicsStats.peakDisplacement,peak);
