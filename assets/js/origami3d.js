@@ -342,6 +342,24 @@ contactShadow.scale.set(4.5,.68,1);
 contactShadow.position.set(.04,-1.80,-.6);
 contactShadow.renderOrder=1;
 sailGroup.add(contactShadow);
+/* A soft, lens-side photographic selection glow follows the SAME sheet.
+   This is not duplicate geometry, and vanishes before folding. */
+const haloCanvas=document.createElement("canvas");
+haloCanvas.width=128;haloCanvas.height=128;
+const hc=haloCanvas.getContext("2d");
+const hg=hc.createRadialGradient(64,64,2,64,64,64);
+hg.addColorStop(0,"rgba(255,246,217,.66)");
+hg.addColorStop(.34,"rgba(248,232,202,.26)");
+hg.addColorStop(1,"rgba(245,222,185,0)");
+hc.fillStyle=hg;hc.fillRect(0,0,128,128);
+const heroHalo=new THREE.Sprite(new THREE.SpriteMaterial({
+ map:new THREE.CanvasTexture(haloCanvas),color:0xfff0d7,
+ transparent:true,opacity:0,depthTest:true,depthWrite:false
+}));
+heroHalo.scale.set(5.1,6.9,1);
+heroHalo.position.set(0,0,-.33);
+heroHalo.visible=false;
+sailGroup.add(heroHalo);
 
 
 /* Continuous mirror-symmetric paper folding.
@@ -498,8 +516,13 @@ function updateSheet(p,time){
   mix(pose.z,0,align));
  const startScale=.94*doc.pw/W;
  const fullScale=.92;
- const targetScale=mix(startScale,fullScale,align);
+ const heroFocus=smooth(.25,.385,p)*(1-smooth(.433,.559,p));
+ // Lens push-in: still the original paper material/geometry and timeline.
+ const targetScale=mix(startScale,fullScale,align)*(1+.16*heroFocus);
  sailGroup.scale.setScalar(targetScale);
+ sailGroup.position.z+=.58*heroFocus;
+ heroHalo.visible=heroFocus>.007;
+ heroHalo.material.opacity=.19*heroFocus;
  sailGroup.rotation.set(
   mix(pose.rx,.016,align)+mix(0,-.09,smooth(.89,1,p)),
   mix(pose.ry,-.03,align)+mix(0,-.18,smooth(.90,1,p)),
@@ -525,7 +548,8 @@ const vortex=new THREE.Group();scene.add(vortex);
 const docs=[];
 let seed=1317;
 function rng(){seed=(1664525*seed+1013904223)>>>0;return seed/4294967296}
-for(let i=0;i<25;i++){
+const VORTEX_COUNT=25,GOLDEN_ANGLE=Math.PI*(3-Math.sqrt(5));
+for(let i=0;i<VORTEX_COUNT;i++){
  const pw=.80+rng()*.31,ph=pw*1.36;
  // Subdivided real sheet, not a flat billboard: enough vertices for mild air flutter.
  const g=new THREE.PlaneGeometry(pw,ph,8,12);
@@ -550,11 +574,21 @@ for(let i=0;i<25;i++){
  });
  const mesh=new THREE.Mesh(g,material);mesh.castShadow=true;vortex.add(mesh);
  const theta=rng()*Math.PI*2;
+ // Golden-angle staging produces layered editorial depth without a grid.
+ // Positions are biased to the RIGHT so the headline remains clear.
+ const layer=i%3,spiral=i*GOLDEN_ANGLE+.22;
+ const radius=Math.sqrt(i/(VORTEX_COUNT-1));
+ const initialX=i===0?2.7:2.78+Math.cos(spiral)*(.55+3.25*radius)+(rng()-.5)*.36;
+ const initialY=i===0?.25:.12+Math.sin(spiral)*(.40+2.85*radius)+(rng()-.5)*.32;
+ const initialZ=i===0?.85:(layer===0?-2.72:layer===1?.05:2.16)+(rng()-.5)*.75;
+ material.color.setHex(layer===0?0xe5ede6:layer===2?0xfff6e8:0xffffff);
  docs.push({
   mesh,pw,ph,baseShape,shape:i%3,textureIndex:i%DOCUMENT_IMAGE_FILES.length,
-  angle:theta,radius:1.0+rng()*3.3,orbit:.67+rng()*.30,
-  order:rng(),x:-.55+rng()*7.5,y:-2.9+rng()*6.15,z:-1.6+rng()*2.9,
-  phase:rng()*6.28,tilt:(rng()-.5)*.36,spin:(rng()-.5)*.95
+  layer,focusTint:layer===0?.82:layer===1?.93:1,
+  angle:theta,radius:1.0+rng()*3.2,orbit:.64+rng()*.34,
+  order:rng(),x:initialX,y:initialY,z:initialZ,
+  phase:rng()*6.28,tilt:(rng()-.5)*.36,spin:(rng()-.5)*.95,
+  drift:rng()*Math.PI*2,tempo:.62+rng()*.90
  });
 }
 /* Swap to the exact four image-generated paper scans after image decoding.
@@ -581,41 +615,50 @@ DOCUMENT_IMAGE_FILES.forEach((filename,index)=>{
   console.warn("Using generated-paper fallback:",filename);
  });
 });
+/* The camera follows one master page while supporting pages recede:
+   three depth tiers, soft orbit banking and time-subtle drift. All scroll
+   positions stay reversible and no additional master paper is rendered. */
 function updateVortex(p,t){
  const pull=smooth(.115,.315,p),shrink=smooth(.390,.510,p);
- const assemble=smooth(.440,.530,p);
- const mobile=innerWidth<670,time=reduce.matches?0:t*.00008;
- vortex.position.set(mobile?0:1.30,mobile?-.4:0,0);
- const targetX=mobile?0:.50,targetY=mobile?-.34:-.19;
+ const assemble=smooth(.440,.530,p),focus=smooth(.265,.405,p);
+ const mobile=width<670,baseTime=reduce.matches?0:t*.00008;
+ const breath=reduce.matches?0:t*.00024;
+ vortex.position.set(mobile?0:1.25,mobile?-.44:0,0);
+ const targetX=mobile?.12:.55,targetY=mobile?-.36:-.19;
  for(let idx=0;idx<docs.length;idx++){
-  const d=docs[idx],m=d.mesh,angle=d.angle+(p-.12)*14*d.orbit+time;
+  const d=docs[idx],m=d.mesh,angle=d.angle+(p-.12)*14*d.orbit+baseTime*d.tempo;
   const radius=d.radius*(1-shrink*.87);
-  let x=mix(d.x,Math.cos(angle)*radius*.83,pull),
-      y=mix(d.y,Math.sin(angle)*radius*.77,pull),
-      z=mix(d.z,Math.sin(angle*1.1+d.phase)*radius*.29,pull),
-      rx=mix(d.tilt,Math.sin(angle)*.30,pull),
-      ry=mix(d.spin*.30,Math.cos(angle)*.37,pull),
-      rz=mix(d.spin,angle*.12,pull);
+  const driftX=Math.sin(breath*d.tempo+d.drift)*.11;
+  const driftY=Math.cos(breath*.77+d.phase)*.095;
+  const stageX=mobile?d.x*.44-.33:d.x;
+  const stageY=mobile?d.y*.62-.35:d.y;
+  const depth=mobile?d.z*.48:d.z;
+  let x=mix(stageX+driftX,Math.cos(angle)*radius*.83,pull),
+      y=mix(stageY+driftY,Math.sin(angle)*radius*.77,pull),
+      z=mix(depth,Math.sin(angle*1.1+d.phase)*radius*.28+d.layer*1.17-1.17,pull);
+  const bank=Math.sin(angle*1.3+d.drift)*.115;
+  let rx=mix(d.tilt+bank*.4,Math.sin(angle)*.29,pull),
+      ry=mix(d.spin*.30,Math.cos(angle)*.35,pull),
+      rz=mix(d.spin*.28+bank,angle*.12,pull);
   if(idx===0){
-   // This document is not rendered twice: the *single master sheet mesh*
-   // occupies its precise pose from frame zero and grows to fill the scene.
-   x=mix(x,targetX,assemble);y=mix(y,targetY,assemble);z=mix(z,0,assemble);
+   // selected document lives ONLY inside the unchanged sheetMesh.
+   x=mix(x,targetX,assemble);y=mix(y,targetY,assemble);z=mix(z,.35,assemble);
    rx=mix(rx,.016,assemble);ry=mix(ry,-.03,assemble);
    rz=mix(rz,-.012,assemble);
    selectedPaperPose={x,y,z,rx,ry,rz};
    m.visible=false;
   }else{
-   x=mix(x,targetX+(.35+.75*d.order)*Math.cos(d.phase),assemble);
-   y=mix(y,targetY+(.35+.75*d.order)*Math.sin(d.phase),assemble);
-   z=mix(z,-.6-d.order*.35,assemble);
-   m.scale.setScalar((.88+.19*d.order)*(1-.34*shrink));
-   m.material.opacity=(1-smooth(.447,.513,p))*(.88+.12*d.order);
+   const recession=smooth(.295,.465,p)*(1-assemble);
+   x=mix(x,targetX+(.45+.88*d.order)*Math.cos(d.phase),assemble);
+   y=mix(y,targetY+(.40+.83*d.order)*Math.sin(d.phase),assemble);
+   z=mix(z,-1.0-d.order*.40,assemble)-recession*(1.2+d.order*.72);
+   const baseSize=(.87+.20*d.order)*(d.layer===0?.82:d.layer===2?1.19:1);
+   m.scale.setScalar(baseSize*(1-.27*shrink)*mix(1,.70,recession));
+   m.material.opacity=(1-smooth(.447,.513,p))*d.focusTint*mix(1,.70,focus);
    m.visible=p<.514&&(!mobile||idx<18);
    m.position.set(x,y,z);
    m.rotation.set(rx,ry,rz);
    if(m.visible&&!reduce.matches){
-    // Stable edge-local airflow: a continuous paper sheet ripples without
-    // tumbling like plastic. Geometry springs back as the vortex assembles.
     const waveFade=1-smooth(.395,.507,p);
     const points=m.geometry.attributes.position,base=d.baseShape;
     for(let j=0;j<points.count;j++){
@@ -681,8 +724,10 @@ function tick(time){
  updateVortex(p,time*1000);
  updateSheet(p,time);
  // Slight parallax makes the folding object read as 3D, but never hides the folds.
+ const lensFocus=smooth(.25,.385,p)*(1-smooth(.433,.559,p));
  camera.position.x=mix(-.10,.14,smooth(.58,.94,p));
  camera.position.y=mix(.13,-.15,smooth(.76,1,p));
+ camera.position.z=(mobile?12.9:13.8)-lensFocus*(mobile?.28:.52);
  camera.lookAt(0,0,0);
  // At rest, the one-paper yacht and its crease details move together.
  const afloat=smooth(.970,1,p);
@@ -714,7 +759,7 @@ try{
   target.style.display="none";
   window.__enableCanvasFallback?.("webgl-context-lost");
 },{passive:true});
- window.__origami3DDiagnostics={engine:"Three.js WebGL",controller:"GSAP ScrollTrigger",sheetMeshes:halves.length,sheetVertices:halves.reduce((n,o)=>n+o.geo.attributes.position.count,0),vortexMeshes:docs.length,boatFacets:8,sailFacets:4,geometryVersion:"v8-sculpted-contours",oneContinuousSheet:true,contourPaths:creaseRibbons.length,contactShadow:true,seaShader:"v10-gpu-water",atmosphericSky:true,paperPBR:"v11-cotton-stock",paperMaps:["albedo","normal","roughness"],paperMapResolution:paperMaps.dimensions,physicalPaperEdges:paperEdges.length,edgeThickness:.014,airFlex:"reversible-pre-fold",documentImages:documentImageStatus,documentTypes:DOCUMENT_IMAGE_FILES.length};
+ window.__origami3DDiagnostics={engine:"Three.js WebGL",controller:"GSAP ScrollTrigger",sheetMeshes:halves.length,sheetVertices:halves.reduce((n,o)=>n+o.geo.attributes.position.count,0),vortexMeshes:docs.length,boatFacets:8,sailFacets:4,geometryVersion:"v8-sculpted-contours",oneContinuousSheet:true,contourPaths:creaseRibbons.length,contactShadow:true,seaShader:"v10-gpu-water",atmosphericSky:true,paperPBR:"v11-cotton-stock",paperMaps:["albedo","normal","roughness"],paperMapResolution:paperMaps.dimensions,physicalPaperEdges:paperEdges.length,edgeThickness:.014,airFlex:"reversible-pre-fold",documentImages:documentImageStatus,documentTypes:DOCUMENT_IMAGE_FILES.length,vortexDirection:"v14-cinematic-parallax",depthTiers:3,focusOnSameSheet:true,vortexDocumentCount:VORTEX_COUNT};
 }catch(err){
  window.__origami3DReady=false;window.__natalia3d=false;
  target.style.display="none";
