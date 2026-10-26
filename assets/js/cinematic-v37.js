@@ -93,11 +93,11 @@ function prepare(img){
  // names and controls are HTML above the liquid, never blurry still text.
  const src2=waterCtx.getImageData(0,0,W,H);
  const pp=src2.data;
- for(let y=130;y<373;y++)for(let x=560;x<W;x++){
+ for(let y=125;y<382;y++)for(let x=542;x<W;x++){
   const k=(y*W+x)*4;
   const sx=522+((x*7+(y>>1)*3)%28);
   const srcK=(y*W+sx)*4;
-  const fadeX=smooth(560,586,x),fadeY=smooth(130,155,y)*(1-smooth(357,373,y));
+  const fadeX=smooth(542,562,x),fadeY=smooth(125,136,y)*(1-smooth(368,382,y));
   const blend=.99*fadeX*fadeY;
   for(let c=0;c<3;c++)pp[k+c]=Math.round(lerp(pp[k+c],source[srcK+c],blend));
  }
