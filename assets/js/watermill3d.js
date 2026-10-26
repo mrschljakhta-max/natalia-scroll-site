@@ -567,6 +567,9 @@ if(stage&&target){
   function frame(time){
    scheduled=false;
    if(!visible||!active)return;
+   // A fully decoded cinematic film replaces the old GPU scene. Keep the
+   // Three.js fallback alive but avoid unnecessary render work underneath it.
+   if(stage.classList.contains('has-cinematic-film')){lastFrame=time;schedule();return;}
    const delta=lastFrame?Math.min(50,time-lastFrame):16;lastFrame=time;
    const p=window.__watermillState?.progress??0;
    const motion=smooth(.05,.97,p);

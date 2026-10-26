@@ -281,6 +281,42 @@ html.canvas-fallback .fallback-ocean{display:block}
   background-position:center,61% center
  }
 }
+
+/* Scene 05 v40: real CGI film composited beneath accessible, clickable HTML. */
+.mill-film-layer{position:absolute;z-index:6;inset:0;overflow:hidden;opacity:0;pointer-events:none;
+  transition:opacity .5s ease;background:#F5F1E8;isolation:isolate}
+.mill-film-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;
+  pointer-events:none;display:block}
+.mill-film-video--settle{opacity:0;will-change:opacity}
+.mill-film-layer::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:linear-gradient(90deg,rgba(245,241,232,.92) 0%,rgba(245,241,232,.77) 21%,
+    rgba(245,241,232,.25) 36%,transparent 57%)}
+.watermill-stage.has-cinematic-film .mill-film-layer{opacity:1}
+.watermill-stage.has-cinematic-film .mill-webgl,
+.watermill-stage.has-cinematic-film .mill-wheel,
+.watermill-stage.has-cinematic-film .mill-sea-ribbon,
+.watermill-stage.has-cinematic-film .mill-fill-canvas,
+.watermill-stage.has-cinematic-film .mill-fall-canvas{opacity:0!important;visibility:hidden!important}
+.watermill-stage.has-cinematic-film .mill-category:not(.is-revealed){opacity:0}
+.watermill-stage.has-cinematic-film .mill-text{z-index:9}
+.watermill-stage.has-cinematic-film .mill-categories{z-index:10}
+.mill-film-meta{position:absolute;z-index:8;bottom:21px;left:clamp(22px,6.4vw,115px);
+  display:flex;align-items:center;gap:12px;pointer-events:none;
+  font:700 10px Arial,sans-serif;letter-spacing:.12em;color:#184b4d;text-shadow:0 1px 8px #f9f6efcc;
+  opacity:0;transition:opacity .4s}
+.has-cinematic-film .mill-film-meta{opacity:.85}
+.mill-film-divider{display:block;width:55px;height:2px;background:#245d61}
+@media(max-width:670px){
+  .mill-film-layer{inset:27% 0 0;}
+  .mill-film-video{object-fit:cover;object-position:57% center}
+  .mill-film-layer::after{background:linear-gradient(180deg,rgba(245,241,232,.35),transparent 38%)}
+  .watermill-stage.has-cinematic-film .mill-category.is-revealed{
+    text-shadow:0 2px 8px #073b46;background:#12475235;border-radius:14px;padding:4px}
+  .mill-film-meta{bottom:14px;left:18px;font-size:8px;gap:6px}
+  .mill-film-divider{width:23px}
+}
+@media(prefers-reduced-motion:reduce){.mill-film-layer,.mill-film-video--settle,.mill-film-meta{transition:none}}
+
 </style>
 </head>
 <body>
@@ -323,6 +359,14 @@ html.canvas-fallback .fallback-ocean{display:block}
 </section>
 <section class="watermill-journey" id="conclusion" aria-label="Кому ми допомагаємо — млин, що оживає від прокручування">
  <div class="watermill-stage" id="watermillStage">
+  <div class="mill-film-layer" id="millFilmLayer" aria-hidden="true">
+   <video id="millFilmFill" class="mill-film-video" muted playsinline webkit-playsinline preload="auto" disablepictureinpicture></video>
+   <video id="millFilmSettle" class="mill-film-video mill-film-video--settle" muted playsinline webkit-playsinline preload="auto" disablepictureinpicture></video>
+  </div>
+  <div class="mill-film-meta" aria-hidden="true">
+   <span id="millFilmStatus">CGI / НАПОВНЕННЯ</span><i class="mill-film-divider"></i>
+   <span id="millFilmPhase">Вода заповнює простір</span><span id="millFilmProgress"></span>
+  </div>
   <div class="mill-atmosphere" aria-hidden="true"></div>
   <svg class="mill-sea-ribbon" viewBox="0 0 1600 130" preserveAspectRatio="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
  <defs><linearGradient id="millTopSea" x1="0" y1="0" x2=".17" y2="1"><stop stop-color="#0C5460"/><stop offset=".30" stop-color="#2F8B8E"/><stop offset=".68" stop-color="#68B1AB"/><stop offset="1" stop-color="#B3DBCF"/></linearGradient><linearGradient id="millShimmer" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#F9EDC5" stop-opacity="0"/><stop offset=".49" stop-color="#FFF5DA" stop-opacity=".66"/><stop offset=".72" stop-color="#9FCFC3" stop-opacity=".13"/><stop offset="1" stop-color="#FFF5DA" stop-opacity="0"/></linearGradient></defs>
@@ -826,5 +870,6 @@ resize();position=scrollProgress();tick=requestAnimationFrame(frame);
 <script type="module" src="./assets/js/origami3d.js?v=28-mist-ocean" onerror="window.__enableCanvasFallback?.('module-load-error')"></script>
 <script src="./assets/js/watermill-scene.js?v=31-waterfall-on-entry" defer></script>
 <script type="module" src="./assets/js/watermill3d.js?v=35-gltf-hdri-water"></script>
+<script src="./assets/js/cinematic-film-v40.js?v=40" defer></script>
 </body>
 </html>
