@@ -61,8 +61,12 @@
   }
   message("Підготовлено "+video.videoWidth+"×"+video.videoHeight+" / "+video.duration.toFixed(1)+" с.");
   try{video.currentTime=.001}catch(_){}
-  reveal();
+  // Avoid the black flash that occurs when metadata exists but the first
+  // decodable frame is not ready. Reveal only after actual frame data.
+  if(video.readyState>=2)reveal();
  });
+ video.addEventListener("loadeddata",()=>{if(!ready&&video.readyState>=2)reveal()});
+ video.addEventListener("canplay",()=>{if(!ready&&video.readyState>=2)reveal()});
  video.addEventListener("error",()=>{
   ready=false;screen.classList.remove("has-video");missing.hidden=false;
   message("Файл недоступний або його формат не підтримується в цьому браузері.");
