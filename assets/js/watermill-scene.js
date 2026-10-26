@@ -28,7 +28,7 @@
   'Системна бухгалтерська підтримка для невеликих команд та бізнесів.'
  ];
  let w=1,h=1,dpr=1,elapsed=0,previous=0,progress=0,rot=0,angularSpeed=0,visible=true;
- let lastTime=0,selected=-1;
+ let lastTime=0,selected=-1,inView=false,scheduled=false;
  function size(){
   const rect=stage.getBoundingClientRect();
   w=Math.max(1,Math.round(rect.width));h=Math.max(1,Math.round(rect.height));
@@ -152,8 +152,12 @@
   const span=Math.max(1,journey.offsetHeight-innerHeight);
   window.scrollTo({top:offset+span*.985,behavior:reduce.matches?'instant':'smooth'});
  });
+ function schedule(){
+  if(!scheduled&&visible&&inView){scheduled=true;requestAnimationFrame(frame);}
+ }
  function frame(now){
-  if(!visible){lastTime=now;return;}
+  scheduled=false;
+  if(!visible||!inView){lastTime=now;return;}
   const delta=lastTime?Math.min(50,now-lastTime):16;
   lastTime=now;
   const t=now,goal=targetProgress();
@@ -180,16 +184,22 @@
    risingWaterTop:Number(surface.toFixed(1)),categoryCount:cards.length,
    flowFromPreviousSea:true,frontFacingWheel:true,waterShape:'single continuous fill'
   };
-  if(visible)requestAnimationFrame(frame);
+  schedule();
  }
  document.addEventListener('visibilitychange',()=>{
   const wasVisible=visible;visible=!document.hidden;
-  if(!wasVisible&&visible){lastTime=0;requestAnimationFrame(frame);}
+  if(!wasVisible&&visible){lastTime=0;schedule();}
  });
  let resizeJob=0;
  window.addEventListener('resize',()=>{clearTimeout(resizeJob);resizeJob=setTimeout(size,90);},{passive:true});
+ // Offscreen scenes never spend frames on canvas work during the original
+ // four-act WebGL journey. Re-entering the scene resumes the water and rotor.
+ const observer=new IntersectionObserver(entries=>{
+  inView=entries[0].isIntersecting;
+  if(inView){lastTime=0;schedule();}
+ },{rootMargin:'100px 0px'});
+ observer.observe(stage);
  size();
  progress=targetProgress();
  if(reduce.matches)rot=0;
- requestAnimationFrame(frame);
 })();
