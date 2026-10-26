@@ -1,0 +1,29 @@
+{
+  "version": 40,
+  "mode": "two-part-scroll-scrub",
+  "ready": true,
+  "sourcePolicy": "Remote Runway preview URLs are temporary. Prefer permanent same-origin MP4 when installed.",
+  "segments": [
+    {
+      "id": "fill",
+      "label": "Наповнення",
+      "durationSeconds": 10.041,
+      "localSrc": "assets/video/cinematic-waterwheel-fill-v40.mp4",
+      "previewSrc": "https://dnznrvs05pmza.cloudfront.net/kling-o3-pro/943804520160317055/ONE_UNINTERRUPTED_10_SECOND_PREMIUM_PHOTOREALISTIC_CGI_SHOT__locked_perfectly_frontal_camera__same_e.mp4?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiODNlMjdiNjgzNjY4Nzc0YyIsImJ1Y2tldCI6InJ1bndheS10YXNrLWFydGlmYWN0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MzE4NjAyNH0.SI_0LkUbJ4xhP-OAH5m_Z0i4fLGXxBJtrHuZzo_gbDw"
+    },
+    {
+      "id": "settle",
+      "label": "Заспокоєння",
+      "durationSeconds": 5.041,
+      "localSrc": "assets/video/cinematic-waterwheel-settle-v40.mp4",
+      "previewSrc": "https://dnznrvs05pmza.cloudfront.net/kling-o3-pro/943806966307768408/One_uninterrupted_FIVE_SECOND_photorealistic_CGI_continuation_of_the_INPUT_STILL__Keep_the_same_warm.mp4?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiNzZlOWZmMmFjMmQxZjY4NCIsImJ1Y2tldCI6InJ1bndheS10YXNrLWFydGlmYWN0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MzIxNjI5OH0.PY5WFnE5iquIFs24Ce3Cl5ZrqDpiAxCCsNJI9wDYik4"
+    }
+  ],
+  "reveal": [
+    0.48,
+    0.63,
+    0.78
+  ],
+  "transitionOverlapSeconds": 0.24,
+  "note": "Original 4 chapters unchanged. This fifth scene accepts permanent local MP4 assets transparently; remote Runway URLs are temporary."
+}
