@@ -270,7 +270,9 @@ if(stage&&target){
    const level=smooth(.14,.985,p)*.87;
    waterUniforms.uLevel.value=level;
    waterUniforms.uTime.value=time*.001;
-   streamUniforms.uStrength.value=smooth(.018,.20,p);
+   // The stream flows as soon as the sea spills into this scene;
+   // scrolling strengthens the waterfall and then accelerates the wheel.
+   streamUniforms.uStrength.value=.38+.62*smooth(.015,.25,p);
    streamUniforms.uTime.value=time*.001;
    topUniforms.uTime.value=time*.001;
    crest.material.opacity=.12*streamUniforms.uStrength.value;
