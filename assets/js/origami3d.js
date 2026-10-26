@@ -525,7 +525,8 @@ const vortex=new THREE.Group();scene.add(vortex);
 const docs=[];
 let seed=1317;
 function rng(){seed=(1664525*seed+1013904223)>>>0;return seed/4294967296}
-for(let i=0;i<25;i++){
+const VORTEX_COUNT=25,GOLDEN_ANGLE=Math.PI*(3-Math.sqrt(5));
+for(let i=0;i<VORTEX_COUNT;i++){
  const pw=.80+rng()*.31,ph=pw*1.36;
  // Subdivided real sheet, not a flat billboard: enough vertices for mild air flutter.
  const g=new THREE.PlaneGeometry(pw,ph,8,12);
@@ -550,11 +551,21 @@ for(let i=0;i<25;i++){
  });
  const mesh=new THREE.Mesh(g,material);mesh.castShadow=true;vortex.add(mesh);
  const theta=rng()*Math.PI*2;
+ // Golden-angle staging produces layered editorial depth without a grid.
+ // Positions are biased to the RIGHT so the headline remains clear.
+ const layer=i%3,spiral=i*GOLDEN_ANGLE+.22;
+ const radius=Math.sqrt(i/(VORTEX_COUNT-1));
+ const initialX=i===0?2.7:2.78+Math.cos(spiral)*(.55+3.25*radius)+(rng()-.5)*.36;
+ const initialY=i===0?.25:.12+Math.sin(spiral)*(.40+2.85*radius)+(rng()-.5)*.32;
+ const initialZ=i===0?.85:(layer===0?-2.72:layer===1?.05:2.16)+(rng()-.5)*.75;
+ material.color.setHex(layer===0?0xe5ede6:layer===2?0xfff6e8:0xffffff);
  docs.push({
   mesh,pw,ph,baseShape,shape:i%3,textureIndex:i%DOCUMENT_IMAGE_FILES.length,
-  angle:theta,radius:1.0+rng()*3.3,orbit:.67+rng()*.30,
-  order:rng(),x:-.55+rng()*7.5,y:-2.9+rng()*6.15,z:-1.6+rng()*2.9,
-  phase:rng()*6.28,tilt:(rng()-.5)*.36,spin:(rng()-.5)*.95
+  layer,focusTint:layer===0?.82:layer===1?.93:1,
+  angle:theta,radius:1.0+rng()*3.2,orbit:.64+rng()*.34,
+  order:rng(),x:initialX,y:initialY,z:initialZ,
+  phase:rng()*6.28,tilt:(rng()-.5)*.36,spin:(rng()-.5)*.95,
+  drift:rng()*Math.PI*2,tempo:.62+rng()*.90
  });
 }
 /* Swap to the exact four image-generated paper scans after image decoding.
