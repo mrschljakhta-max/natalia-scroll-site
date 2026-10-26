@@ -79,9 +79,6 @@ html.canvas-fallback .fallback-ocean{display:block}
 .ending-copy{color:#163338!important}.ending-copy .eyebrow{color:#516963}.ending-copy h2{color:#163338}.ending-copy h2 em{color:#a57854}
 .end-signature{display:flex;gap:14px;align-items:center;margin-top:31px;color:#2e5549;font-size:11px;letter-spacing:.11em;font-weight:800}.end-signature::before{content:'';width:38px;height:1px;background:#2e5549}
 .chapter-rail{position:absolute;right:clamp(18px,3.4vw,58px);top:50%;transform:translateY(-50%);display:grid;gap:18px;z-index:10}.chapter-dot{display:flex;align-items:center;gap:12px;justify-content:flex-end;padding:7px 0;border:0;color:#e5eee6a0;background:none}.chapter-dot span{font-size:9px;letter-spacing:.12em;font-weight:700;opacity:0;transform:translateX(7px);transition:.25s}.chapter-dot::after{content:'';display:block;width:5px;height:5px;border-radius:100px;background:#d9e9d688;transition:.25s}.chapter-dot.active span,.chapter-dot:hover span,.chapter-dot:focus-visible span{opacity:1;transform:none}.chapter-dot.active{color:#f6f2e9}.chapter-dot.active::after{width:11px;height:11px;background:#f0e4c9;box-shadow:0 0 0 5px #fff7}
-.bottomline{position:absolute;bottom:clamp(18px,3vw,38px);left:clamp(20px,4.6vw,76px);right:clamp(20px,4.6vw,76px);z-index:9;display:flex;align-items:end;gap:22px;justify-content:space-between}
-.bottom-caption{display:grid;gap:7px;font-size:10px;letter-spacing:.17em;font-weight:700}
-.bottom-caption small{font:400 10px 'DM Sans',sans-serif;letter-spacing:.03em;color:#e4eee5a8}
 /* Floating first-scroll hint. No card, frame, wash, or blur: the papers
    remain the artwork, the scroll cue is just a lightweight editorial label. */
 .scroll-guide{position:absolute;z-index:18;left:50%;
@@ -132,10 +129,10 @@ html.canvas-fallback .fallback-ocean{display:block}
 .footer{background:#f5f1e8;color:#25473d;padding:clamp(65px,11vw,140px) clamp(24px,8vw,150px);position:relative;min-height:64vh;display:grid;align-items:center;grid-template-columns:1.2fr .8fr;gap:60px}
 .footer-kicker{font-size:11px;letter-spacing:.24em;font-weight:800;color:#718779;text-transform:uppercase}.footer h2{font:400 clamp(45px,6vw,86px)/1.06 Georgia,serif;letter-spacing:-.055em;margin:18px 0 20px}.footer h2 em{color:#8b9e89}.footer p{max-width:510px;line-height:1.85;font-size:15px;color:#536861}.footer .panel{border-left:1px solid #b4c1b4;padding-left:45px;display:grid;gap:26px}.footer .panel span{font-size:9px;letter-spacing:.2em;color:#7a8f84;text-transform:uppercase;font-weight:800}.footer .panel b{font:400 25px Georgia,serif;line-height:1.3}.restart{border:1px solid #244e44;background:transparent;color:#244e44;padding:13px 19px;border-radius:100px;font-size:12px;font-weight:700;justify-self:start;transition:.25s}.restart:hover{background:#244e44;color:white}.fineprint{font-size:11px;line-height:1.7;color:#82918a!important;margin-top:35px}
 @media(max-width:1020px){.headline-area{left:6%;width:46%;top:27%}.story-copy h1,.story-copy h2{font-size:clamp(43px,6.3vw,72px)}.story-copy p{font-size:13px;max-width:320px}.rail-label{display:none}}
-@media(max-width:670px){.journey{height:560svh;min-height:2350px}.stage{min-height:600px}.topbar{left:19px;right:19px;top:20px}.monogram{width:36px;height:36px;font-size:20px}.brand-name{font-size:11px}.brand-name small{font-size:7px}.headline-area{top:19%;left:23px;width:calc(100% - 74px)}.story-copy h1,.story-copy h2{font-size:clamp(43px,10.6vw,70px);margin:0 0 11px}.story-copy p{font-size:12px;line-height:1.65;max-width:290px}.eyebrow{margin-bottom:12px;font-size:8px}.eyebrow::before{width:20px}.chapter-rail{right:16px;gap:12px}.chapter-dot span{display:none}.bottomline{left:19px;right:19px;bottom:25px}.bottom-caption{font-size:8px}.bottom-caption small{font-size:9px}.footer{grid-template-columns:1fr;padding:73px 24px;gap:45px}.footer .panel{padding-left:23px}.footer h2{font-size:52px}.stage::after{background:linear-gradient(#10232ad9,#10232a3b 65%,transparent);opacity:calc(1 - var(--day))}}
+@media(max-width:670px){.journey{height:560svh;min-height:2350px}.stage{min-height:600px}.topbar{left:19px;right:19px;top:20px}.monogram{width:36px;height:36px;font-size:20px}.brand-name{font-size:11px}.brand-name small{font-size:7px}.headline-area{top:19%;left:23px;width:calc(100% - 74px)}.story-copy h1,.story-copy h2{font-size:clamp(43px,10.6vw,70px);margin:0 0 11px}.story-copy p{font-size:12px;line-height:1.65;max-width:290px}.eyebrow{margin-bottom:12px;font-size:8px}.eyebrow::before{width:20px}.chapter-rail{right:16px;gap:12px}.chapter-dot span{display:none}.footer{grid-template-columns:1fr;padding:73px 24px;gap:45px}.footer .panel{padding-left:23px}.footer h2{font-size:52px}.stage::after{background:linear-gradient(#10232ad9,#10232a3b 65%,transparent);opacity:calc(1 - var(--day))}}
 @media(max-width:400px){.headline-area{top:17%}.story-copy h1,.story-copy h2{font-size:43px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.escape-world{transition:none}.story-copy{transition:none}.stage::after{transition:none}.chapter-dot span{transition:none}}
-.hero-wordmark{font:400 clamp(28px,3.2vw,56px)/1.06 Georgia,serif;letter-spacing:-.05em;color:#f8f2e7;white-space:nowrap;margin:0 0 18px}.hero-wordmark i{color:#d9af8a}.stage.is-day .brand,.stage.is-day .bottom-caption,.stage.is-day .bottom-caption small,.stage.is-day .chapter-dot{color:#173f3a}.stage.is-day .chapter-dot::after{background:#345c50}.stage.is-day .chapter-dot.active::after{background:#ad7d58}.monogram{font-size:16px;letter-spacing:-.08em}.brand-name{letter-spacing:.14em}@media(max-width:670px){.hero-wordmark{font-size:clamp(24px,6.5vw,37px);margin-bottom:13px}.stage.is-day .headline-area{top:13%}}
+.hero-wordmark{font:400 clamp(28px,3.2vw,56px)/1.06 Georgia,serif;letter-spacing:-.05em;color:#f8f2e7;white-space:nowrap;margin:0 0 18px}.hero-wordmark i{color:#d9af8a}.stage.is-day .brand,.stage.is-day .chapter-dot{color:#173f3a}.stage.is-day .chapter-dot::after{background:#345c50}.stage.is-day .chapter-dot.active::after{background:#ad7d58}.monogram{font-size:16px;letter-spacing:-.08em}.brand-name{letter-spacing:.14em}@media(max-width:670px){.hero-wordmark{font-size:clamp(24px,6.5vw,37px);margin-bottom:13px}.stage.is-day .headline-area{top:13%}}
 /* Master-brand mark: two individually folded sails share one origami hull. */
 .sail-mark{width:57px;height:57px;flex:0 0 57px;display:grid;place-items:center;border:1px solid #dce8d66b;background:linear-gradient(145deg,#f0e5d212,#06282b43);border-radius:50%;box-shadow:0 6px 26px #0004,inset 0 0 0 4px #e7e2d108}
 .sail-mark svg{width:47px;height:47px;display:block;filter:drop-shadow(0 2px 4px #122a2b72)}
@@ -191,8 +188,7 @@ html.canvas-fallback .fallback-ocean{display:block}
     <button class="chapter-dot" data-jump=".70" aria-label="Перейти до етапу: Порядок"><span>03 / ОРІГАМІ</span></button>
     <button class="chapter-dot" data-jump=".93" aria-label="Перейти до етапу: Свобода"><span>04 / СВОБОДА</span></button>
   </nav>
-  <div class="bottomline"><div class="bottom-caption"><span id="chapterCounter">01 / 04 — ХАОС</span><small>Від розрізнених документів до часу для себе</small></div></div>
-   <div class="scroll-guide" id="scrollGuide" role="note" aria-hidden="true">
+     <div class="scroll-guide" id="scrollGuide" role="note" aria-hidden="true">
      <span class="scroll-guide__icon" aria-hidden="true"><span class="scroll-guide__mouse"></span></span>
      <span class="scroll-guide__copy">
        <span class="scroll-guide__title"><span class="scroll-guide__desktop">ПРОКРУЧУЙТЕ ВНИЗ</span><span class="scroll-guide__mobile">ГОРТАЙТЕ ДАЛІ</span></span>
@@ -209,7 +205,7 @@ html.canvas-fallback .fallback-ocean{display:block}
 <script>
 (()=>{
 'use strict';
-const stage=document.getElementById('stage'),journey=document.getElementById('experience'),canvas=document.getElementById('paperCanvas'),ctx=canvas.getContext('2d',{alpha:true}),copies=Array.from(document.querySelectorAll('[data-act]')),dots=Array.from(document.querySelectorAll('[data-jump]')),counter=document.getElementById('chapterCounter'),guide=document.getElementById('scrollGuide');
+const stage=document.getElementById('stage'),journey=document.getElementById('experience'),canvas=document.getElementById('paperCanvas'),ctx=canvas.getContext('2d',{alpha:true}),copies=Array.from(document.querySelectorAll('[data-act]')),dots=Array.from(document.querySelectorAll('[data-jump]')),guide=document.getElementById('scrollGuide');
 const reduce=window.matchMedia('(prefers-reduced-motion: reduce)');
 const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));const mix=(a,b,t)=>a+(b-a)*t;const smooth=t=>{t=clamp(t);return t*t*(3-2*t)};
 let w=innerWidth,h=innerHeight,dpr=1,target=0,position=0,lastAct=-1,tick=0,isVisible=true,resizeToken=0;
@@ -217,7 +213,7 @@ let seed=8121;function rand(){seed=(seed*1664525+1013904223)>>>0;return seed/429
 const papers=Array.from({length:43},(_,i)=>({i,nx:rand()*.98+.01,ny:rand()*.92+.04,size:mix(.75,1.32,rand()),r:rand()*6.283,spin:rand()>.5?1:-1,phase:rand()*6.283,shape:rand(),tilt:(rand()-.5)*2.1,pattern:i%5,order:rand()}));
 function resize(){w=stage.clientWidth;h=stage.clientHeight;dpr=Math.min(window.devicePixelRatio||1,1.7);canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);canvas.style.width=w+'px';canvas.style.height=h+'px';ctx.setTransform(dpr,0,0,dpr,0,0)}
 function scrollProgress(){const r=journey.getBoundingClientRect();return clamp(-r.top/Math.max(1,r.height-h))}
-function setAct(act){if(act===lastAct)return;lastAct=act;const names=['ХАОС','ВИХОР','ОРІГАМІ','СВОБОДА'];counter.textContent=String(act+1).padStart(2,'0')+' / 04 — '+names[act];dots.forEach((dot,i)=>{const ok=i===act;dot.classList.toggle('active',ok);if(ok)dot.setAttribute('aria-current','step');else dot.removeAttribute('aria-current')})}
+function setAct(act){if(act===lastAct)return;lastAct=act;dots.forEach((dot,i)=>{const ok=i===act;dot.classList.toggle('active',ok);if(ok)dot.setAttribute('aria-current','step');else dot.removeAttribute('aria-current')})}
 function actFor(p){return p<.245?0:p<.56?1:p<.815?2:3}
 function updateText(p){
  const boundaries=[.245,.56,.815],act=actFor(p);
