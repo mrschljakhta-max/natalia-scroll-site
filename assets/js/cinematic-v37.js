@@ -49,6 +49,15 @@ function prepare(img){
  // extracted into a separate angular layer; this background has it removed.
  const src=originalCtx.getImageData(0,0,W,H),source=src.data;
  baseCtx.drawImage(original,0,0);
+ // Soft reconstruction of the warm paper-colored space on the left:
+ // remove rasterized labels from the photographic source, so live HTML
+ // typography is perfectly crisp on desktop at every screen resolution.
+ const cleanLeft=baseCtx.createLinearGradient(0,0,292,0);
+ cleanLeft.addColorStop(0,"rgba(245,231,210,1)");
+ cleanLeft.addColorStop(.48,"rgba(248,238,219,.99)");
+ cleanLeft.addColorStop(.81,"rgba(245,231,211,.98)");
+ cleanLeft.addColorStop(1,"rgba(245,231,211,0)");
+ baseCtx.fillStyle=cleanLeft;baseCtx.fillRect(0,95,292,254);
  // Hide the original right-side water+labels. They return only as the
  // physically rising wave crosses their location.
  const cream=baseCtx.createLinearGradient(0,SEA_Y,0,H);
@@ -79,6 +88,20 @@ function prepare(img){
   }
  }
  waterCtx.putImageData(frame,0,0);
+ // Reconstruct the original water behind formerly rasterized service
+ // labels, using authentic neighboring turquoise pixels. Actual service
+ // names and controls are HTML above the liquid, never blurry still text.
+ const src2=waterCtx.getImageData(0,0,W,H);
+ const pp=src2.data;
+ for(let y=130;y<373;y++)for(let x=560;x<W;x++){
+  const k=(y*W+x)*4;
+  const sx=522+((x*7+(y>>1)*3)%28);
+  const srcK=(y*W+sx)*4;
+  const fadeX=smooth(560,586,x),fadeY=smooth(130,155,y)*(1-smooth(357,373,y));
+  const blend=.99*fadeX*fadeY;
+  for(let c=0;c<3;c++)pp[k+c]=Math.round(lerp(pp[k+c],source[srcK+c],blend));
+ }
+ waterCtx.putImageData(src2,0,0);
  // Soft-masked photo wheel: its true metal, caustics, cast shadows and
  // water droplets remain photographic rather than procedural PBR.
  wheelCtx.drawImage(original,0,0);
