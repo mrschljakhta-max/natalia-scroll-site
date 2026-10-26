@@ -11,7 +11,7 @@ export function createCinematicFinale(THREE,{scene,paperMaps,reduce,mobile=false
  const u={
   uTime:{value:0},uReveal:{value:0},
   uBoat:{value:new THREE.Vector2(1.8,.12)},
-  uSunX:{value:7.1}
+  uSunX:{value:5.0}
  };
  const common=[
   "uniform float uTime;",
@@ -201,22 +201,23 @@ export function createCinematicFinale(THREE,{scene,paperMaps,reduce,mobile=false
   const appear=smooth(.958,.995,p);
   u.uTime.value=reduce.matches?0:time;
   u.uReveal.value=reveal;
-  const x=small?0:1.8;
+  const x=small?0:2.35;
   const z=small?1.0:.2;
   u.uBoat.value.set(x,z);
-  u.uSunX.value=small?3.9:7.1;
+  u.uSunX.value=small?1.45:5.0;
   water.visible=reveal>.003;
   boat.visible=appear>.002;
   shadow.visible=appear>.002;
   const t=reduce.matches?0:time;
   const bob=heightAt(x,z,t);
-  boat.position.set(x,-1.08+bob*.45,z);
+  const size=(small?.79:1.28)*(1-.06*(1-appear));
+  boat.position.set(x,seaLevel+size*.74-.025+bob*.45,z);
   boat.rotation.set(
    reduce.matches?0:Math.sin(t*.84)*.012,
    (small?-.06:-.04),
    reduce.matches?0:Math.sin(t*.72+.2)*.018
   );
-  boat.scale.setScalar((small?.79:.88)*(1-.06*(1-appear)));
+  boat.scale.setScalar(size);
   for(const mat of fabrics){
    mat.transparent=appear<.999;
    mat.opacity=appear;
@@ -224,6 +225,7 @@ export function createCinematicFinale(THREE,{scene,paperMaps,reduce,mobile=false
   }
   outline.opacity=.28*appear;
   shadow.position.set(x,seaLevel+.015,z);
+  shadow.scale.set(small?.87:1.30,small?.9:1.13,1);
   shadow.material.opacity=.68*appear;
  }
  return {
