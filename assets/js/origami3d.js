@@ -858,7 +858,7 @@ function tick(time){
  camera.position.x=mix(-.10,.14,smooth(.58,.94,p));
  camera.position.y=mix(.13,.62,smooth(.76,1,p));
  camera.position.z=(mobile?12.9:13.8)-lensFocus*(mobile?.28:.52);
- camera.lookAt(0,mix(0,-.18,smooth(.78,1,p)),0);
+ camera.lookAt(0,mix(0,.76,smooth(.78,1,p)),0);
  // At rest, the one-paper yacht and its crease details move together.
  const afloat=smooth(.970,1,p);
  sailGroup.rotation.z+=(reduce.matches?0:Math.sin(time*.63)*.010*afloat);
