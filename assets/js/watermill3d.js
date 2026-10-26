@@ -35,11 +35,74 @@ if(stage&&target){
   const edge=new THREE.DirectionalLight(0xA9C9C2,1.45);edge.position.set(7,3,-6);scene.add(edge);
   const glow=new THREE.PointLight(0xF8DBB9,17,20,2);glow.position.set(4,5,7);scene.add(glow);
   assembly=new THREE.Group();scene.add(assembly);
+  // Six physically reflected studio softboxes, generated without an HDRI asset
+  // or extra network dependency. Three.js PMREM filters this environment.
+  const envFaces=[];
+  for(let i=0;i<6;i++){
+   const c=document.createElement("canvas");c.width=c.height=160;
+   const cx=c.getContext("2d");
+   const bg=cx.createLinearGradient(0,0,160,160);
+   bg.addColorStop(0,i===2?"#F7F1E5":"#DEE6E1");
+   bg.addColorStop(.55,i===3?"#A0C5C3":"#CCCEC5");
+   bg.addColorStop(1,i===4?"#C1CEC8":"#8DAEB1");
+   cx.fillStyle=bg;cx.fillRect(0,0,160,160);
+   const box=cx.createRadialGradient(i%2?101:56,32,2,i%2?101:56,32,116);
+   box.addColorStop(0,"rgba(255,250,229,.95)");
+   box.addColorStop(.38,"rgba(255,248,229,.47)");
+   box.addColorStop(1,"rgba(255,249,238,0)");
+   cx.fillStyle=box;cx.fillRect(0,0,160,160);
+   cx.fillStyle="rgba(255,254,248,.36)";
+   cx.fillRect(i%2?95:38,0,14,132);
+   envFaces.push(c);
+  }
+  const studioEnv=new THREE.CubeTexture(envFaces);
+  studioEnv.colorSpace=THREE.SRGBColorSpace;
+  studioEnv.needsUpdate=true;
+  scene.environment=studioEnv;
+  scene.environmentIntensity=.82;
+  // Real brushed-metal micro-surface, roughness variation and microscopic
+  // scratches encoded in repeatable procedural PBR textures (not paint-on
+  // glossy streaks); deterministic and generated once at startup.
+  const texSize=384,normalData=new Uint8Array(texSize*texSize*4),
+   roughData=new Uint8Array(texSize*texSize*4);
+  let grainSeed=1559;
+  const grain=()=>{grainSeed=(grainSeed*1664525+1013904223)>>>0;return grainSeed/4294967296};
+  const scratches=Array.from({length:23},()=>({x:Math.floor(grain()*texSize),
+   width:.6+grain()*2,weight:.6+grain()*.4}));
+  for(let y=0;y<texSize;y++)for(let x=0;x<texSize;x++){
+   let scratch=0;
+   for(const line of scratches){
+    const distance=Math.min(Math.abs(x-line.x),texSize-Math.abs(x-line.x));
+    scratch+=Math.exp(-distance*distance/(line.width*line.width))*line.weight;
+   }
+   const tremor=grain()-.5;
+   const waviness=Math.sin(y*.11+x*.017)+.55*Math.sin(y*.42-x*.013);
+   const k=(y*texSize+x)*4;
+   const nx=128+Math.max(-25,Math.min(25,scratch*8+tremor*8));
+   const ny=128+waviness*3+tremor*5;
+   normalData[k]=Math.round(Math.min(255,nx));
+   normalData[k+1]=Math.round(Math.min(255,ny));
+   normalData[k+2]=253;normalData[k+3]=255;
+   const rough=Math.round(Math.max(96,Math.min(196,135+scratch*14+tremor*13+waviness*4)));
+   roughData[k]=rough;roughData[k+1]=rough;roughData[k+2]=rough;roughData[k+3]=255;
+  }
+  const mapFrom=(pixels)=>{
+   const tex=new THREE.DataTexture(pixels,texSize,texSize,THREE.RGBAFormat);
+   tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.anisotropy=4;
+   tex.generateMipmaps=true;tex.minFilter=THREE.LinearMipmapLinearFilter;
+   tex.magFilter=THREE.LinearFilter;tex.needsUpdate=true;return tex;
+  };
+  const brassNormal=mapFrom(normalData),brassRoughness=mapFrom(roughData);
   // Satin brushed brass; restrained reflections make the circular form
   // feel machined and substantial instead of plastic or mirror-chrome.
-  const gold=new THREE.MeshPhysicalMaterial({color:0xBA8750,metalness:.72,roughness:.48,clearcoat:.14,clearcoatRoughness:.55});
-  const lightGold=new THREE.MeshPhysicalMaterial({color:0xD8B17A,metalness:.64,roughness:.39,clearcoat:.20,clearcoatRoughness:.56});
-  const darkGold=new THREE.MeshStandardMaterial({color:0x765539,metalness:.65,roughness:.57});
+  const gold=new THREE.MeshPhysicalMaterial({color:0xBC925D,metalness:.86,roughness:.53,
+   roughnessMap:brassRoughness,normalMap:brassNormal,normalScale:new THREE.Vector2(.22,.22),
+   envMapIntensity:.86,clearcoat:.055,clearcoatRoughness:.65});
+  const lightGold=new THREE.MeshPhysicalMaterial({color:0xD9B582,metalness:.72,roughness:.49,
+   roughnessMap:brassRoughness,normalMap:brassNormal,normalScale:new THREE.Vector2(.17,.17),
+   envMapIntensity:.88,clearcoat:.075,clearcoatRoughness:.68});
+  const darkGold=new THREE.MeshStandardMaterial({color:0x755338,metalness:.72,roughness:.67,
+   roughnessMap:brassRoughness,envMapIntensity:.60});
   // A gently varied mineral surface, authored procedurally and only once.
   // Fine warm flecks and subtle grain replace the previous flat cream fill.
   const stoneCanvas=document.createElement("canvas");
@@ -100,10 +163,24 @@ if(stage&&target){
   foot.position.set(0,-4.86,-.20);
   const footLip=mesh(new THREE.BoxGeometry(3.92,.035,.89),porcelainEdge);
   footLip.position.set(0,-4.70,-.19);
+  // Subtle hand-painted contact occlusion behind the wheel and the pedestal.
+  // These are translucent decals, not heavy post-processing passes.
+  const aoCanvas=document.createElement("canvas");aoCanvas.width=aoCanvas.height=256;
+  const aoc=aoCanvas.getContext("2d");
+  const g=aoc.createRadialGradient(128,128,12,128,128,128);
+  g.addColorStop(0,"rgba(40,29,19,.56)");
+  g.addColorStop(.48,"rgba(50,37,24,.27)");
+  g.addColorStop(1,"rgba(60,48,31,0)");
+  aoc.fillStyle=g;aoc.fillRect(0,0,256,256);
+  const aoMap=new THREE.CanvasTexture(aoCanvas);aoMap.colorSpace=THREE.SRGBColorSpace;
+  const contact=mesh(new THREE.PlaneGeometry(5.5,5.5),new THREE.MeshBasicMaterial({
+   map:aoMap,transparent:true,opacity:.19,depthWrite:false,polygonOffset:true,polygonOffsetFactor:1
+  }),assembly);
+  contact.position.set(0,0,-.86);
   const shadow=mesh(new THREE.PlaneGeometry(5.1,.35),new THREE.MeshBasicMaterial({
    color:0x5A5447,transparent:true,opacity:.065,depthWrite:false
   }));
-  materials.push(shadow.material);
+  materials.push(shadow.material,contact.material);
   shadow.position.set(0,-4.97,-.45);
   // Actual 3D rotating rotor: two concentric raised rims, spoke barrels
   // in different depth planes and 12 individually extruded water-catching cups.
@@ -137,6 +214,9 @@ if(stage&&target){
    rivet.position.set(radial.x*2.29,radial.y*2.29,.625);
    rotor.add(rivet);
   }
+  // Dark mechanical joint behind the axle adds convincing depth at the hub.
+  const joint=mesh(new THREE.CylinderGeometry(.67,.67,.12,64),darkGold,rotor);
+  joint.rotation.x=Math.PI/2;joint.position.z=-.13;
   const hubBack=mesh(new THREE.CylinderGeometry(.59,.59,.67,64),darkGold,rotor);
   hubBack.rotation.x=Math.PI/2;
   hubBack.position.z=.12;
@@ -415,6 +495,8 @@ if(stage&&target){
    };
    schedule();
   }
+  window.__millPhotorealPBR={version:33,environment:"six-card procedural PMREM",
+   brassNormalMap:true,brassRoughnessMap:true,contactOcclusion:true};
   const observer=new IntersectionObserver(entries=>{
    visible=entries[0].isIntersecting;
    if(visible){lastFrame=0;schedule();}
