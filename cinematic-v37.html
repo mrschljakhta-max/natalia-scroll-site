@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#11363C">
+<meta name="description" content="Наталія & Анна — кінематографічна водяна сцена з реалістичним орігамі-переходом, фотоматеріалами CGI та керуванням прокручуванням.">
+<meta name="robots" content="noindex,nofollow">
+<title>Cinematic Watermill / 37 — Наталія & Анна</title>
+<link rel="preload" href="./assets/images/cinematic-v37-plate.avif?v=37" as="image" type="image/avif">
+<style>
+:root{--pine:#174642;--sage:#8FA598;--ivory:#F5F0E5;--gold:#D6AC74;--glass:#193E46E8}
+*{box-sizing:border-box}
+html{scroll-behavior:auto;scrollbar-color:#86ACA6 #F5F0E5}
+body{margin:0;background:#0B262C;color:#F5F1E8;font-family:"Helvetica Neue",Arial,sans-serif}
+button{font:inherit}a:focus-visible,button:focus-visible{outline:2px solid #F8D69A;outline-offset:4px}
+.cinematic-journey{height:485svh;min-height:2000px;position:relative}
+.cinematic-stage{position:sticky;top:0;width:100%;height:100svh;min-height:480px;overflow:hidden;
+ background:radial-gradient(ellipse at 63% 34%,#A6C8BB,#E6E9D8 62%,#F4EADD);isolation:isolate;--cine-progress:0}
+.cinematic-stage canvas{position:absolute;inset:0;display:block;width:100%;height:100%;z-index:1;pointer-events:none}
+.cinematic-overlay{position:absolute;inset:0;z-index:2;pointer-events:none;
+ background:linear-gradient(180deg,rgba(255,247,228,.12),transparent 20%,transparent 85%,rgba(15,50,53,.13));
+ mix-blend-mode:soft-light}
+.topbar{position:absolute;top:22px;left:clamp(14px,4.2vw,72px);right:clamp(14px,4.2vw,72px);
+ z-index:11;display:flex;align-items:center;justify-content:space-between;gap:20px;pointer-events:none}
+.mark{color:#204B48;font-size:10px;letter-spacing:.21em;font-weight:800;text-shadow:0 1px 13px #F7EEE5B8}
+.mark small{display:block;font-size:8px;letter-spacing:.16em;margin-top:7px;color:#476F6B;font-weight:600}
+.topbar a{pointer-events:auto;text-decoration:none;padding:12px 17px;border:1px solid #E5ECE48C;
+ border-radius:100px;background:#12474CC7;color:#F6EEE0;font-size:10px;font-weight:700;
+ letter-spacing:.12em;backdrop-filter:blur(12px);white-space:nowrap;transition:background .3s}
+.topbar a:hover{background:#1C666E}
+.service-zone{position:absolute;z-index:5;display:block;background:transparent;border:1px solid transparent;
+ border-radius:20px;cursor:pointer;opacity:0;pointer-events:none;transition:background .35s,box-shadow .35s,border-color .35s}
+.service-zone.is-active{pointer-events:auto}
+.service-zone:hover,.service-zone:focus-visible,.service-zone[aria-pressed="true"]{
+ background:rgba(224,254,244,.075);border-color:#F9E2AA75;box-shadow:0 0 38px 5px #E4F8CF20}
+.service-zone:focus-visible{opacity:1;outline:2px solid #F7D297}
+.service-zone.s1{right:3.8%;top:29%;width:28%;height:14%}
+.service-zone.s2{right:3.8%;top:45.5%;width:28%;height:14%}
+.service-zone.s3{right:3.8%;top:62%;width:28%;height:14%}
+.cta-zone{position:absolute;z-index:5;left:4.5%;top:64.3%;width:19%;height:11%;border:0;
+ background:transparent;border-radius:80px;cursor:pointer;opacity:0}
+.cta-zone:hover,.cta-zone:focus-visible{opacity:1;background:#E8CF9830;outline:2px solid #53776D}
+.cine-meter{position:absolute;z-index:8;bottom:clamp(16px,3svh,38px);left:50%;
+ transform:translateX(-50%);display:flex;align-items:center;gap:15px;min-width:310px;
+ max-width:calc(100% - 24px);border:1px solid #F0E9D985;border-radius:100px;
+ padding:11px 17px;background:#123D42DC;backdrop-filter:blur(16px);
+ box-shadow:0 8px 30px #08323832;pointer-events:none}
+.cine-meter span{white-space:nowrap;color:#DFEBDE;font-size:9px;letter-spacing:.08em;font-weight:700}
+.cine-meter .progress{height:2px;width:78px;background:#82A9A86E;overflow:hidden;position:relative}
+.cine-meter .progress:before{content:"";display:block;width:calc(var(--cine-progress)*100%);height:100%;background:#E6C593}
+.cine-meter output{font:700 10px ui-monospace,monospace;color:#F5E3C6}
+.detail{position:absolute;z-index:17;bottom:clamp(82px,12svh,120px);right:clamp(20px,6vw,110px);
+ width:min(390px,calc(100% - 40px));border:1px solid #E9CFAE8C;border-radius:19px;
+ padding:25px 28px;background:#113C42F5;color:#F5F0E5;backdrop-filter:blur(18px);
+ box-shadow:0 18px 60px #062B3069}
+.detail[hidden]{display:none}
+.detail strong{font:400 26px/1.2 Georgia,"Times New Roman",serif}
+.detail p{font-size:13px;line-height:1.75;color:#D4E5DB;max-width:33ch}
+.detail button{position:absolute;top:10px;right:11px;background:none;color:#F2E3C7;border:0;
+ font-size:26px;cursor:pointer;padding:4px 10px}
+.detail .eyebrow{color:#DAB17C;font-size:9px;letter-spacing:.2em;display:block;margin-bottom:12px}
+.mobile-copy,.mobile-services{display:none}
+.cinematic-error{z-index:8;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+ width:min(430px,92%);padding:30px;border-radius:20px;background:#16383E;color:#F3E8D9;text-align:center}
+.cinematic-error[hidden]{display:none}.cinematic-error a{color:#F2CF9F}
+.footer{background:#F5F0E5;color:#1D4844;text-align:center;padding:56px 24px 70px}
+.footer .eyebrow{font-size:10px;font-weight:800;letter-spacing:.24em;color:#927350}
+.footer h2{font:400 clamp(31px,5vw,54px)/1.1 Georgia,serif;margin:17px auto}
+.footer p{color:#57716C;font-size:13px;line-height:1.75;max-width:570px;margin:0 auto 23px}
+.footer a{display:inline-flex;align-items:center;text-decoration:none;font-size:12px;font-weight:700;
+ color:#245950;border:1px solid #73908C;border-radius:60px;padding:13px 20px}
+.footer a:hover{background:#DBE9E3}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+ clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:790px){
+ .cinematic-stage{background:#D8E7DC}
+ .topbar{top:13px}.mark{color:#F4EEDD;text-shadow:0 1px 8px #163E49}
+ .topbar a{padding:10px 13px;font-size:8px}
+ .service-zone,.cta-zone{display:none}
+ .mobile-copy{display:block;position:absolute;z-index:7;left:0;right:0;top:65px;padding:26px 24px 30px;
+ color:#204B46;background:linear-gradient(180deg,#F8F3EDEE 0%,#F8F3EDCF 66%,transparent 100%)}
+ .mobile-copy .eyebrow{letter-spacing:.2em;font-size:9px;font-weight:800;color:#54817B}
+ .mobile-copy h1{font:400 clamp(34px,9vw,54px)/1 Georgia,serif;letter-spacing:-.055em;margin:12px 0 11px;max-width:11ch}
+ .mobile-copy h1 em{font-style:italic;color:#8DA598}
+ .mobile-copy p{font-size:12px;line-height:1.6;max-width:32ch;color:#4F706A;margin:0}
+ .mobile-services{position:absolute;z-index:8;display:flex;flex-direction:column;gap:7px;
+ left:13px;right:13px;bottom:79px}
+ .mobile-services button{border:1px solid #C2DDCF78;border-radius:12px;
+ padding:11px 14px;color:#F8F2E7;background:#17494CD6;backdrop-filter:blur(15px);
+ display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left;font:400 18px Georgia,serif}
+ .mobile-services button[aria-pressed="true"]{background:#2E787A;border-color:#F1D6A9}
+ .mobile-services small{color:#DFB985;font:700 10px Arial,sans-serif}
+ .cine-meter{min-width:0;width:calc(100% - 28px);bottom:13px;justify-content:space-between}
+ .cine-meter span{font-size:8px}
+ .cine-meter .progress{flex:1;max-width:95px}
+ .detail{left:12px;right:12px;bottom:252px;width:auto;padding:21px}
+ .detail strong{font-size:23px}
+}
+@media(prefers-reduced-motion:reduce){
+ .service-zone,.topbar a{transition:none}
+ .cinematic-overlay{background:none}
+}
+</style>
+<script defer src="./assets/js/cinematic-v37.js?v=37-photo-compositor"></script>
+</head>
+<body>
+<main>
+ <section class="cinematic-journey" id="cinematicJourney" aria-label="Наталія та Анна — кінематографічна інтерактивна сцена">
+  <div class="cinematic-stage" id="cinematicStage">
+   <canvas id="cinematicCanvas" aria-label="Фотографічна водяна композиція з колесом, що обертається від прокручування, та водою, яка піднімається"></canvas>
+   <div class="cinematic-overlay" aria-hidden="true"></div>
+   <header class="topbar"><div class="mark">НАТАЛІЯ &amp; АННА<small>БУХГАЛТЕРСЬКИЙ СУПРОВІД</small></div>
+    <a href="./index.html?v=35#conclusion" aria-label="Порівняти з чинною 3D-сценою">Порівняти з 3D ↗</a></header>
+   <h1 class="sr-only">Для кожної справи — свій підхід.</h1>
+   <p class="sr-only">Бухгалтерський супровід для цифрових спеціалістів, підприємців і малого бізнесу.</p>
+   <button type="button" id="cinematicCTA" class="cta-zone" aria-label="Прокрутити до вибору бухгалтерського напряму"><span class="sr-only">Обрати свій напрям</span></button>
+   <div role="group" aria-label="Категорії бухгалтерського супроводу">
+    <button data-cine-service="0" class="service-zone s1" aria-label="IT та фриланс — докладніше" aria-pressed="false" disabled><span class="sr-only">IT та фриланс</span></button>
+    <button data-cine-service="1" class="service-zone s2" aria-label="ФОП та підприємці — докладніше" aria-pressed="false" disabled><span class="sr-only">ФОП та підприємці</span></button>
+    <button data-cine-service="2" class="service-zone s3" aria-label="Малий бізнес — докладніше" aria-pressed="false" disabled><span class="sr-only">Малий бізнес</span></button>
+   </div>
+   <div class="mobile-copy">
+    <span class="eyebrow">КОМУ МИ ДОПОМАГАЄМО</span>
+    <h1>Для кожної справи — <em>свій підхід.</em></h1>
+    <p>Бухгалтерський супровід цифрових спеціалістів, підприємців і малого бізнесу.</p>
+   </div>
+   <div class="mobile-services" id="cinematicMobileServices" role="group" aria-label="Оберіть послуги">
+    <button type="button" aria-pressed="false"><small>01</small>IT та фриланс <span aria-hidden="true">↗</span></button>
+    <button type="button" aria-pressed="false"><small>02</small>ФОП та підприємці <span aria-hidden="true">↗</span></button>
+    <button type="button" aria-pressed="false"><small>03</small>Малий бізнес <span aria-hidden="true">↗</span></button>
+   </div>
+   <aside class="detail" id="cinematicDetail" hidden aria-live="polite">
+    <span class="eyebrow">ВАШ НАПРЯМ</span><strong></strong><p></p>
+    <button type="button" aria-label="Закрити опис">×</button>
+   </aside>
+   <div class="cine-meter" role="status" aria-live="off"><span id="cineLegend">Море переходить у потік</span>
+    <div class="progress" aria-hidden="true"></div><output id="cineProgress">0%</output></div>
+   <div class="cinematic-error" hidden><h2>Не вдалося відкрити CGI-зображення</h2>
+    <p>Можеш переглянути попередню 3D-сцену без втрати даних.</p>
+    <a href="./index.html?v=35#conclusion">Відкрити 3D-варіант ↗</a></div>
+  </div>
+ </section>
+</main>
+<footer class="footer">
+ <span class="eyebrow">CINEMATIC EXPERIMENT / 37</span>
+ <h2>Від руху — до ясності.</h2>
+ <p>Реальна кінематографічна 2.5D-композиція на основі затвердженого CGI-кадру: колесо обертається за годинниковою стрілкою, вода піднімається, а напрями залишаються інтерактивними. Це не повноцінний фізичний AAA-рендер і не відео з десятків відрендерених кадрів.</p>
+ <a href="./index.html?v=35#conclusion">Повернутися на основний сайт ↗</a>
+</footer>
+</body>
+</html>
