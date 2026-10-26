@@ -197,13 +197,104 @@ ribbonPath({name:'hull-central-fold',from:[.5,0],to:[.5,.335],color:0xb1a087,wid
 ribbonPath({name:'hull-fold-left',from:[0,.12],to:[.5,.335],color:0x9aad9b,width:.012,alpha:.64,begin:.868,finish:.944,kind:'hull'});
 ribbonPath({name:'hull-fold-right',from:[.5,.335],to:[1,.12],color:0xbda484,width:.012,alpha:.61,begin:.868,finish:.944,kind:'hull'});
 
-function positionFromUV(u,v,p){
+/* Low-amplitude cinematic air-flex. It naturally fades BEFORE the hinge
+   mechanics begin: no interference with physical folds or final boat shape. */
+function paperFlex(u,v,p,time=0){
+ const relax=1-smooth(.53,.645,p);
+ if(relax<=0)return 0;
+ const phase=reduce.matches?0:time*.56;
+ const edge=Math.pow(Math.abs(2*u-1),2);
+ return relax*(.016*Math.sin(v*7.8+phase)*(.24+.76*edge)
+   +.009*Math.sin(u*6.4+v*3.9-phase*.73));
+}
+function positionFromUV(u,v,p,time=0){
  const x0=W*(u-.5),y0=H*(v-.5),folded=foldPoint(x0,y0,p),
        final=yachtPoint(x0,y0),morph=v<.34-.00001?smooth(.851,.925,p):
          u<=.5?smooth(.887,.961,p):smooth(.921,.998,p);
  return [mix(folded[0],final[0],morph),mix(folded[1],final[1],morph),
-    mix(folded[2],final[2],morph)];
+    mix(folded[2],final[2],morph)+paperFlex(u,v,p,time)];
 }
+/* Physical paper edge strips. These are SIDE WALLS of the same deforming
+   sheet, not a second sheet or a cross-faded boat model. Each strip follows
+   the exact current UV surface, and avoids the intentionally split keel/sail
+   boundary at v=.34 where those panels acquire independent boat positions.
+   Sidewall thickness in scene units: .014 of 3.55-wide hero sheet. */
+const edgeStock=[
+ {name:"keel-bottom",from:[0,0],to:[1,0],inside:[0,.008],tint:0xb7af9e},
+ {name:"keel-left",from:[0,0],to:[0,.335],inside:[.008,0],tint:0xaaa894},
+ {name:"keel-right",from:[1,0],to:[1,.335],inside:[-.008,0],tint:0xbda78c},
+ {name:"sage-left",from:[0,.346],to:[0,1],inside:[.008,0],tint:0x9fae9c},
+ {name:"copper-right",from:[1,.346],to:[1,1],inside:[-.008,0],tint:0xb99b80},
+ {name:"sage-top",from:[0,1],to:[.497,1],inside:[0,-.008],tint:0xa6b3a2},
+ {name:"copper-top",from:[.503,1],to:[1,1],inside:[0,-.008],tint:0xb7a18c}
+];
+const paperEdges=edgeStock.map(spec=>{
+ const segments=26,positions=new Float32Array((segments+1)*2*3),colors=new Float32Array(positions.length);
+ const indices=[];
+ for(let i=0;i<segments;i++){
+  const a=i*2;indices.push(a,a+1,a+2,a+1,a+3,a+2);
+ }
+ const geo=new THREE.BufferGeometry();
+ geo.setAttribute("position",new THREE.BufferAttribute(positions,3));
+ geo.setAttribute("color",new THREE.BufferAttribute(colors,3));
+ geo.setIndex(indices);
+ const base=new THREE.Color(spec.tint);
+ const top=base.clone().lerp(new THREE.Color(0xf1eee3),.39);
+ const bottom=base.clone().multiplyScalar(.77);
+ for(let i=0;i<=segments;i++){
+  geo.attributes.color.setXYZ(i*2,top.r,top.g,top.b);
+  geo.attributes.color.setXYZ(i*2+1,bottom.r,bottom.g,bottom.b);
+ }
+ const material=new THREE.MeshStandardMaterial({
+  vertexColors:true,roughness:.97,metalness:0,side:THREE.DoubleSide
+ });
+ const mesh=new THREE.Mesh(geo,material);
+ mesh.frustumCulled=false;
+ mesh.renderOrder=2;
+ sailGroup.add(mesh);
+ return {...spec,segments,geo,mesh};
+});
+const edgeTangent=new THREE.Vector3(),edgeInward=new THREE.Vector3(),
+ edgeNormal=new THREE.Vector3(),edgeVecA=new THREE.Vector3(),
+ edgeVecB=new THREE.Vector3();
+function updatePaperEdges(p,time){
+ for(const r of paperEdges){
+  const pos=r.geo.attributes.position;
+  for(let i=0;i<=r.segments;i++){
+   const u=i/r.segments;
+   const uvX=mix(r.from[0],r.to[0],u);
+   const uvY=mix(r.from[1],r.to[1],u);
+   const pt=positionFromUV(uvX,uvY,p,time);
+   const tangentStart=Math.max(0,u-.008);
+   const tangentEnd=Math.min(1,u+.008);
+   const a=positionFromUV(
+     mix(r.from[0],r.to[0],tangentStart),
+     mix(r.from[1],r.to[1],tangentStart),p,time);
+   const b=positionFromUV(
+     mix(r.from[0],r.to[0],tangentEnd),
+     mix(r.from[1],r.to[1],tangentEnd),p,time);
+   const inner=positionFromUV(
+     clamp(uvX+r.inside[0]),clamp(uvY+r.inside[1]),p,time);
+   edgeVecA.set(...a);edgeVecB.set(...b);
+   edgeTangent.subVectors(edgeVecB,edgeVecA).normalize();
+   edgeInward.set(inner[0]-pt[0],inner[1]-pt[1],inner[2]-pt[2]).normalize();
+   edgeNormal.crossVectors(edgeTangent,edgeInward).normalize();
+   // Winding is consistent over the original flat sheet, and this local
+   // orientation tracks the surface as real hinges fold it in 3D.
+   if(r.name==="keel-left"||r.name==="sage-left"||r.name==="sage-top"||
+      r.name==="copper-top")edgeNormal.negate();
+   const thickness=.014;
+   pos.setXYZ(i*2,pt[0]+edgeNormal.x*.0025,
+     pt[1]+edgeNormal.y*.0025,pt[2]+edgeNormal.z*.0025);
+   pos.setXYZ(i*2+1,pt[0]-edgeNormal.x*thickness,
+     pt[1]-edgeNormal.y*thickness,pt[2]-edgeNormal.z*thickness);
+  }
+  pos.needsUpdate=true;
+  r.geo.computeVertexNormals();
+  // Never allow stale bounds to cull dynamically deforming edge strips.
+ }
+}
+
 function updateRibbons(p){
  for(const r of creaseRibbons){
   const a=smooth(r.begin,r.finish,p);
@@ -334,6 +425,12 @@ function updateSheet(p,time){
  const port=smooth(.887,.961,p);
  const starboard=smooth(.921,.998,p);
  const ink=smooth(.834,.974,p);
+ // Ambient fold occlusion: darken actual hinge neighborhoods while in motion,
+ // fade out before the boat's dedicated sculptural shading takes over.
+ const foldOcclusion=1-smooth(.82,.93,p);
+ const midFold=smooth(.565,.624,p)*foldOcclusion;
+ const leftFold=smooth(.663,.718,p)*foldOcclusion;
+ const rightFold=smooth(.694,.746,p)*foldOcclusion;
  if(sheetMat.userData.shader)sheetMat.userData.shader.uniforms.uInkToFiber.value=ink;
  for(let i=0;i<pos.count;i++){
   const index=i*3,x0=original[index],y0=original[index+1],
@@ -343,7 +440,7 @@ function updateSheet(p,time){
   const morph=uvy<.34-.00001?hull:uvx<=.5?port:starboard;
   const x=mix(folded[0],final[0],morph),
         y=mix(folded[1],final[1],morph),
-        z=mix(folded[2],final[2],morph);
+        z=mix(folded[2],final[2],morph)+paperFlex(uvx,uvy,p,time);
   pos.setXYZ(i,x,y,z);
   let c=neutral.clone();
   if(uvy<.34){
@@ -365,6 +462,15 @@ function updateSheet(p,time){
    c.lerp(sand,starboard*(.17+.49*(uvx-.5)*2));
    const foldShadow=1-clamp(Math.abs(uvx-.77)/.065);
    c.multiplyScalar(1-starboard*.13*foldShadow);
+  }
+  // Fine pressure-darkened fold lines remain part of the SAME vertex color
+  // field; no decals/second flat planes that could float during animation.
+  if(foldOcclusion>.002){
+   const mid=Math.exp(-Math.pow(y0/.105,2))*midFold;
+   const lineX=-W/2+(W/H)*Math.max(0,y0);
+   const dl=y0>0?Math.exp(-Math.pow((x0-lineX)/.13,2))*leftFold:0;
+   const dr=y0>0?Math.exp(-Math.pow((x0+lineX)/.13,2))*rightFold:0;
+   c.multiplyScalar(1-Math.min(.145,.082*mid+.089*dl+.083*dr));
   }
   col.setXYZ(i,c.r,c.g,c.b);
  }
@@ -395,6 +501,7 @@ function updateSheet(p,time){
  mast.scale.y=Math.max(.002,details);
  mast.position.y=-.71+1.575*details;
  detailMaterials.forEach(({mat,initial})=>mat.opacity=initial*details);
+ updatePaperEdges(p,time);
  updateRibbons(p);
  const seaContact=smooth(.951,.996,p);
  contactShadow.visible=seaContact>.008;
@@ -412,14 +519,21 @@ let seed=1317;
 function rng(){seed=(1664525*seed+1013904223)>>>0;return seed/4294967296}
 for(let i=0;i<25;i++){
  const pw=.80+rng()*.31,ph=pw*1.36;
- const g=new THREE.PlaneGeometry(pw,ph,2,3);
+ // Subdivided real sheet, not a flat billboard: enough vertices for mild air flutter.
+ const g=new THREE.PlaneGeometry(pw,ph,8,12);
  const a=g.attributes.position;
  const bend=.007+rng()*.017;
  for(let j=0;j<a.count;j++){
   const x=a.getX(j),y=a.getY(j);
-  a.setZ(j,Math.sin((x/pw+.5)*Math.PI)*Math.sin((y/ph+.5)*Math.PI)*bend);
+  const u=x/pw+.5,v=y/ph+.5;
+  const mainBend=Math.sin(u*Math.PI)*Math.sin(v*Math.PI)*bend;
+  const cornerLift=i%3===1
+   ? .018*Math.pow(u,3)*Math.sin(v*Math.PI*.78)
+   : i%3===2?.014*Math.sin(v*Math.PI*1.3)*(2*u-1):0;
+  a.setZ(j,mainBend+cornerLift);
  }
  g.computeVertexNormals();
+ const baseShape=new Float32Array(a.array);
  const material=new THREE.MeshStandardMaterial({
   map:textures[i%textures.length],side:THREE.DoubleSide,
   normalMap:paperMaps.normal,normalScale:new THREE.Vector2(.085,.085),
@@ -429,7 +543,7 @@ for(let i=0;i<25;i++){
  const mesh=new THREE.Mesh(g,material);mesh.castShadow=true;vortex.add(mesh);
  const theta=rng()*Math.PI*2;
  docs.push({
-  mesh,pw,ph,angle:theta,radius:1.0+rng()*3.3,orbit:.67+rng()*.30,
+  mesh,pw,ph,baseShape,shape:i%3,angle:theta,radius:1.0+rng()*3.3,orbit:.67+rng()*.30,
   order:rng(),x:-.55+rng()*7.5,y:-2.9+rng()*6.15,z:-1.6+rng()*2.9,
   phase:rng()*6.28,tilt:(rng()-.5)*.36,spin:(rng()-.5)*.95
  });
@@ -463,9 +577,24 @@ function updateVortex(p,t){
    z=mix(z,-.6-d.order*.35,assemble);
    m.scale.setScalar((.88+.19*d.order)*(1-.34*shrink));
    m.material.opacity=(1-smooth(.447,.513,p))*(.88+.12*d.order);
-   m.visible=p<.514;
+   m.visible=p<.514&&(!mobile||idx<18);
    m.position.set(x,y,z);
    m.rotation.set(rx,ry,rz);
+   if(m.visible&&!reduce.matches){
+    // Stable edge-local airflow: a continuous paper sheet ripples without
+    // tumbling like plastic. Geometry springs back as the vortex assembles.
+    const waveFade=1-smooth(.395,.507,p);
+    const points=m.geometry.attributes.position,base=d.baseShape;
+    for(let j=0;j<points.count;j++){
+     const k=j*3,u=base[k]/d.pw+.5,v=base[k+1]/d.ph+.5;
+     const edgeFlex=.28+.72*Math.pow(Math.abs(2*u-1),2);
+     const flutter=(.004+d.order*.009)*edgeFlex*waveFade
+       *Math.sin(t*.00115+d.phase+v*5.3+u*2.1);
+     points.setZ(j,base[k+2]+flutter);
+    }
+    points.needsUpdate=true;
+    m.geometry.computeVertexNormals();
+   }
   }
  }
 }
@@ -552,7 +681,7 @@ try{
   target.style.display="none";
   window.__enableCanvasFallback?.("webgl-context-lost");
 },{passive:true});
- window.__origami3DDiagnostics={engine:"Three.js WebGL",controller:"GSAP ScrollTrigger",sheetMeshes:halves.length,sheetVertices:halves.reduce((n,o)=>n+o.geo.attributes.position.count,0),vortexMeshes:docs.length,boatFacets:8,sailFacets:4,geometryVersion:"v8-sculpted-contours",oneContinuousSheet:true,contourPaths:creaseRibbons.length,contactShadow:true,seaShader:"v10-gpu-water",atmosphericSky:true,paperPBR:"v11-cotton-stock",paperMaps:["albedo","normal","roughness"],paperMapResolution:paperMaps.dimensions};
+ window.__origami3DDiagnostics={engine:"Three.js WebGL",controller:"GSAP ScrollTrigger",sheetMeshes:halves.length,sheetVertices:halves.reduce((n,o)=>n+o.geo.attributes.position.count,0),vortexMeshes:docs.length,boatFacets:8,sailFacets:4,geometryVersion:"v8-sculpted-contours",oneContinuousSheet:true,contourPaths:creaseRibbons.length,contactShadow:true,seaShader:"v10-gpu-water",atmosphericSky:true,paperPBR:"v11-cotton-stock",paperMaps:["albedo","normal","roughness"],paperMapResolution:paperMaps.dimensions,physicalPaperEdges:paperEdges.length,edgeThickness:.014,airFlex:"reversible-pre-fold"};
 }catch(err){
  window.__origami3DReady=false;window.__natalia3d=false;
  target.style.display="none";
