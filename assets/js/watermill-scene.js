@@ -163,6 +163,26 @@
   const t=now,goal=targetProgress();
   progress=reduce.matches?goal:lerp(progress,goal,1-Math.exp(-delta/110));
   if(Math.abs(progress-goal)<.0001)progress=goal;
+  // v40 video controls the physical scene; this legacy controller only
+  // keeps live category buttons, scroll state and accessibility in sync.
+  if(stage.classList.contains('has-cinematic-film')){
+   const waterTop=h*(1-.88*smooth(0,.665,progress));
+   window.__watermillState={progress,waterTop,active:false,engine:'pre-rendered CGI video'};
+   stage.style.setProperty('--mill-progress',progress.toFixed(4));
+   const revealAt=[.615,.52,.42]; // rising water reaches lower labels before upper ones
+   cards.forEach((card,i)=>{
+    const isShown=progress>=revealAt[i];
+    card.classList.toggle('is-revealed',isShown);
+    card.disabled=!isShown;
+    card.tabIndex=isShown?0:-1;
+    card.setAttribute('aria-hidden',String(!isShown));
+   });
+   window.__watermillDiagnostics={progress:+progress.toFixed(4),
+    waterTop:+waterTop.toFixed(1),engine:'CGI film v40',scriptInitialized:true,
+    categoriesInteractive:true,videoSegments:2};
+   schedule();
+   return;
+  }
   const motion=smooth(.065,.98,progress);
   const targetSpeed=reduce.matches?0:motion*(.16+3.75*Math.pow(motion,1.6));
   angularSpeed=lerp(angularSpeed,targetSpeed,1-Math.exp(-delta/280));
