@@ -36,10 +36,14 @@ async function check(viewport,reducedMotion='no-preference'){
   await target(.98);
   await page.waitForFunction(()=>window.__watermillDiagnostics?.progress>.95);
   const last=await page.evaluate(()=>window.__watermillDiagnostics);
+  await page.waitForFunction(()=>window.__watermill3D?.gltfModel===true,
+    null,{timeout:25000});
   const real3D=await page.evaluate(()=>window.__watermill3D);
   const pbr=await page.evaluate(()=>window.__millPhotorealPBR);
   assert.equal(real3D.engine,'Three.js WebGL');
-  assert.equal(real3D.materialVersion,33,'Expected updated realistic v33 materials');
+  assert.equal(real3D.materialVersion,35,'Expected sculpted glTF v35');
+  assert.equal(real3D.gltfModel,true,'Real model must load from our glTF asset');
+  assert.equal(real3D.waterSurfaceMesh,true,'Physically based liquid sheet exists');
   assert.equal(real3D.brassTextures,true);
   assert.equal(real3D.softReflections,true);
   assert.equal(real3D.liquidVolume,true);
