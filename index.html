@@ -6,6 +6,10 @@
 <meta name="theme-color" content="#12232a">
 <link rel="preload" as="image" type="image/svg+xml" href="./assets/images/forest-paper-texture.svg">
 <link rel="preload" as="image" type="image/svg+xml" href="./assets/images/cinematic-sea-sky.svg">
+<link rel="preload" as="image" href="./assets/images/documents/accounting-policy.webp" type="image/webp">
+<link rel="preload" as="image" href="./assets/images/documents/financial-charts.webp" type="image/webp">
+<link rel="preload" as="image" href="./assets/images/documents/handwritten-review.webp" type="image/webp">
+<link rel="preload" as="image" href="./assets/images/documents/handwritten-summary.webp" type="image/webp">
 <meta name="robots" content="noindex,nofollow">
 <meta name="description" content="Тривимірний скролітелінг Наталії та Анни: паперові документи у вихорі та складання орігамі-вітрильника.">
 <link rel="canonical" href="https://mrschljakhta-max.github.io/natalia-scroll-site/">
@@ -196,12 +200,28 @@ function grad(x0,y0,x1,y1,stops){
 function inkLine(x1,y1,x2,y2,col,lw=1){
  ctx.strokeStyle=col;ctx.lineWidth=lw;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
 }
+// The Canvas fallback uses those same four images, not a different design.
+const fallbackDocumentImages=[
+ "accounting-policy.webp","financial-charts.webp",
+ "handwritten-review.webp","handwritten-summary.webp"
+].map(filename=>{
+ const img=new Image();
+ img.decoding="async";
+ img.src="./assets/images/documents/"+filename;
+ return img;
+});
 function drawPage(x,y,ww,hh,rot,alpha,pattern,depth=0){
  if(alpha<.005)return;
  ctx.save();ctx.globalAlpha*=alpha;ctx.translate(x,y);ctx.rotate(rot);
  const d=clamp(depth,-1,1),fore=.77+.23*Math.max(0,d),skew=.095*Math.sin(rot*.8+pattern);
  ctx.transform(fore,.06*d,skew,1-.12*Math.abs(d),0,0);
  ctx.shadowColor='#04161b9c';ctx.shadowBlur=12+Math.max(0,d)*20;ctx.shadowOffsetX=4+Math.max(0,d)*6;ctx.shadowOffsetY=8+Math.max(0,d)*16;
+ const photo=fallbackDocumentImages[pattern%fallbackDocumentImages.length];
+ if(photo&&photo.complete&&photo.naturalWidth>0){
+  ctx.drawImage(photo,-ww*.5,-hh*.5,ww,hh);
+  ctx.restore();
+  return;
+ }
  const pg=grad(-ww*.5,-hh*.48,ww*.45,hh*.42,[[0,'#fffdf4'],[.38,pattern%3===0?'#f0efe4':'#faf7ed'],[.80,'#e6eae0'],[1,'#c7d0c5']]);
  const f=ww*.12;
  poly([[-ww*.5,-hh*.5],[ww*.5-f,-hh*.5],[ww*.5,-hh*.5+f],[ww*.5,hh*.5],[-ww*.5,hh*.5]],pg,'#9cb5a63a',.7);
@@ -518,6 +538,6 @@ resize();position=scrollProgress();tick=requestAnimationFrame(frame);
  },12000);
 })();
 </script>
-<script type="module" src="./assets/js/origami3d.js?v=12-physical-paper-edges" onerror="window.__enableCanvasFallback?.('module-load-error')"></script>
+<script type="module" src="./assets/js/origami3d.js?v=13-original-documents" onerror="window.__enableCanvasFallback?.('module-load-error')"></script>
 </body>
 </html>
