@@ -4,7 +4,9 @@
  * bucket geometry and dynamic GPU-shaded water — not SVG/card mockups.
  * All geometry faces the camera (frontal angle).
  */
-import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js";
+import * as THREE from "three";
+import {GLTFLoader} from "three/addons/loaders/GLTFLoader.js";
+import {RGBELoader} from "three/addons/loaders/RGBELoader.js";
 
 const stage=document.getElementById("watermillStage");
 const target=document.getElementById("millWebGL");
@@ -16,7 +18,8 @@ if(stage&&target){
  let splash=null,seaTop=null,active=false,visible=false,scheduled=false,prev=0,frameCount=0,rotation=0,speed=0;
  let width=1,height=1,W=16;
  const materials=[],geometries=[];
- let assembly=null;
+ let assembly=null,loadedRotor=null,hdriApplied=false,gltfApplied=false;
+ let waterSurface3D=null,waterSurfaceBase=null,assetLoading=false;
  try{
   renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:"high-performance"});
   renderer.setPixelRatio(Math.min(devicePixelRatio||1,matchMedia("(max-width:670px)").matches?1.1:1.4));
@@ -226,9 +229,55 @@ if(stage&&target){
   hubDisc.rotation.x=Math.PI/2;hubDisc.position.z=1.02;
   const axle=mesh(new THREE.CylinderGeometry(.105,.105,.09,32),darkGold);
   axle.rotation.x=Math.PI/2;axle.position.z=1.08;
-  torus(.28,.017,1.076,lightGold,assembly);
+  const hubRing=torus(.28,.017,1.076,lightGold,assembly);
   // Water is GPU shaded with moving caustics, volume, refraction and real
   // wave crest. The RIGHT side is a single liquid region (no tubes or tiers).
+  // First-party glTF sculptural asset, authored for this exact front camera.
+  // Existing wheel remains as a complete fallback until the replacement is
+  // confirmed loaded and parsed. The glTF geometry has curved catch-paddles
+  // and a forged rim profile instead of assembled torus/box placeholders.
+  function loadPremiumAssets(){
+   if(assetLoading)return;
+   assetLoading=true;
+   const wheelUrl=new URL("../models/studio-waterwheel-v35.gltf",import.meta.url);
+   new GLTFLoader().load(wheelUrl.href,asset=>{
+    loadedRotor=asset.scene;
+    loadedRotor.traverse(obj=>{
+     if(!obj.isMesh)return;
+     const n=obj.material?.name||"";
+     obj.material=n.includes("Champagne")?lightGold:
+      n.includes("Dark")?darkGold:gold;
+     obj.castShadow=false;obj.receiveShadow=false;
+     obj.frustumCulled=false;
+    });
+    assembly.add(loadedRotor);
+    loadedRotor.rotation.z=rotor.rotation.z;
+    rotor.visible=false;
+    hubDisc.visible=false;
+    axle.visible=false;
+    hubRing.visible=false;
+    gltfApplied=true;
+   },undefined,error=>{
+    window.__watermillAssetWarning="glTF wheel unavailable; displaying original 3D fallback";
+    console.warn("Watermill glTF fallback:",error);
+   });
+   // Actual CC0 studio HDRI, deliberately low-resolution (1K) and fetched
+   // only when scene 05 approaches the viewport. The procedural cube
+   // environment already set above remains when off-line / CORS-blocked.
+   const hdr="https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/studio_small_09_1k.hdr";
+   new RGBELoader().load(hdr,texture=>{
+    const generator=new THREE.PMREMGenerator(renderer);
+    const pack=generator.fromEquirectangular(texture);
+    scene.environment=pack.texture;
+    scene.environmentIntensity=.82;
+    hdriApplied=true;
+    texture.dispose();
+    generator.dispose();
+   },undefined,error=>{
+    window.__watermillHDRIWarning="HDRI unavailable; using procedural environment";
+    console.warn("Watermill HDRI fallback:",error);
+   });
+  }
   const rgb=x=>new THREE.Color(x);
   const waterUniforms={
    uTime:{value:0},uLevel:{value:0},uDeep:{value:rgb("#1E6873")},
@@ -327,6 +376,21 @@ if(stage&&target){
   }),scene);
   materials.push(surface.material);
   surface.position.z=.26;
+  // A real tilted surface plane defines the water's visible thickness at
+  // the moving waterline. It refracts the background using a physically
+  // based dielectric material rather than drawing all water as a flat mask.
+  const sheetGeo=new THREE.PlaneGeometry(1,1.45,68,10);
+  waterSurfaceBase=new Float32Array(sheetGeo.attributes.position.array);
+  waterSurface3D=mesh(sheetGeo,new THREE.MeshPhysicalMaterial({
+   color:0xA5D5D0,metalness:0,roughness:.16,
+   ior:1.333,transmission:.27,thickness:.42,transparent:true,
+   opacity:.48,depthWrite:false,side:THREE.DoubleSide,
+   clearcoat:.25,clearcoatRoughness:.22,envMapIntensity:.48
+  }),scene);
+  materials.push(waterSurface3D.material);
+  waterSurface3D.rotation.x=-1.12;
+  waterSurface3D.position.z=.50;
+  waterSurface3D.visible=false;
   // A moving three-dimensional curtain of water drops from the sea surface
   // onto the ACTUAL top bucket of the wheel, not an unrelated graphic.
   const streamUniforms={
@@ -465,6 +529,8 @@ if(stage&&target){
    sea.position.x=(W*.5+start)*.5;
    surface.scale.x=sea.scale.x;
    surface.position.x=sea.position.x;
+   waterSurface3D.scale.x=sea.scale.x;
+   waterSurface3D.position.x=sea.position.x;
    seaTop.scale.x=W;
    seaTop.position.x=0;
    // Narrow screens keep the centered water source and smaller sculpture
@@ -498,11 +564,25 @@ if(stage&&target){
    // Keep angular speed positive; only its visual orientation is reversed.
    rotation=(rotation+speed*delta/1000)%(Math.PI*2);
    rotor.rotation.z=-rotation;
+   if(loadedRotor)loadedRotor.rotation.z=-rotation;
    const level=smooth(.14,.985,p)*.87;
    waterUniforms.uLevel.value=level;
    waterUniforms.uTime.value=time*.001;
    surface.position.y=-5+10*level;
    surface.visible=level>.006;
+   waterSurface3D.visible=level>.025;
+   waterSurface3D.position.y=-5+10*level;
+   if(waterSurface3D.visible&&!reduce.matches){
+    const attr=waterSurface3D.geometry.attributes.position;
+    for(let i=0;i<attr.count;i++){
+     const x=waterSurfaceBase[i*3],y=waterSurfaceBase[i*3+1];
+     const swell=.022*Math.sin(x*13.8+time*.00049+y*4.6)
+      +.011*Math.sin(x*29.7-time*.00085+y*7.4);
+     attr.setZ(i,swell);
+    }
+    attr.needsUpdate=true;
+    waterSurface3D.geometry.computeVertexNormals();
+   }
    // The stream flows as soon as the sea spills into this scene;
    // scrolling strengthens the waterfall and then accelerates the wheel.
    streamUniforms.uStrength.value=.38+.62*smooth(.015,.25,p);
@@ -537,15 +617,17 @@ if(stage&&target){
     angularVelocity:Number(speed.toFixed(2)),waterLevel:Number(level.toFixed(3)),
     wheelRadius:2.31,frontFacing:true,seaLinked:true,
     wheelDirection:"clockwise",rotationRadians:Number(rotor.rotation.z.toFixed(3)),
-    materialVersion:33,brassTextures:true,softReflections:true,
+    materialVersion:35,brassTextures:true,softReflections:true,
+    gltfModel:gltfApplied,studioHDRI:hdriApplied,waterSurfaceMesh:!!waterSurface3D,
     liquidVolume:true,sprayParticles:drops
    };
    schedule();
   }
-  window.__millPhotorealPBR={version:33,environment:"six-card procedural PMREM",
+  window.__millPhotorealPBR={version:35,environment:"studio_small_09 HDRI with fallback",
    brassNormalMap:true,brassRoughnessMap:true,contactOcclusion:true};
   const observer=new IntersectionObserver(entries=>{
    visible=entries[0].isIntersecting;
+   if(visible)loadPremiumAssets();
    if(visible){lastFrame=0;schedule();}
   },{rootMargin:"100px 0px"});
   resize();
