@@ -99,7 +99,7 @@
  }
  function drawFall(p,t){
   F.clearRect(0,0,w,h);
-  const amount=smooth(.018,.23,p);
+  const amount=.30+.70*smooth(.018,.23,p);
   if(amount<=.002)return;
   const rect=wheel.getBoundingClientRect(),parent=stage.getBoundingClientRect();
   const cx=rect.left-parent.left+rect.width*.5;
