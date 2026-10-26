@@ -119,30 +119,40 @@ if(stage&&target){
    "void main(){vUv=uv; vec4 w=modelMatrix*vec4(position,1.);vWorld=w.xyz;",
    "gl_Position=projectionMatrix*viewMatrix*w;}"
   ].join("\n");
+  // A layered body of water, not a repeating caustics screensaver.
+  // Low-frequency refraction and soft irregular sun patches preserve its mass.
   const waterFragment=[
    "uniform float uTime;uniform float uLevel;uniform float uOpacity;",
    "uniform vec3 uDeep;uniform vec3 uMid;uniform vec3 uLight;uniform vec3 uSun;",
    "varying vec2 vUv;varying vec3 vWorld;",
-   "float band(vec2 p){return sin(p.x*57.+sin(p.y*32.+uTime*.84)*1.9)",
-   " *sin(p.y*35.-p.x*18.+uTime*1.22);}",
+   "float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}",
+   "float noise(vec2 p){vec2 i=floor(p),f=fract(p);",
+   " f=f*f*(3.-2.*f);",
+   " return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),",
+   " mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),f.x),f.y);}",
    "void main(){",
-   " float surf=uLevel+.013*sin(vUv.x*12.+uTime*.95)+.007*sin(vUv.x*29.-uTime*1.18);",
-   " if(uLevel<.002 || vUv.y>surf)discard;",
-   " float d=clamp((surf-vUv.y)*2.1,0.,1.);",
-   " vec2 uv=vUv;",
-   " float ripple=sin(uv.x*38.+sin(uv.y*25.+uTime)*1.8-uTime*2.1)",
-   "   *sin(uv.y*31.-uv.x*14.+uTime*.93);",
-   " float caustic=pow(max(0.,band(uv)+.26),6.)*.31;",
-   " float sun=pow(max(0.,.5+.5*sin(uv.x*73.-uv.y*55.+uTime*1.42)),16.)*.18;",
-   " vec3 col=mix(uLight,uDeep,pow(d,.66)*.84);",
-   " col=mix(col,uMid,.18+max(0.,ripple)*.11);",
-   " col+=uSun*(caustic+sun);",
-   " float lip=1.-smoothstep(.006,.045,abs(vUv.y-surf));",
-   " col=mix(col,uSun,lip*.6);",
-   " float edge=pow(1.-vUv.x,9.)*.12;",
-   " col+=uLight*edge;",
-   " float opacity=uOpacity*(.82+.17*d)+.10*lip;",
-   " gl_FragColor=vec4(col,clamp(opacity,0.,.99));",
+   " vec2 uv=vUv;float t=uTime;",
+   " float swell=.0065*sin(uv.x*12.7+t*.62)+.0035*sin(uv.x*25.3-t*.53);",
+   " float surf=uLevel+swell;",
+   " if(uLevel<.002||uv.y>surf)discard;",
+   " float depth=clamp((surf-uv.y)/max(surf,.12),0.,1.);",
+   " float warp=noise(uv*vec2(3.8,4.9)+vec2(t*.11,-t*.075))-.5;",
+   " vec2 f=uv*vec2(6.8,7.8)+vec2(warp*.7,warp*.9);",
+   " float caustic=noise(f+vec2(t*.21,-t*.15));",
+   " caustic=mix(caustic,noise(f*1.78-vec2(t*.07,t*.11)),.30);",
+   " float broad=sin(uv.x*7.3+uv.y*6.9+t*.32+warp*.7);",
+   " float shade=.018*broad+.032*(caustic-.5);",
+   " vec3 col=mix(uLight,uDeep,pow(depth,.82)*.76);",
+   " col=mix(col,uMid,.12+max(0.,warp)*.10);",
+   " col+=uSun*(.012+.042*pow(max(0.,caustic-.54),2.));",
+   " col+=uLight*shade;",
+   " float rim=1.-smoothstep(0.,.025,abs(uv.y-surf));",
+   " col=mix(col,uLight+uSun*.17,rim*.46);",
+   " float side=pow(1.-uv.x,6.);col+=uLight*side*.065;",
+   " float lightFromTop=(1.-depth)*.095;",
+   " col+=uSun*lightFromTop;",
+   " float opacity=clamp(uOpacity*(.83+.13*depth)+rim*.11,0.,.97);",
+   " gl_FragColor=vec4(col,opacity);",
    " #include <colorspace_fragment>",
    "}"
   ].join("\n");
@@ -153,6 +163,34 @@ if(stage&&target){
   }),scene);
   materials.push(sea.material);
   sea.position.z=-.30;
+  // The moving lip is a separate small, curved GPU surface in front of the
+  // volume: a real 3D edge with shimmer, not a hard flat dividing line.
+  const surfaceUniforms={uTime:waterUniforms.uTime,uLevel:waterUniforms.uLevel,
+   uSun:waterUniforms.uSun,uLight:waterUniforms.uLight};
+  const surfaceVertex=[
+   "uniform float uTime; varying vec2 vUv;",
+   "void main(){vUv=uv;vec3 p=position;",
+   "p.y+=.035*sin(uv.x*12.7+uTime*.62)+.018*sin(uv.x*25.3-uTime*.53);",
+   "p.z+=.028*sin(uv.x*10.5+uTime*.38);",
+   "gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}"
+  ].join("\n");
+  const surfaceFragment=[
+   "uniform float uTime;uniform vec3 uSun;uniform vec3 uLight;",
+   "varying vec2 vUv;",
+   "void main(){",
+   " float center=1.-abs(vUv.y-.5)*2.;",
+   " float beam=.68+.32*sin(vUv.x*17.1+uTime*.57);",
+   " vec3 col=mix(uLight,uSun,.16+.15*beam);",
+   " gl_FragColor=vec4(col,pow(max(0.,center),2.2)*.36);",
+   " #include <colorspace_fragment>",
+   "}"
+  ].join("\n");
+  const surface=mesh(new THREE.PlaneGeometry(1,.17,96,4),new THREE.ShaderMaterial({
+   uniforms:surfaceUniforms,vertexShader:surfaceVertex,fragmentShader:surfaceFragment,
+   transparent:true,depthWrite:false,side:THREE.DoubleSide,toneMapped:false
+  }),scene);
+  materials.push(surface.material);
+  surface.position.z=.26;
   // A moving three-dimensional curtain of water drops from the sea surface
   // onto the ACTUAL top bucket of the wheel, not an unrelated graphic.
   const streamUniforms={
@@ -241,6 +279,8 @@ if(stage&&target){
    const start=.12;
    sea.scale.x=W*.5-start;
    sea.position.x=(W*.5+start)*.5;
+   surface.scale.x=sea.scale.x;
+   surface.position.x=sea.position.x;
    seaTop.scale.x=W;
    seaTop.position.x=0;
    // Narrow screens keep the centered water source and smaller sculpture
@@ -270,6 +310,8 @@ if(stage&&target){
    const level=smooth(.14,.985,p)*.87;
    waterUniforms.uLevel.value=level;
    waterUniforms.uTime.value=time*.001;
+   surface.position.y=-5+10*level;
+   surface.visible=level>.006;
    // The stream flows as soon as the sea spills into this scene;
    // scrolling strengthens the waterfall and then accelerates the wheel.
    streamUniforms.uStrength.value=.38+.62*smooth(.015,.25,p);
