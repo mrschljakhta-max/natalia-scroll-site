@@ -539,16 +539,15 @@ function updateSheet(p,time){
  }
  pos.needsUpdate=true;col.needsUpdate=true;
  geo.computeVertexNormals();geo.computeBoundingSphere();
- // The single source sheet stays intact until its final stage, at which
- // point the reference-photo boat fades in while animated water continues.
- const photoSwap=smooth(.961,.991,p);
- if(sheetMat.transparent!==(photoSwap>.001)){
-   sheetMat.transparent=photoSwap>.001;
-   sheetMat.depthWrite=photoSwap<=.001;
-   sheetMat.needsUpdate=true;
+ // Preserve the ORIGINAL continuous-sheet yacht at full scroll progress.
+ // No substitute object, sprite, or photograph obscures its paper facets.
+ if(sheetMat.transparent){
+  sheetMat.transparent=false;
+  sheetMat.depthWrite=true;
+  sheetMat.needsUpdate=true;
  }
- mesh.visible=photoSwap<.998;
- mesh.material.opacity=1-photoSwap;
+ mesh.visible=true;
+ mesh.material.opacity=1;
  const mobile=width<670;
  const doc=docs[0];
  const pose=selectedPaperPose||{x:0,y:0,z:0,rx:0,ry:0,rz:0};
@@ -572,17 +571,17 @@ function updateSheet(p,time){
   mix(pose.ry,-.03,align)+mix(0,-.18,smooth(.90,1,p)),
   mix(pose.rz,-.012,align));
  const details=smooth(.888,.973,p);
- boatDetail.visible=details>.002&&photoSwap<.985;
+ boatDetail.visible=details>.002;
  mast.scale.y=Math.max(.002,details);
  mast.position.y=-.71+1.575*details;
- detailMaterials.forEach(({mat,initial})=>mat.opacity=initial*details*(1-photoSwap));
+ detailMaterials.forEach(({mat,initial})=>mat.opacity=initial*details);
  updatePaperEdges(p,time);
  updateRibbons(p);
- for(const r of creaseRibbons)r.mesh.material.opacity*=1-photoSwap;
- for(const edge of paperEdges)edge.mesh.visible=photoSwap<.93;
+ // Keep crease ribbons on the original sail geometry.
+ for(const edge of paperEdges)edge.mesh.visible=true;
  const seaContact=smooth(.951,.996,p);
- contactShadow.visible=seaContact>.008&&photoSwap<.90;
- contactShadow.material.opacity=.54*seaContact*(1-photoSwap*.8);
+ contactShadow.visible=seaContact>.008;
+ contactShadow.material.opacity=.54*seaContact;
  contactShadow.position.y=-1.83+(reduce.matches?0:Math.sin(time*.79)*.012*seaContact);
  boatDetail.rotation.z=reduce.matches?0:Math.sin(time*.72)*.007*smooth(.973,1,p);
  boatDetail.position.y=reduce.matches?0:Math.sin(time*.79)*.014*smooth(.978,1,p);
@@ -890,7 +889,7 @@ try{
   target.style.display="none";
   window.__enableCanvasFallback?.("webgl-context-lost");
 },{passive:true});
- window.__origami3DDiagnostics={engine:"Three.js WebGL",controller:"GSAP ScrollTrigger",sheetMeshes:halves.length,sheetVertices:halves.reduce((n,o)=>n+o.geo.attributes.position.count,0),vortexMeshes:docs.length,boatFacets:8,sailFacets:4,geometryVersion:"v8-sculpted-contours",oneContinuousSheet:true,contourPaths:creaseRibbons.length,contactShadow:true,seaShader:"v18-worldspace-animated-surface",atmosphericSky:true,paperPBR:"v11-cotton-stock",paperMaps:["albedo","normal","roughness"],paperMapResolution:paperMaps.dimensions,physicalPaperEdges:paperEdges.length,edgeThickness:.014,airFlex:"reversible-pre-fold",documentImages:documentImageStatus,documentTypes:DOCUMENT_IMAGE_FILES.length,paperPhysics:"v16-visible-paper-flaps",finalScene:"v18-fiber-origami-volumetric-sea",waveVertices:finale.waveVertices,finale:finale.diagnostics,paperPhysicsStats,heroWind:true,vortexDirection:"v14-cinematic-parallax",depthTiers:3,focusOnSameSheet:true,vortexDocumentCount:VORTEX_COUNT};
+ window.__origami3DDiagnostics={engine:"Three.js WebGL",controller:"GSAP ScrollTrigger",sheetMeshes:halves.length,sheetVertices:halves.reduce((n,o)=>n+o.geo.attributes.position.count,0),vortexMeshes:docs.length,boatFacets:8,sailFacets:4,geometryVersion:"v8-sculpted-contours",oneContinuousSheet:true,contourPaths:creaseRibbons.length,contactShadow:true,seaShader:"v18-worldspace-animated-surface",atmosphericSky:true,paperPBR:"v11-cotton-stock",paperMaps:["albedo","normal","roughness"],paperMapResolution:paperMaps.dimensions,physicalPaperEdges:paperEdges.length,edgeThickness:.014,airFlex:"reversible-pre-fold",documentImages:documentImageStatus,documentTypes:DOCUMENT_IMAGE_FILES.length,paperPhysics:"v16-visible-paper-flaps",finalScene:"v19-original-yacht-volumetric-sea",waveVertices:finale.waveVertices,finale:finale.diagnostics,paperPhysicsStats,heroWind:true,vortexDirection:"v14-cinematic-parallax",depthTiers:3,focusOnSameSheet:true,vortexDocumentCount:VORTEX_COUNT};
 }catch(err){
  window.__origami3DReady=false;window.__natalia3d=false;
  target.style.display="none";
