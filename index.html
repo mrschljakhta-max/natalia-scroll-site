@@ -49,7 +49,7 @@ html.webgl-ready #origami3d{opacity:1}
 html.canvas-fallback #origami3d{opacity:0}
 #origami3d canvas{display:block;width:100%;height:100%;pointer-events:none;outline:0}
 /* CINEMATIC PAPER SEA — layered atmosphere behind the actual WebGL yacht.
-   The sky is a separate responsive texture; water is a fragment shader in Three.js.
+   The sky is a separate responsive texture; geometric waves live in world-space Three.js.
    The simple CSS sea appears ONLY when WebGL cannot start. */
 .escape-world{position:absolute;inset:0;z-index:1;opacity:var(--day);
  transform:translateY(calc((1 - var(--day))*14px)) scale(calc(1.012 - var(--day)*.012));
@@ -66,15 +66,15 @@ html.canvas-fallback #origami3d{opacity:0}
  background:radial-gradient(ellipse 12% 85% at 80% 0%,#eadbbb39,transparent 100%),
   linear-gradient(180deg,#79a5a0 0%,#55908c 34%,#2c696b 100%)}
 html.canvas-fallback .fallback-ocean{display:block}
-/* PHOTO-REFERENCE FINALE: the actual user-approved origami silhouette.
-   Overlays the WebGL sail geometry ONLY after the final fold; the ocean
-   underneath remains live, animated, and 3D-displaced. */
+/* Original photo is retained ONLY for no-WebGL fallback.
+    World-space sea and paper origami render together in Three.js. */
+html.webgl-ready .photoreal-boat-layer{display:none!important}
 .photoreal-boat-layer{position:absolute;inset:0;z-index:6;pointer-events:none;
  opacity:var(--boat-photo,0);visibility:visible;
  will-change:opacity}
 .photoreal-boat{position:absolute;left:65%;top:54%;width:min(48vw,735px);height:auto;
  transform:translate(-50%,-50%);object-fit:contain;
- filter:drop-shadow(0 17px 14px rgba(15,62,61,.24));
+ filter:brightness(1.17) saturate(.73) contrast(.90) drop-shadow(0 14px 16px rgba(15,62,61,.20));
  animation:photoBoatFloat 6.4s ease-in-out infinite;
  will-change:transform}
 .photoreal-boat-contact{position:absolute;left:65%;top:70.7%;height:5.6%;width:min(45vw,675px);
@@ -577,6 +577,6 @@ resize();position=scrollProgress();tick=requestAnimationFrame(frame);
  },12000);
 })();
 </script>
-<script type="module" src="./assets/js/origami3d.js?v=17-photo-boat-ocean" onerror="window.__enableCanvasFallback?.('module-load-error')"></script>
+<script type="module" src="./assets/js/origami3d.js?v=18-cinematic-finale" onerror="window.__enableCanvasFallback?.('module-load-error')"></script>
 </body>
 </html>
