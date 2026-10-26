@@ -244,6 +244,18 @@ if(stage&&target){
     loadedRotor=asset.scene;
     loadedRotor.traverse(obj=>{
      if(!obj.isMesh)return;
+     // Our bespoke geometry uses topology optimized for a tiny glTF.
+     // Generate UVs on import so PBR micro-scratch normal/roughness maps
+     // work correctly even when the source meshes omit TEXCOORD_0.
+     const geo=obj.geometry,vertices=geo.getAttribute("position");
+     if(vertices&&!geo.getAttribute("uv")){
+      const uv=new Float32Array(vertices.count*2);
+      for(let i=0;i<vertices.count;i++){
+       uv[i*2]=vertices.getX(i)*.17+.5;
+       uv[i*2+1]=vertices.getY(i)*.17+.5;
+      }
+      geo.setAttribute("uv",new THREE.BufferAttribute(uv,2));
+     }
      const n=obj.material?.name||"";
      obj.material=n.includes("Champagne")?lightGold:
       n.includes("Dark")?darkGold:gold;
