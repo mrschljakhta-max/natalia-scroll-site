@@ -16,6 +16,12 @@ async function check(viewport,reducedMotion='no-preference'){
   const stage=page.locator('#watermillStage');
   const wheel=page.locator('#millWheel');
   assert.equal(await page.locator('#conclusion .mill-category').count(),3);
+  await page.waitForFunction(()=>window.__watermillDiagnostics?.scriptInitialized===true,
+    {timeout:20000});
+  await page.waitForFunction(()=>window.__watermill3D?.engine==='Three.js WebGL',
+    {timeout:30000});
+  assert.equal(await page.locator('#millWebGL canvas').count(),1,
+    'real WebGL renderer should replace flat SVG wheel');
   assert.equal(await page.locator('#experience .story-copy').count(),4);
   const target=async p=>page.evaluate(v=>{
     const el=document.getElementById('watermillJourney')||document.getElementById('conclusion');
@@ -29,6 +35,14 @@ async function check(viewport,reducedMotion='no-preference'){
   await target(.98);
   await page.waitForFunction(()=>window.__watermillDiagnostics?.progress>.95);
   const last=await page.evaluate(()=>window.__watermillDiagnostics);
+  const real3D=await page.evaluate(()=>window.__watermill3D);
+  assert.equal(real3D.engine,'Three.js WebGL');
+  assert.equal(real3D.frontFacing,true);
+  assert.equal(real3D.seaLinked,true);
+  assert.match(real3D.waterfall,/3D mesh/);
+  assert.ok(real3D.waterLevel>.75,'WebGL ocean water should visibly rise');
+  assert.ok(reducedMotion==='reduce'||real3D.angularVelocity>.2,
+    'waterwheel should accelerate with the scroll');
   assert.equal(last.categoryCount,3);
   assert.equal(last.frontFacingWheel,true);
   assert.equal(last.waterShape,'single continuous fill');
@@ -52,7 +66,7 @@ async function check(viewport,reducedMotion='no-preference'){
     'rising water must reverse on upward scroll');
   assert.deepEqual(errors,[],errors.join('\n'));
 
-  console.log(JSON.stringify({viewport,reducedMotion,first,last,reversed,pass:true}));
+  console.log(JSON.stringify({viewport,reducedMotion,first,last,real3D,reversed,pass:true}));
  }finally{await page.close()}
 }
 try{
