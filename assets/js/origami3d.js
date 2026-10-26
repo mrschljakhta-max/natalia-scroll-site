@@ -538,9 +538,16 @@ function updateSheet(p,time){
  }
  pos.needsUpdate=true;col.needsUpdate=true;
  geo.computeVertexNormals();geo.computeBoundingSphere();
- // Never fade the sheet out; it becomes the boat through its own vertices.
- mesh.visible=true;
- mesh.material.opacity=1;
+ // The single source sheet stays intact until its final stage, at which
+ // point the reference-photo boat fades in while animated water continues.
+ const photoSwap=smooth(.961,.991,p);
+ if(sheetMat.transparent!==(photoSwap>.001)){
+   sheetMat.transparent=photoSwap>.001;
+   sheetMat.depthWrite=photoSwap<=.001;
+   sheetMat.needsUpdate=true;
+ }
+ mesh.visible=photoSwap<.998;
+ mesh.material.opacity=1-photoSwap;
  const mobile=width<670;
  const doc=docs[0];
  const pose=selectedPaperPose||{x:0,y:0,z:0,rx:0,ry:0,rz:0};
@@ -564,15 +571,17 @@ function updateSheet(p,time){
   mix(pose.ry,-.03,align)+mix(0,-.18,smooth(.90,1,p)),
   mix(pose.rz,-.012,align));
  const details=smooth(.888,.973,p);
- boatDetail.visible=details>.002;
+ boatDetail.visible=details>.002&&photoSwap<.985;
  mast.scale.y=Math.max(.002,details);
  mast.position.y=-.71+1.575*details;
- detailMaterials.forEach(({mat,initial})=>mat.opacity=initial*details);
+ detailMaterials.forEach(({mat,initial})=>mat.opacity=initial*details*(1-photoSwap));
  updatePaperEdges(p,time);
  updateRibbons(p);
+ for(const r of creaseRibbons)r.mesh.material.opacity*=1-photoSwap;
+ for(const edge of paperEdges)edge.mesh.visible=photoSwap<.93;
  const seaContact=smooth(.951,.996,p);
  contactShadow.visible=seaContact>.008;
- contactShadow.material.opacity=.54*seaContact;
+ contactShadow.material.opacity=.54*seaContact*(1-photoSwap*.8);
  contactShadow.position.y=-1.83+(reduce.matches?0:Math.sin(time*.79)*.012*seaContact);
  boatDetail.rotation.z=reduce.matches?0:Math.sin(time*.72)*.007*smooth(.973,1,p);
  boatDetail.position.y=reduce.matches?0:Math.sin(time*.79)*.014*smooth(.978,1,p);
@@ -829,10 +838,13 @@ const oceanUniforms={
 const oceanMaterial=new THREE.ShaderMaterial({
  uniforms:oceanUniforms,transparent:true,depthTest:false,depthWrite:false,
  toneMapped:false,
- vertexShader:"\nvarying vec2 vUv;\nuniform float uTime;\nvoid main(){\n vUv=uv;\n gl_Position=vec4(position.xy,0.0,1.0);\n}",
- fragmentShader:"\nprecision highp float;\nuniform float uTime;\nuniform float uReveal;\nuniform float uAspect;\nuniform float uSunX;\nvarying vec2 vUv;\nfloat h21(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}\nfloat noise2(vec2 p){\n vec2 i=floor(p),f=fract(p);\n vec2 t=f*f*(3.0-2.0*f);\n float a=h21(i),b=h21(i+vec2(1.0,0.0));\n float c=h21(i+vec2(0.0,1.0)),d=h21(i+vec2(1.0,1.0));\n return mix(mix(a,b,t.x),mix(c,d,t.x),t.y);\n}\nfloat fbm(vec2 p){\n float f=0.0,w=.53;\n for(int i=0;i<3;i++){f+=w*noise2(p);p=p*2.07+vec2(9.3,7.1);w*=.49;}\n return f;\n}\nvoid main(){\n const float horizon=.394;\n float waterMask=1.0-smoothstep(horizon-.010,horizon+.016,vUv.y);\n if(waterMask<.002)discard;\n float depth=clamp((horizon-vUv.y)/horizon,0.0,1.0);\n float perspective=pow(depth,.76);\n float t=uTime*.15;\n vec2 uv=vec2(vUv.x*uAspect,depth);\n float undulate=sin(uv.x*5.3+depth*18.0+t*.68)*.33\n   +sin(uv.x*11.7-depth*22.5-t*.44)*.13;\n float domainX=uv.x*7.0+undulate*.19;\n float n=fbm(vec2(domainX*.76,depth*9.0-t*.34));\n float small=fbm(vec2(domainX*1.85+2.0,depth*18.0+t*.42));\n float current=sin(uv.x*13.0+depth*50.0+n*3.7+t);\n float micro=sin(uv.x*28.0-depth*76.0+small*5.3-t*1.20);\n float fineFoam=pow(max(0.0,.5+.5*current),8.0)*.12+\n       pow(max(0.0,.5+.5*micro),16.0)*.065;\n float body=clamp(.54*n+.46*small,0.0,1.0);\n vec3 horizonTeal=vec3(.49,.68,.62);\n vec3 foregroundTeal=vec3(.10,.37,.39);\n vec3 color=mix(horizonTeal,foregroundTeal,pow(depth,.88));\n color+=vec3(.085,.095,.076)*(body-.45);\n color+=vec3(.06,.11,.085)*undulate*.38;\n color+=vec3(.15,.18,.145)*fineFoam*(.20+.80*perspective);\n float horizontalDrift=.014*sin(depth*15.0+t*.65)\n    +.008*sin(depth*34.0-t*1.3);\n float reflectionWidth=mix(.013,.145,pow(depth,.90));\n float xdist=(vUv.x-(uSunX+horizontalDrift))/reflectionWidth;\n float reflection=exp(-2.0*xdist*xdist);\n float broken=pow(max(0.0,.5+.5*sin(\n   depth*155.0+uv.x*28.0+small*9.0+t*1.6)),10.0);\n float sparkle=pow(max(0.0,.5+.5*sin(\n   depth*250.0+uv.x*44.0+n*12.0-t*1.5)),22.0);\n float glints=reflection*(broken*.26+sparkle*.22+body*.045)\n   *(.25+.75*perspective);\n color+=vec3(1.0,.79,.49)*glints;\n color=mix(color,vec3(.79,.81,.69),\n   (1.0-smoothstep(0.0,.09,depth))*.10);\n float horizonHaze=1.0-smoothstep(0.0,.15,depth);\n color=mix(color,vec3(.64,.74,.67),horizonHaze*.20);\n gl_FragColor=vec4(clamp(color,0.0,1.0),waterMask*uReveal*.985);\n}"
+ vertexShader:"\nprecision highp float;\nuniform float uTime;\nuniform float uReveal;\nuniform float uAspect;\nvarying vec2 vUv;\nvarying vec3 vWaveNormal;\nvarying float vWaveHeight;\nvoid main(){\n vUv=uv;\n vec3 pos=position;\n float nearSea=clamp((.394-uv.y)/.394,0.0,1.0);\n float waveScale=pow(nearSea,.83);\n float t=uTime;\n float a=uv.x*26.0*uAspect+nearSea*37.0-t*.63;\n float b=uv.x*43.0*uAspect-nearSea*48.0+t*.47;\n float c=uv.x*13.0*uAspect+nearSea*22.0+t*.33;\n float h=(sin(a)*.47+sin(b)*.22+sin(c)*.31)*waveScale;\n pos.y+=h*.012*uReveal;\n pos.z+=h*.145*uReveal;\n vWaveHeight=h;\n float ddx=(cos(a)*26.0*.47+cos(b)*43.0*.22+\n   cos(c)*13.0*.31)*waveScale*.145*uReveal;\n float ddy=(cos(a)*37.0*.47-cos(b)*48.0*.22+\n   cos(c)*22.0*.31)*waveScale*.145*uReveal;\n vWaveNormal=normalize(vec3(-ddx*.23,-ddy*.23,1.0));\n gl_Position=vec4(pos.xy,pos.z*.035,1.0);\n}",
+ fragmentShader:"\nprecision highp float;\nuniform float uTime;\nuniform float uReveal;\nuniform float uAspect;\nuniform float uSunX;\nvarying vec2 vUv;\nvarying vec3 vWaveNormal;\nvarying float vWaveHeight;\nfloat h21(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}\nfloat noise2(vec2 p){\n vec2 i=floor(p),f=fract(p);\n vec2 t=f*f*(3.0-2.0*f);\n float a=h21(i),b=h21(i+vec2(1.0,0.0));\n float c=h21(i+vec2(0.0,1.0)),d=h21(i+vec2(1.0,1.0));\n return mix(mix(a,b,t.x),mix(c,d,t.x),t.y);\n}\nfloat fbm(vec2 p){\n float f=0.0,w=.53;\n for(int i=0;i<3;i++){f+=w*noise2(p);p=p*2.07+vec2(9.3,7.1);w*=.49;}\n return f;\n}\nvoid main(){\n const float horizon=.394;\n float waterMask=1.0-smoothstep(horizon-.010,horizon+.016,vUv.y);\n if(waterMask<.002)discard;\n float depth=clamp((horizon-vUv.y)/horizon,0.0,1.0);\n float perspective=pow(depth,.76);\n float t=uTime*.15;\n vec2 uv=vec2(vUv.x*uAspect,depth);\n float undulate=sin(uv.x*5.3+depth*18.0+t*.68)*.33\n   +sin(uv.x*11.7-depth*22.5-t*.44)*.13;\n float domainX=uv.x*7.0+undulate*.19;\n float n=fbm(vec2(domainX*.76,depth*9.0-t*.34));\n float small=fbm(vec2(domainX*1.85+2.0,depth*18.0+t*.42));\n float current=sin(uv.x*13.0+depth*50.0+n*3.7+t);\n float micro=sin(uv.x*28.0-depth*76.0+small*5.3-t*1.20);\n float fineFoam=pow(max(0.0,.5+.5*current),8.0)*.12+\n       pow(max(0.0,.5+.5*micro),16.0)*.065;\n float body=clamp(.54*n+.46*small,0.0,1.0);\n vec3 horizonTeal=vec3(.49,.68,.62);\n vec3 foregroundTeal=vec3(.10,.37,.39);\n vec3 color=mix(horizonTeal,foregroundTeal,pow(depth,.88));\n color+=vec3(.085,.095,.076)*(body-.45);\n color+=vec3(.06,.11,.085)*undulate*.38;\n color+=vec3(.15,.18,.145)*fineFoam*(.20+.80*perspective);\nvec3 waterLight=normalize(vec3(.50,.20,.85));\nfloat crestLight=pow(max(0.0,dot(normalize(vWaveNormal),waterLight)),4.0);\ncolor+=vec3(.19,.20,.145)*crestLight*perspective*.20;\ncolor+=vec3(.05,.095,.07)*vWaveHeight*perspective;\nfloat nearHull=exp(-pow((vUv.x-.63)/.14,2.0))\n  *exp(-pow((vUv.y-.315)/.048,2.0));\nfloat wake=nearHull*(.12+.09*sin(uTime*1.7+vUv.x*57.0));\ncolor+=vec3(.24,.26,.18)*wake;\n float horizontalDrift=.014*sin(depth*15.0+t*.65)\n    +.008*sin(depth*34.0-t*1.3);\n float reflectionWidth=mix(.013,.145,pow(depth,.90));\n float xdist=(vUv.x-(uSunX+horizontalDrift))/reflectionWidth;\n float reflection=exp(-2.0*xdist*xdist);\n float broken=pow(max(0.0,.5+.5*sin(\n   depth*155.0+uv.x*28.0+small*9.0+t*1.6)),10.0);\n float sparkle=pow(max(0.0,.5+.5*sin(\n   depth*250.0+uv.x*44.0+n*12.0-t*1.5)),22.0);\n float glints=reflection*(broken*.26+sparkle*.22+body*.045)\n   *(.25+.75*perspective);\n color+=vec3(1.0,.79,.49)*glints;\n color=mix(color,vec3(.79,.81,.69),\n   (1.0-smoothstep(0.0,.09,depth))*.10);\n float horizonHaze=1.0-smoothstep(0.0,.15,depth);\n color=mix(color,vec3(.64,.74,.67),horizonHaze*.20);\n gl_FragColor=vec4(clamp(color,0.0,1.0),waterMask*uReveal*.985);\n}"
 });
-const oceanQuad=new THREE.Mesh(new THREE.PlaneGeometry(2,2,50,32),oceanMaterial);
+// Subdivided wave geometry: physical crest/trough displacement.
+const waterCompact=matchMedia("(max-width: 670px)").matches;
+const oceanQuad=new THREE.Mesh(new THREE.PlaneGeometry(2,2,
+ waterCompact?64:126,waterCompact?40:78),oceanMaterial);
 oceanQuad.frustumCulled=false;oceanScene.add(oceanQuad);
 renderer.autoClear=false;
 function renderCinematicLayers(p,t){
@@ -900,7 +912,7 @@ try{
   target.style.display="none";
   window.__enableCanvasFallback?.("webgl-context-lost");
 },{passive:true});
- window.__origami3DDiagnostics={engine:"Three.js WebGL",controller:"GSAP ScrollTrigger",sheetMeshes:halves.length,sheetVertices:halves.reduce((n,o)=>n+o.geo.attributes.position.count,0),vortexMeshes:docs.length,boatFacets:8,sailFacets:4,geometryVersion:"v8-sculpted-contours",oneContinuousSheet:true,contourPaths:creaseRibbons.length,contactShadow:true,seaShader:"v10-gpu-water",atmosphericSky:true,paperPBR:"v11-cotton-stock",paperMaps:["albedo","normal","roughness"],paperMapResolution:paperMaps.dimensions,physicalPaperEdges:paperEdges.length,edgeThickness:.014,airFlex:"reversible-pre-fold",documentImages:documentImageStatus,documentTypes:DOCUMENT_IMAGE_FILES.length,paperPhysics:"v16-visible-paper-flaps",paperPhysicsStats,heroWind:true,vortexDirection:"v14-cinematic-parallax",depthTiers:3,focusOnSameSheet:true,vortexDocumentCount:VORTEX_COUNT};
+ window.__origami3DDiagnostics={engine:"Three.js WebGL",controller:"GSAP ScrollTrigger",sheetMeshes:halves.length,sheetVertices:halves.reduce((n,o)=>n+o.geo.attributes.position.count,0),vortexMeshes:docs.length,boatFacets:8,sailFacets:4,geometryVersion:"v8-sculpted-contours",oneContinuousSheet:true,contourPaths:creaseRibbons.length,contactShadow:true,seaShader:"v10-gpu-water",atmosphericSky:true,paperPBR:"v11-cotton-stock",paperMaps:["albedo","normal","roughness"],paperMapResolution:paperMaps.dimensions,physicalPaperEdges:paperEdges.length,edgeThickness:.014,airFlex:"reversible-pre-fold",documentImages:documentImageStatus,documentTypes:DOCUMENT_IMAGE_FILES.length,paperPhysics:"v16-visible-paper-flaps",finalScene:"v17-photo-boat-3d-waves",waveVertices:oceanQuad.geometry.attributes.position.count,paperPhysicsStats,heroWind:true,vortexDirection:"v14-cinematic-parallax",depthTiers:3,focusOnSameSheet:true,vortexDocumentCount:VORTEX_COUNT};
 }catch(err){
  window.__origami3DReady=false;window.__natalia3d=false;
  target.style.display="none";
