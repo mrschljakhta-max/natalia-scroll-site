@@ -12,7 +12,7 @@
 <link rel="preload" as="image" href="./assets/images/documents/handwritten-summary.webp" type="image/webp">
 <meta name="robots" content="noindex,nofollow">
 <meta name="description" content="Тривимірний скролітелінг Наталії та Анни: паперові документи у вихорі та складання орігамі-вітрильника.">
-<meta name="site-revision" content="v28-mist-sky-ocean">
+<meta name="site-revision" content="v29-scroll-watermill">
 <link rel="canonical" href="https://mrschljakhta-max.github.io/natalia-scroll-site/">
 <script>
 /* Keep platform referral tracking out of the visible address bar, without
@@ -141,10 +141,95 @@ html.canvas-fallback .fallback-ocean{display:block}
 .progress-track{height:2px;position:absolute;left:0;right:0;bottom:0;background:#ffffff2e;z-index:15}.progress-track>div{height:100%;background:#d9e7d1;transform:scaleX(var(--p));transform-origin:left;box-shadow:0 0 20px #e1eac880}
 
 
-.footer{background:#f5f1e8;color:#25473d;padding:clamp(65px,11vw,140px) clamp(24px,8vw,150px);position:relative;min-height:64vh;display:grid;align-items:center;grid-template-columns:1.2fr .8fr;gap:60px}
-.footer-kicker{font-size:11px;letter-spacing:.24em;font-weight:800;color:#718779;text-transform:uppercase}.footer h2{font:400 clamp(45px,6vw,86px)/1.06 Georgia,serif;letter-spacing:-.055em;margin:18px 0 20px}.footer h2 em{color:#8b9e89}.footer p{max-width:510px;line-height:1.85;font-size:15px;color:#536861}.footer .panel{border-left:1px solid #b4c1b4;padding-left:45px;display:grid;gap:26px}.footer .panel span{font-size:9px;letter-spacing:.2em;color:#7a8f84;text-transform:uppercase;font-weight:800}.footer .panel b{font:400 25px Georgia,serif;line-height:1.3}.restart{border:1px solid #244e44;background:transparent;color:#244e44;padding:13px 19px;border-radius:100px;font-size:12px;font-weight:700;justify-self:start;transition:.25s}.restart:hover{background:#244e44;color:white}.fineprint{font-size:11px;line-height:1.7;color:#82918a!important;margin-top:35px}
+/* Scene 05 / sea spills over the edge and powers a frontal waterwheel */
+.watermill-journey{height:365svh;min-height:2200px;background:#F5F1E8;position:relative}
+.watermill-stage{height:100svh;min-height:540px;position:sticky;top:0;isolation:isolate;overflow:hidden;
+ background:radial-gradient(ellipse 48% 76% at 76% 54%,#DFEAE2 0%,transparent 83%),
+ linear-gradient(130deg,#FAF8F1 0%,#F5F1E8 42%,#E3E7DB 100%);
+ color:#163E43;--mill-progress:0;--wheel-activity:0}
+.mill-atmosphere{position:absolute;z-index:0;inset:0;pointer-events:none;
+ background:radial-gradient(ellipse 31% 65% at 51% 81%,#D8B08B22,transparent 85%),
+ radial-gradient(ellipse 30% 28% at 72% 10%,#F2E7CF77,transparent 83%)}
+.mill-sea-ribbon{position:absolute;top:-1px;left:0;width:100%;height:clamp(58px,9svh,104px);z-index:5;pointer-events:none;filter:drop-shadow(0 5px 7px #2C78701A)}
+.mill-fill-canvas,.mill-fall-canvas{position:absolute;inset:0;display:block;width:100%;height:100%;pointer-events:none}
+.mill-fill-canvas{z-index:2}.mill-fall-canvas{z-index:5}
+.mill-wheel{position:absolute;z-index:3;left:50%;bottom:0;transform:translateX(-50%);
+ height:min(88svh,790px);width:auto;aspect-ratio:600/780;pointer-events:none;
+ filter:drop-shadow(0 18px 21px #62503A23)}
+.mill-wheel svg{display:block;width:100%;height:100%;overflow:visible}
+.mill-text{position:absolute;z-index:7;left:clamp(22px,6.4vw,115px);top:clamp(145px,22svh,245px);
+ width:min(32vw,450px);pointer-events:auto}
+.mill-eyebrow{font-size:10px;letter-spacing:.28em;font-weight:800;color:#4B766D}
+.mill-text h2{font:400 clamp(43px,5.0vw,82px)/1.035 Georgia,'Times New Roman',serif;
+ letter-spacing:-.061em;color:#16483F;margin:26px 0 25px;text-wrap:balance}
+.mill-text h2 em{color:#91A895;font-style:italic}
+.mill-text p{font-size:clamp(13px,1vw,16px);line-height:1.8;color:#53756E;max-width:365px;margin:0 0 23px}
+.mill-explore{border:1px solid #54736B;border-radius:80px;padding:13px 19px;
+ background:#F5F1E83D;color:#16483F;display:inline-flex;gap:24px;align-items:center;
+ font-size:12px;font-weight:700;transition:background .25s,border-color .25s,transform .25s}
+.mill-explore:hover,.mill-explore:focus-visible{transform:translateY(-2px);border-color:#C3905B;background:#FDF6EA}
+.mill-categories{position:absolute;z-index:8;inset:0;pointer-events:none}
+.mill-category{position:absolute;right:clamp(24px,6vw,105px);width:clamp(178px,18vw,320px);
+ display:flex;align-items:center;gap:15px;text-align:left;opacity:.10;transform:translateY(20px);
+ color:#1C4D4E;background:none;border:none;padding:8px 0;cursor:pointer;
+ transition:opacity .65s ease,transform .65s cubic-bezier(.2,.8,.2,1),color .35s;
+ pointer-events:none;filter:drop-shadow(0 1px 2px #113A4020)}
+.mill-category:disabled{cursor:default}
+.mill-category.is-revealed{opacity:1;transform:translateY(0);pointer-events:auto;color:#F6F1E4;
+ text-shadow:0 2px 12px #11383FC7}
+.mill-category-1{top:27%}.mill-category-2{top:47%}.mill-category-3{top:67%}
+.mill-category-no{align-self:flex-start;font:600 11px 'DM Sans',sans-serif;letter-spacing:.15em;color:#BD9868;padding-top:10px}
+.mill-category-name{font:400 clamp(23px,2vw,33px)/1.15 Georgia,serif;letter-spacing:-.04em}
+.mill-category-mark{font:400 24px Arial,sans-serif;align-self:flex-start;opacity:.3;margin-left:auto}
+.mill-category.is-revealed:hover .mill-category-mark,.mill-category[aria-pressed="true"] .mill-category-mark{opacity:1;color:#F8DDB3}
+.mill-category.is-revealed:hover,.mill-category[aria-pressed="true"]{color:#FFFAE9;transform:translateX(-4px)}
+.mill-category:focus-visible{outline:2px solid #FFF1C7;outline-offset:5px}
+.mill-selection{position:absolute;z-index:10;right:clamp(24px,6vw,105px);bottom:clamp(42px,6svh,75px);
+ width:min(24vw,340px);color:#F5F1E8;font-size:12px;line-height:1.65;
+ text-shadow:0 2px 9px #07323B;opacity:0;transform:translateY(6px);
+ transition:opacity .35s,transform .35s}
+.mill-selection.is-open{opacity:1;transform:none}
+.mill-scroll-note{position:absolute;bottom:21px;left:50%;transform:translateX(-50%);z-index:7;
+ color:#4D8B87;font-size:9px;font-weight:750;white-space:nowrap;letter-spacing:.18em;
+ opacity:calc(.58 * (1 - var(--mill-progress)));pointer-events:none}
+.site-end{background:#F5F1E8;display:flex;justify-content:space-between;align-items:center;gap:20px;
+ padding:27px clamp(22px,6.4vw,115px) 38px;color:#204C47;border-top:1px solid #B9C6B852}
+.site-end-brand{display:grid;gap:6px;font-size:12px;letter-spacing:.13em;font-weight:750}
+.site-end-brand small{font-size:11px;color:#67857C;letter-spacing:.035em;font-weight:400}
+.restart{border:1px solid #244e44;background:transparent;color:#244e44;padding:13px 19px;
+ border-radius:100px;font-size:12px;font-weight:700;transition:.25s}
+.restart:hover{background:#244e44;color:white}
+@media(max-width:1100px) and (min-width:671px){
+ .mill-wheel{left:52%;height:min(78svh,730px)}
+ .mill-text{width:34vw;left:4.5vw}
+ .mill-text h2{font-size:clamp(40px,4.9vw,65px)}
+ .mill-category{right:3.2vw;width:19vw;gap:10px}
+ .mill-category-name{font-size:clamp(20px,2.3vw,29px)}
+}
+@media(max-width:670px){
+ .watermill-journey{height:330svh;min-height:1820px}
+ .mill-sea-ribbon{height:60px}
+ .mill-text{top:90px;left:24px;width:calc(100% - 48px)}
+ .mill-eyebrow{font-size:9px;letter-spacing:.22em}
+ .mill-text h2{font-size:clamp(36px,8.5vw,52px);margin:11px 0 10px}
+ .mill-text p{font-size:12px;line-height:1.55;max-width:335px;margin-bottom:12px}
+ .mill-explore{padding:10px 14px;font-size:11px}
+ .mill-wheel{left:38%;height:min(46svh,420px);filter:drop-shadow(0 9px 9px #62503A22)}
+ .mill-category{right:12px;width:44%;gap:6px}
+ .mill-category-1{top:55%}.mill-category-2{top:67%}.mill-category-3{top:79%}
+ .mill-category-no{font-size:9px;padding-top:4px}
+ .mill-category-name{font-size:clamp(18px,5vw,25px)}
+ .mill-category-mark{font-size:17px}
+ .mill-selection{right:13px;bottom:9px;width:46%;font-size:10px}
+ .mill-scroll-note{display:none}
+ .site-end{padding:24px;flex-wrap:wrap}
+ .site-end-brand small{line-height:1.5}
+}
+@media(prefers-reduced-motion:reduce){
+ .mill-category,.mill-explore,.mill-selection{transition:none}
+}
 @media(max-width:1020px){.headline-area{left:6%;width:46%;top:27%}.story-copy h1,.story-copy h2{font-size:clamp(43px,6.3vw,72px)}.story-copy p{font-size:13px;max-width:320px}.rail-label{display:none}}
-@media(max-width:670px){.journey{height:560svh;min-height:2350px}.stage{min-height:600px}.topbar{left:19px;right:19px;top:20px}.monogram{width:36px;height:36px;font-size:20px}.brand-name{font-size:11px}.brand-name small{font-size:7px}.headline-area{top:19%;left:23px;width:calc(100% - 74px)}.story-copy h1,.story-copy h2{font-size:clamp(43px,10.6vw,70px);margin:0 0 11px}.story-copy p{font-size:12px;line-height:1.65;max-width:290px}.eyebrow{margin-bottom:12px;font-size:8px}.eyebrow::before{width:20px}.chapter-rail{right:16px;gap:12px}.chapter-dot span{display:none}.footer{grid-template-columns:1fr;padding:73px 24px;gap:45px}.footer .panel{padding-left:23px}.footer h2{font-size:52px}.stage::after{background:linear-gradient(#10232ad9,#10232a3b 65%,transparent);opacity:calc(1 - var(--day))}}
+@media(max-width:670px){.journey{height:560svh;min-height:2350px}.stage{min-height:600px}.topbar{left:19px;right:19px;top:20px}.monogram{width:36px;height:36px;font-size:20px}.brand-name{font-size:11px}.brand-name small{font-size:7px}.headline-area{top:19%;left:23px;width:calc(100% - 74px)}.story-copy h1,.story-copy h2{font-size:clamp(43px,10.6vw,70px);margin:0 0 11px}.story-copy p{font-size:12px;line-height:1.65;max-width:290px}.eyebrow{margin-bottom:12px;font-size:8px}.eyebrow::before{width:20px}.chapter-rail{right:16px;gap:12px}.chapter-dot span{display:none}.stage::after{background:linear-gradient(#10232ad9,#10232a3b 65%,transparent);opacity:calc(1 - var(--day))}}
 @media(max-width:400px){.headline-area{top:17%}.story-copy h1,.story-copy h2{font-size:43px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.escape-world{transition:none}.story-copy{transition:none}.stage::after{transition:none}.chapter-dot span{transition:none}}
 .hero-wordmark{font:400 clamp(28px,3.2vw,56px)/1.06 Georgia,serif;letter-spacing:-.05em;color:#f8f2e7;white-space:nowrap;margin:0 0 18px}.hero-wordmark i{color:#d9af8a}.stage.is-day .brand,.stage.is-day .chapter-dot{color:#173f3a}.stage.is-day .chapter-dot::after{background:#345c50}.stage.is-day .chapter-dot.active::after{background:#ad7d58}.monogram{font-size:16px;letter-spacing:-.08em}.brand-name{letter-spacing:.14em}@media(max-width:670px){.hero-wordmark{font-size:clamp(24px,6.5vw,37px);margin-bottom:13px}.stage.is-day .headline-area{top:13%}}
@@ -212,10 +297,96 @@ html.canvas-fallback .fallback-ocean{display:block}
   <div class="progress-track" aria-hidden="true"><div></div></div>
 </div>
 </section>
-<section class="footer" id="conclusion" aria-label="Завершення історії">
-  <div><span class="footer-kicker">NATALIIA &amp; ANNA / BEYOND THE NUMBERS</span><h2>Цифри —<br>під контролем.<br><em>Життя — у фокусі.</em></h2><p>Це демонстрація майбутнього скролітелінгу для спільного бренду Наталії та Анни. Ми показуємо шлях від інформаційного хаосу до порядку й вільного часу, а не обіцяємо фінансовий успіх як гарантований результат.</p><p class="fineprint">Сценарій і образ паперового вітрильника — робоча концепція. Номер телефону, тарифи та реальна форма звернення будуть додані тільки після погодження партнерками.</p><button class="restart" id="restart" type="button">↺ Переглянути анімацію ще раз</button></div>
-  <div class="panel"><div><span>ІСТОРІЯ</span><b>Хаос → Вихор → Складання → Свобода</b></div><div><span>ФОРМАТ</span><b>Three.js + GSAP ScrollTrigger<br>WebGL 3D та керування скролом</b></div><div><span>НАСТУПНИЙ ЕТАП</span><b>Узгодження стилю, фіналу й інтеграція на сайт</b></div></div>
+<section class="watermill-journey" id="conclusion" aria-label="Кому ми допомагаємо — млин, що оживає від прокручування">
+ <div class="watermill-stage" id="watermillStage">
+  <div class="mill-atmosphere" aria-hidden="true"></div>
+  <svg class="mill-sea-ribbon" viewBox="0 0 1600 130" preserveAspectRatio="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+ <defs><linearGradient id="millTopSea" x1="0" y1="0" x2=".17" y2="1"><stop stop-color="#0C5460"/><stop offset=".30" stop-color="#2F8B8E"/><stop offset=".68" stop-color="#68B1AB"/><stop offset="1" stop-color="#B3DBCF"/></linearGradient><linearGradient id="millShimmer" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#F9EDC5" stop-opacity="0"/><stop offset=".49" stop-color="#FFF5DA" stop-opacity=".66"/><stop offset=".72" stop-color="#9FCFC3" stop-opacity=".13"/><stop offset="1" stop-color="#FFF5DA" stop-opacity="0"/></linearGradient></defs>
+ <path d="M0 0H1600V82Q1480 88 1360 80T1120 86T875 77T625 83T365 82T125 88L0 82Z" fill="url(#millTopSea)"/>
+ <g fill="none" stroke-linecap="round"><path d="M0 18Q140 4 300 21T610 17T920 15T1260 20T1600 12" stroke="#F1EDD1" opacity=".35" stroke-width="2"/><path d="M0 43Q130 28 255 44T490 42T735 40T1040 45T1290 37T1600 40" stroke="#C4EAE0" opacity=".5" stroke-width="2.5"/><path d="M0 67Q130 55 260 65T600 62T955 65T1310 61T1600 67" stroke="#FDF0D6" opacity=".38" stroke-width="1.7"/></g>
+ <ellipse cx="820" cy="22" rx="390" ry="55" fill="url(#millShimmer)" opacity=".32"/>
+</svg>
+  <canvas id="millFillCanvas" class="mill-fill-canvas" aria-hidden="true"></canvas>
+  <div class="mill-wheel" id="millWheel" aria-hidden="true">
+ <svg viewBox="0 0 600 780" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+   <linearGradient id="millGold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#8A5932"/><stop offset=".21" stop-color="#F6D4A0"/><stop offset=".50" stop-color="#C08B50"/><stop offset=".75" stop-color="#F9DFAD"/><stop offset="1" stop-color="#916033"/></linearGradient>
+   <linearGradient id="millSpokeMetal" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#80532D"/><stop offset=".5" stop-color="#F7D6A0"/><stop offset="1" stop-color="#AD7A47"/></linearGradient>
+   <linearGradient id="millPaddleMetal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#F5D3A2"/><stop offset=".46" stop-color="#BB8B55"/><stop offset="1" stop-color="#81532D"/></linearGradient>
+   <linearGradient id="millPlaster" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FBF6E9"/><stop offset=".40" stop-color="#D3C3AA"/><stop offset=".75" stop-color="#F3E5D1"/><stop offset="1" stop-color="#BCA789"/></linearGradient>
+   <radialGradient id="millHub"><stop stop-color="#FFEAC2"/><stop offset=".52" stop-color="#CEA06E"/><stop offset=".85" stop-color="#9A663D"/><stop offset="1" stop-color="#F3C98D"/></radialGradient>
+   <filter id="millDrop" x="-35%" y="-30%" width="170%" height="180%"><feGaussianBlur in="SourceAlpha" stdDeviation="13"/><feOffset dy="13"/><feComponentTransfer><feFuncA type="linear" slope=".16"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <ellipse cx="300" cy="768" rx="252" ry="10" fill="#615340" opacity=".17"/>
+  <!-- Single architectural pedestal: its lower edge exactly meets scene bottom. -->
+  <g filter="url(#millDrop)">
+   <path d="M267 312Q240 382 234 458C225 569 192 669 155 738L125 769H475L445 738C407 669 376 569 366 458Q354 364 333 312Z" fill="url(#millPlaster)" stroke="#C1AD90" stroke-width="3"/>
+   <path d="M277 351Q254 496 239 610L206 742" fill="none" stroke="#FFF9EB" stroke-width="5" opacity=".7"/>
+   <path d="M327 351Q362 502 374 608L411 739" fill="none" stroke="#A99275" stroke-width="4" opacity=".32"/>
+   <rect x="101" y="748" width="398" height="32" rx="8" fill="url(#millPlaster)" stroke="#C6AC8F" stroke-width="3"/>
+   <path d="M115 753H483" stroke="#FFFFFF" stroke-opacity=".8" stroke-width="3"/>
+  </g>
+  <!-- All spokes, buckets and both rims rotate in the SAME XY plane. -->
+  <g id="millRotor" transform="rotate(0 300 290)">
+   <circle cx="300" cy="290" r="237" fill="none" stroke="#795336" stroke-opacity=".55" stroke-width="34" transform="translate(0 9)"/>
+   <circle cx="300" cy="290" r="235" fill="none" stroke="url(#millGold)" stroke-width="25"/>
+   <circle cx="300" cy="290" r="216" fill="none" stroke="#FCE6BD" stroke-width="3.3" opacity=".93"/>
+   <circle cx="300" cy="290" r="208" fill="none" stroke="#8C5C35" stroke-width="2" opacity=".47"/>
+   <circle cx="300" cy="290" r="176" fill="none" stroke="#BD8B58" stroke-width="4" opacity=".55"/>
+   <g transform="rotate(0 300 290)"><path d="M293 290L289 77L311 77L307 290Z" fill="url(#millSpokeMetal)" stroke="#BD8B54" stroke-width="1.4"/><rect x="280" y="45" width="40" height="33" rx="4" fill="url(#millPaddleMetal)" stroke="#A8713C" stroke-width="2"/><path d="M283 52H317" stroke="#FFF4D4" stroke-opacity=".75" stroke-width="2"/></g>
+<g transform="rotate(30 300 290)"><path d="M293 290L289 77L311 77L307 290Z" fill="url(#millSpokeMetal)" stroke="#BD8B54" stroke-width="1.4"/><rect x="280" y="45" width="40" height="33" rx="4" fill="url(#millPaddleMetal)" stroke="#A8713C" stroke-width="2"/><path d="M283 52H317" stroke="#FFF4D4" stroke-opacity=".75" stroke-width="2"/></g>
+<g transform="rotate(60 300 290)"><path d="M293 290L289 77L311 77L307 290Z" fill="url(#millSpokeMetal)" stroke="#BD8B54" stroke-width="1.4"/><rect x="280" y="45" width="40" height="33" rx="4" fill="url(#millPaddleMetal)" stroke="#A8713C" stroke-width="2"/><path d="M283 52H317" stroke="#FFF4D4" stroke-opacity=".75" stroke-width="2"/></g>
+<g transform="rotate(90 300 290)"><path d="M293 290L289 77L311 77L307 290Z" fill="url(#millSpokeMetal)" stroke="#BD8B54" stroke-width="1.4"/><rect x="280" y="45" width="40" height="33" rx="4" fill="url(#millPaddleMetal)" stroke="#A8713C" stroke-width="2"/><path d="M283 52H317" stroke="#FFF4D4" stroke-opacity=".75" stroke-width="2"/></g>
+<g transform="rotate(120 300 290)"><path d="M293 290L289 77L311 77L307 290Z" fill="url(#millSpokeMetal)" stroke="#BD8B54" stroke-width="1.4"/><rect x="280" y="45" width="40" height="33" rx="4" fill="url(#millPaddleMetal)" stroke="#A8713C" stroke-width="2"/><path d="M283 52H317" stroke="#FFF4D4" stroke-opacity=".75" stroke-width="2"/></g>
+<g transform="rotate(150 300 290)"><path d="M293 290L289 77L311 77L307 290Z" fill="url(#millSpokeMetal)" stroke="#BD8B54" stroke-width="1.4"/><rect x="280" y="45" width="40" height="33" rx="4" fill="url(#millPaddleMetal)" stroke="#A8713C" stroke-width="2"/><path d="M283 52H317" stroke="#FFF4D4" stroke-opacity=".75" stroke-width="2"/></g>
+<g transform="rotate(180 300 290)"><path d="M293 290L289 77L311 77L307 290Z" fill="url(#millSpokeMetal)" stroke="#BD8B54" stroke-width="1.4"/><rect x="280" y="45" width="40" height="33" rx="4" fill="url(#millPaddleMetal)" stroke="#A8713C" stroke-width="2"/><path d="M283 52H317" stroke="#FFF4D4" stroke-opacity=".75" stroke-width="2"/></g>
+<g transform="rotate(210 300 290)"><path d="M293 290L289 77L311 77L307 290Z" fill="url(#millSpokeMetal)" stroke="#BD8B54" stroke-width="1.4"/><rect x="280" y="45" width="40" height="33" rx="4" fill="url(#millPaddleMetal)" stroke="#A8713C" stroke-width="2"/><path d="M283 52H317" stroke="#FFF4D4" stroke-opacity=".75" stroke-width="2"/></g>
+<g transform="rotate(240 300 290)"><path d="M293 290L289 77L311 77L307 290Z" fill="url(#millSpokeMetal)" stroke="#BD8B54" stroke-width="1.4"/><rect x="280" y="45" width="40" height="33" rx="4" fill="url(#millPaddleMetal)" stroke="#A8713C" stroke-width="2"/><path d="M283 52H317" stroke="#FFF4D4" stroke-opacity=".75" stroke-width="2"/></g>
+<g transform="rotate(270 300 290)"><path d="M293 290L289 77L311 77L307 290Z" fill="url(#millSpokeMetal)" stroke="#BD8B54" stroke-width="1.4"/><rect x="280" y="45" width="40" height="33" rx="4" fill="url(#millPaddleMetal)" stroke="#A8713C" stroke-width="2"/><path d="M283 52H317" stroke="#FFF4D4" stroke-opacity=".75" stroke-width="2"/></g>
+<g transform="rotate(300 300 290)"><path d="M293 290L289 77L311 77L307 290Z" fill="url(#millSpokeMetal)" stroke="#BD8B54" stroke-width="1.4"/><rect x="280" y="45" width="40" height="33" rx="4" fill="url(#millPaddleMetal)" stroke="#A8713C" stroke-width="2"/><path d="M283 52H317" stroke="#FFF4D4" stroke-opacity=".75" stroke-width="2"/></g>
+<g transform="rotate(330 300 290)"><path d="M293 290L289 77L311 77L307 290Z" fill="url(#millSpokeMetal)" stroke="#BD8B54" stroke-width="1.4"/><rect x="280" y="45" width="40" height="33" rx="4" fill="url(#millPaddleMetal)" stroke="#A8713C" stroke-width="2"/><path d="M283 52H317" stroke="#FFF4D4" stroke-opacity=".75" stroke-width="2"/></g>
+   <circle cx="300" cy="290" r="237" fill="none" stroke="#FFF3D6" stroke-opacity=".39" stroke-width="2.7"/>
+   <circle cx="300" cy="290" r="48" fill="url(#millHub)" stroke="#B6854E" stroke-width="5"/>
+   <circle cx="300" cy="290" r="21" fill="#8C6A50" stroke="#FFF1CE" stroke-width="5"/>
+   <circle cx="300" cy="290" r="8" fill="#F9DFB4"/>
+  </g>
+  <!-- Front axle is stationary and keeps the sculpture's frontal alignment. -->
+  <circle cx="300" cy="290" r="29" fill="url(#millHub)" stroke="#F6DDB2" stroke-width="4"/>
+  <circle cx="300" cy="290" r="10" fill="#C69361" stroke="#FFF0CC" stroke-width="2"/>
+ </svg>
+</div>
+  <canvas id="millFallCanvas" class="mill-fall-canvas" aria-hidden="true"></canvas>
+  <div class="mill-text">
+ <span class="mill-eyebrow">КОМУ МИ ДОПОМАГАЄМО</span>
+ <h2>Для кожної<br>справи —<br><em>свій підхід.</em></h2>
+ <p>Бухгалтерський супровід для цифрових спеціалістів, підприємців і малого бізнесу. Оберіть напрям, який відповідає саме вашій справі.</p>
+ <button class="mill-explore" id="millExplore" type="button">Обрати свій напрям <span aria-hidden="true">↗</span></button>
+</div>
+  <div class="mill-categories" role="group" aria-label="Оберіть напрям бухгалтерського супроводу">
+   <button class="mill-category mill-category-1" data-mill-category="0" type="button" aria-label="IT та фриланс" aria-pressed="false" disabled>
+ <span class="mill-category-no">01</span>
+ <span class="mill-category-name">IT та<br>фриланс</span>
+ <span class="mill-category-mark" aria-hidden="true">↗</span>
+</button>
+<button class="mill-category mill-category-2" data-mill-category="1" type="button" aria-label="ФОП та підприємці" aria-pressed="false" disabled>
+ <span class="mill-category-no">02</span>
+ <span class="mill-category-name">ФОП та<br>підприємці</span>
+ <span class="mill-category-mark" aria-hidden="true">↗</span>
+</button>
+<button class="mill-category mill-category-3" data-mill-category="2" type="button" aria-label="Малий бізнес" aria-pressed="false" disabled>
+ <span class="mill-category-no">03</span>
+ <span class="mill-category-name">Малий<br>бізнес</span>
+ <span class="mill-category-mark" aria-hidden="true">↗</span>
+</button>
+   <div class="mill-selection" id="millSelection" aria-live="polite"></div>
+  </div>
+  <span class="mill-scroll-note" aria-hidden="true">ПРОКРУЧУЙТЕ — ВОДА ПРИВОДИТЬ КОЛЕСО В РУХ</span>
+ </div>
 </section>
+<footer class="site-end">
+ <div class="site-end-brand"><span>НАТАЛІЯ &amp; АННА</span><small>Бухгалтерський супровід · Порядок у цифрах</small></div>
+ <button class="restart" id="restart" type="button">↺ Переглянути історію ще раз</button>
+</footer>
 </main>
 <script>
 (()=>{
@@ -624,5 +795,6 @@ resize();position=scrollProgress();tick=requestAnimationFrame(frame);
 })();
 </script>
 <script type="module" src="./assets/js/origami3d.js?v=28-mist-ocean" onerror="window.__enableCanvasFallback?.('module-load-error')"></script>
+<script src="./assets/js/watermill-scene.js?v=29-continuous-water" defer></script>
 </body>
 </html>
