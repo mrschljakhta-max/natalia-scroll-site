@@ -1,0 +1,36 @@
+{
+  "version": 38,
+  "mode": "cinematic-scroll-video",
+  "videoSrc": null,
+  "posterSrc": null,
+  "targetDurationSeconds": 10,
+  "motion": "front-facing brass waterwheel rotates clockwise, dense water falls from ocean above and fills right-hand water volume bottom to top; locked camera",
+  "events": [
+    {
+      "at": 0,
+      "label": "Море переходить у потік"
+    },
+    {
+      "at": 0.19,
+      "label": "Колесо набирає швидкість"
+    },
+    {
+      "at": 0.4,
+      "label": "Вода поступово заповнює простір"
+    },
+    {
+      "at": 0.73,
+      "label": "Відкриваються напрями"
+    },
+    {
+      "at": 0.91,
+      "label": "Обери свій напрям"
+    }
+  ],
+  "categoryRevealProgress": [
+    0.62,
+    0.75,
+    0.87
+  ],
+  "note": "videoSrc remains null until a real, visually reviewed cinematic video render exists. No simulation/photo patch is substituted."
+}
