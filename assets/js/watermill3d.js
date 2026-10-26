@@ -426,16 +426,33 @@ if(stage&&target){
   }),scene);
   materials.push(seaTop.material);seaTop.position.set(0,4.70,.53);
   // Light spray where the stream strikes the upper paddles.
-  const drops=96;
+  const drops=180;
   const particles=new Float32Array(drops*3);
   for(let i=0;i<drops;i++)particles[i*3+2]=1.30;
   const dropGeo=new THREE.BufferGeometry();dropGeo.setAttribute('position',new THREE.BufferAttribute(particles,3));
   geometries.push(dropGeo);
+  // A soft circular droplet sprite avoids square dots and bright CGI sparks.
+  const dropCanvas=document.createElement("canvas");
+  dropCanvas.width=dropCanvas.height=64;
+  const dropCtx=dropCanvas.getContext("2d");
+  const dropGradient=dropCtx.createRadialGradient(32,32,1,32,32,32);
+  dropGradient.addColorStop(0,"rgba(255,255,255,.98)");
+  dropGradient.addColorStop(.30,"rgba(255,255,255,.78)");
+  dropGradient.addColorStop(.67,"rgba(255,255,255,.20)");
+  dropGradient.addColorStop(1,"rgba(255,255,255,0)");
+  dropCtx.fillStyle=dropGradient;dropCtx.fillRect(0,0,64,64);
+  const dropTexture=new THREE.CanvasTexture(dropCanvas);
+  dropTexture.colorSpace=THREE.SRGBColorSpace;
   splash=new THREE.Points(dropGeo,new THREE.PointsMaterial({
-   color:0xD0F8F0,size:.045,transparent:true,opacity:.78,depthWrite:false,
-   sizeAttenuation:true,blending:THREE.AdditiveBlending
+   color:0xD8F3E9,size:.14,map:dropTexture,transparent:true,opacity:.77,
+   depthWrite:false,sizeAttenuation:true,blending:THREE.NormalBlending
   }));
   materials.push(splash.material);scene.add(splash);
+  const mist=new THREE.Points(dropGeo,new THREE.PointsMaterial({
+   color:0xC7EAE6,size:.32,map:dropTexture,transparent:true,opacity:.13,
+   depthWrite:false,sizeAttenuation:true,blending:THREE.AdditiveBlending
+  }));
+  materials.push(mist.material);scene.add(mist);
   function resize(){
    const rect=stage.getBoundingClientRect();
    width=Math.max(1,rect.width);height=Math.max(1,rect.height);
@@ -497,22 +514,28 @@ if(stage&&target){
    waterCore.rotation.z=.016*Math.sin(time*.0016);
    const array=splash.geometry.attributes.position;
    for(let i=0;i<drops;i++){
-    const seed=i*2.399963;
-    const q=(i*.618+time*.00047*(.4+i%7*.1))%1;
+    const seed=i*2.399963,randomized=.44+(i%13)/13;
+    const q=(i*.6180339+time*.00035*(.55+i%7*.075))%1;
     const hitX=assembly.position.x;
     const hitY=assembly.position.y+2.31*assembly.scale.x;
-    array.setXYZ(i,hitX+Math.sin(seed)*q*.66,
-     hitY+.22+q*.56-Math.pow(q,1.4)*.9,
-     1.25+Math.cos(seed)*q*.29);
+    const impulse=q*.92*randomized;
+    const gravity=q*q*1.24*randomized;
+    array.setXYZ(i,
+     hitX+Math.sin(seed)*(.04+impulse)+.03*Math.cos(seed*2+q*4),
+     hitY+.11+impulse*.48-gravity,
+     1.19+.18*Math.cos(seed)*q);
    }
    array.needsUpdate=true;
    splash.visible=streamUniforms.uStrength.value>.08;
+   mist.visible=splash.visible;
    renderer.render(scene,camera);
    window.__watermill3D={
     engine:"Three.js WebGL",wheelGeometry:"3D toruses, buckets and cylinders",
     waterfall:"animated translucent 3D mesh",rightWater:"single GPU-shaded surface",
     angularVelocity:Number(speed.toFixed(2)),waterLevel:Number(level.toFixed(3)),
-    wheelRadius:2.31,frontFacing:true,seaLinked:true
+    wheelRadius:2.31,frontFacing:true,seaLinked:true,
+    materialVersion:33,brassTextures:true,softReflections:true,
+    liquidVolume:true,sprayParticles:drops
    };
    schedule();
   }
