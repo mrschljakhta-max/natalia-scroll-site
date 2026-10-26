@@ -82,8 +82,16 @@ const paperTexture=(variant=0)=>{
  tex.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
  return tex;
 };
+// Actual generated papers: policy, charts, handwritten review, handwritten
+// summary. Procedural originals stay visible until the WebP files load.
+const DOCUMENT_IMAGE_FILES=Object.freeze([
+ "accounting-policy.webp",
+ "financial-charts.webp",
+ "handwritten-review.webp",
+ "handwritten-summary.webp"
+]);
 const textures=[0,1,2,3].map(paperTexture);
-const texture=textures[0];
+const documentImageStatus={loaded:0,failed:0,source:"generated-originals"};
 
 /* ONE REAL WEBGL SHEET throughout the entire story.
    The sheet starts as the selected document inside the vortex, unfolds
@@ -543,11 +551,36 @@ for(let i=0;i<25;i++){
  const mesh=new THREE.Mesh(g,material);mesh.castShadow=true;vortex.add(mesh);
  const theta=rng()*Math.PI*2;
  docs.push({
-  mesh,pw,ph,baseShape,shape:i%3,angle:theta,radius:1.0+rng()*3.3,orbit:.67+rng()*.30,
+  mesh,pw,ph,baseShape,shape:i%3,textureIndex:i%DOCUMENT_IMAGE_FILES.length,
+  angle:theta,radius:1.0+rng()*3.3,orbit:.67+rng()*.30,
   order:rng(),x:-.55+rng()*7.5,y:-2.9+rng()*6.15,z:-1.6+rng()*2.9,
   phase:rng()*6.28,tilt:(rng()-.5)*.36,spin:(rng()-.5)*.95
  });
 }
+/* Swap to the exact four image-generated paper scans after image decoding.
+   One same hero mesh remains: printed marks dissolve to the PBR fiber map. */
+const documentTextureLoader=new THREE.TextureLoader();
+DOCUMENT_IMAGE_FILES.forEach((filename,index)=>{
+ const url=new URL("../images/documents/"+filename,import.meta.url).href;
+ documentTextureLoader.load(url,(loaded)=>{
+  loaded.colorSpace=THREE.SRGBColorSpace;
+  loaded.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+  textures[index]=loaded;
+  if(index===0){
+   sheetMat.map=loaded;
+   sheetMat.needsUpdate=true;
+  }
+  for(const doc of docs){
+   if(doc.textureIndex!==index)continue;
+   doc.mesh.material.map=loaded;
+   doc.mesh.material.needsUpdate=true;
+  }
+  documentImageStatus.loaded++;
+ },undefined,()=>{
+  documentImageStatus.failed++;
+  console.warn("Using generated-paper fallback:",filename);
+ });
+});
 function updateVortex(p,t){
  const pull=smooth(.115,.315,p),shrink=smooth(.390,.510,p);
  const assemble=smooth(.440,.530,p);
@@ -681,7 +714,7 @@ try{
   target.style.display="none";
   window.__enableCanvasFallback?.("webgl-context-lost");
 },{passive:true});
- window.__origami3DDiagnostics={engine:"Three.js WebGL",controller:"GSAP ScrollTrigger",sheetMeshes:halves.length,sheetVertices:halves.reduce((n,o)=>n+o.geo.attributes.position.count,0),vortexMeshes:docs.length,boatFacets:8,sailFacets:4,geometryVersion:"v8-sculpted-contours",oneContinuousSheet:true,contourPaths:creaseRibbons.length,contactShadow:true,seaShader:"v10-gpu-water",atmosphericSky:true,paperPBR:"v11-cotton-stock",paperMaps:["albedo","normal","roughness"],paperMapResolution:paperMaps.dimensions,physicalPaperEdges:paperEdges.length,edgeThickness:.014,airFlex:"reversible-pre-fold"};
+ window.__origami3DDiagnostics={engine:"Three.js WebGL",controller:"GSAP ScrollTrigger",sheetMeshes:halves.length,sheetVertices:halves.reduce((n,o)=>n+o.geo.attributes.position.count,0),vortexMeshes:docs.length,boatFacets:8,sailFacets:4,geometryVersion:"v8-sculpted-contours",oneContinuousSheet:true,contourPaths:creaseRibbons.length,contactShadow:true,seaShader:"v10-gpu-water",atmosphericSky:true,paperPBR:"v11-cotton-stock",paperMaps:["albedo","normal","roughness"],paperMapResolution:paperMaps.dimensions,physicalPaperEdges:paperEdges.length,edgeThickness:.014,airFlex:"reversible-pre-fold",documentImages:documentImageStatus,documentTypes:DOCUMENT_IMAGE_FILES.length};
 }catch(err){
  window.__origami3DReady=false;window.__natalia3d=false;
  target.style.display="none";
