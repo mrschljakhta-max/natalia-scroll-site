@@ -235,10 +235,20 @@ if(stage&&target){
    uMid:{value:rgb("#2A7F88")},uLight:{value:rgb("#74C5C7")},
    uSun:{value:rgb("#FBEAC9")},uOpacity:{value:.95}
   };
+  // Both the top sea and the rising ocean have physical wave displacement.
+  // Edges catch light because actual vertices occupy different Z positions.
   const waterVertex=[
+   "uniform float uTime;",
    "varying vec2 vUv; varying vec3 vWorld;",
-   "void main(){vUv=uv; vec4 w=modelMatrix*vec4(position,1.);vWorld=w.xyz;",
-   "gl_Position=projectionMatrix*viewMatrix*w;}"
+   "void main(){",
+   " vUv=uv;vec3 p=position;",
+   " float v=sin(uv.x*13.1+uTime*.39)*sin(uv.y*4.7-uTime*.24);",
+   " float ripple=sin(uv.x*33.7-uTime*.63+uv.y*8.3);",
+   " p.z+=.075*v+.018*ripple+.20*pow(1.-uv.x,12.);",
+   " p.y+=.014*sin(uv.x*18.7+uTime*.52);",
+   " vec4 w=modelMatrix*vec4(p,1.);vWorld=w.xyz;",
+   " gl_Position=projectionMatrix*viewMatrix*w;",
+   "}"
   ].join("\n");
   // A layered body of water, not a repeating caustics screensaver.
   // Low-frequency refraction and soft irregular sun patches preserve its mass.
@@ -263,22 +273,27 @@ if(stage&&target){
    " caustic=mix(caustic,noise(f*1.78-vec2(t*.07,t*.11)),.30);",
    " float broad=sin(uv.x*7.3+uv.y*6.9+t*.32+warp*.7);",
    " float shade=.018*broad+.032*(caustic-.5);",
-   " vec3 col=mix(uLight,uDeep,pow(depth,.82)*.76);",
-   " col=mix(col,uMid,.12+max(0.,warp)*.10);",
-   " col+=uSun*(.012+.042*pow(max(0.,caustic-.54),2.));",
-   " col+=uLight*shade;",
-   " float rim=1.-smoothstep(0.,.025,abs(uv.y-surf));",
-   " col=mix(col,uLight+uSun*.17,rim*.46);",
-   " float side=pow(1.-uv.x,6.);col+=uLight*side*.065;",
-   " float lightFromTop=(1.-depth)*.095;",
-   " col+=uSun*lightFromTop;",
-   " float opacity=clamp(uOpacity*(.83+.13*depth)+rim*.11,0.,.97);",
+   " // Transmitted daylight falls off inside the liquid with depth.",
+   " float opticalDepth=1.-exp(-depth*2.8);",
+   " vec3 col=mix(uLight,uDeep,opticalDepth*.83);",
+   " col=mix(col,uMid,.10+max(0.,warp)*.12);",
+   " float diffuse=.045*max(0.,caustic-.38)*max(.12,1.-depth);",
+   " col+=uSun*(.012+diffuse);",
+   " col+=uLight*(shade*.6);",
+   " // Fresnel-style grazing reflections at the edges and waterline.",
+   " float nX=.008*cos(uv.x*12.7+t*.62)+.006*cos(uv.x*25.3-t*.53);",
+   " float edgeGrazing=pow(clamp(abs(nX)*10.+pow(1.-uv.x,5.),0.,1.),3.);",
+   " col+=uSun*edgeGrazing*.12;",
+   " float rim=1.-smoothstep(0.,.016,abs(uv.y-surf));",
+   " col=mix(col,uLight+uSun*.10,rim*.42);",
+   " col+=uSun*((1.-depth)*.045);",
+   " float opacity=clamp(uOpacity*(.75+.19*opticalDepth)+rim*.10,0.,.96);",
    " gl_FragColor=vec4(col,opacity);",
    " #include <colorspace_fragment>",
    "}"
   ].join("\n");
   // Left edge grazes the wheel; rim remains in front with genuine depth.
-  sea=mesh(new THREE.PlaneGeometry(1,10,70,68),new THREE.ShaderMaterial({
+  sea=mesh(new THREE.PlaneGeometry(1,10,100,80),new THREE.ShaderMaterial({
    uniforms:waterUniforms,vertexShader:waterVertex,fragmentShader:waterFragment,
    transparent:true,depthWrite:false,side:THREE.DoubleSide,toneMapped:false
   }),scene);
@@ -292,7 +307,7 @@ if(stage&&target){
    "uniform float uTime; varying vec2 vUv;",
    "void main(){vUv=uv;vec3 p=position;",
    "p.y+=.035*sin(uv.x*12.7+uTime*.62)+.018*sin(uv.x*25.3-uTime*.53);",
-   "p.z+=.028*sin(uv.x*10.5+uTime*.38);",
+   "p.z+=.08*sin(uv.x*10.5+uTime*.38)+.025*cos(uv.x*23.6-uTime*.71);",
    "gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}"
   ].join("\n");
   const surfaceFragment=[
@@ -300,13 +315,13 @@ if(stage&&target){
    "varying vec2 vUv;",
    "void main(){",
    " float center=1.-abs(vUv.y-.5)*2.;",
-   " float beam=.68+.32*sin(vUv.x*17.1+uTime*.57);",
+   " float beam=.60+.24*sin(vUv.x*10.7+uTime*.57)+.16*sin(vUv.x*28.1-uTime*.34);",
    " vec3 col=mix(uLight,uSun,.16+.15*beam);",
-   " gl_FragColor=vec4(col,pow(max(0.,center),2.2)*.36);",
+   " gl_FragColor=vec4(col,pow(max(0.,center),2.2)*.24);",
    " #include <colorspace_fragment>",
    "}"
   ].join("\n");
-  const surface=mesh(new THREE.PlaneGeometry(1,.17,96,4),new THREE.ShaderMaterial({
+  const surface=mesh(new THREE.PlaneGeometry(1,.17,128,8),new THREE.ShaderMaterial({
    uniforms:surfaceUniforms,vertexShader:surfaceVertex,fragmentShader:surfaceFragment,
    transparent:true,depthWrite:false,side:THREE.DoubleSide,toneMapped:false
   }),scene);
@@ -366,9 +381,10 @@ if(stage&&target){
   }
   fallCoreGeometry.computeVertexNormals();
   const waterCoreMaterial=new THREE.MeshPhysicalMaterial({
-   color:0xA0D4D2,metalness:0,roughness:.13,transmission:.25,
-   thickness:.28,transparent:true,opacity:.30,depthWrite:false,
-   side:THREE.DoubleSide,clearcoat:.34,clearcoatRoughness:.15
+   color:0x8FC8C9,metalness:0,roughness:.095,transmission:.57,
+   thickness:.44,transparent:true,opacity:.40,depthWrite:false,
+   side:THREE.DoubleSide,clearcoat:.22,clearcoatRoughness:.12,
+   envMapIntensity:.75,ior:1.333
   });
   materials.push(waterCoreMaterial);
   const waterCore=mesh(fallCoreGeometry,waterCoreMaterial,scene);
@@ -473,7 +489,12 @@ if(stage&&target){
    streamUniforms.uStrength.value=.38+.62*smooth(.015,.25,p);
    streamUniforms.uTime.value=time*.001;
    topUniforms.uTime.value=time*.001;
-   crest.material.opacity=.12*streamUniforms.uStrength.value;
+   crest.material.opacity=.065*streamUniforms.uStrength.value;
+   // Subtle volume changes create a natural flowing column, while the
+   // semi-transparent outer skin preserves the spray silhouette.
+   waterCore.scale.x=1+.07*Math.sin(time*.0019);
+   waterCore.scale.z=1+.12*Math.sin(time*.0021+.7);
+   waterCore.rotation.z=.016*Math.sin(time*.0016);
    const array=splash.geometry.attributes.position;
    for(let i=0;i<drops;i++){
     const seed=i*2.399963;
