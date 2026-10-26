@@ -12,7 +12,7 @@
 <link rel="preload" as="image" href="./assets/images/documents/handwritten-summary.webp" type="image/webp">
 <meta name="robots" content="noindex,nofollow">
 <meta name="description" content="Тривимірний скролітелінг Наталії та Анни: паперові документи у вихорі та складання орігамі-вітрильника.">
-<meta name="site-revision" content="v31-3d-waterflow-on-entry">
+<meta name="site-revision" content="v32-premium-sculptural-watermill">
 <link rel="canonical" href="https://mrschljakhta-max.github.io/natalia-scroll-site/">
 <script>
 /* Keep platform referral tracking out of the visible address bar, without
@@ -179,8 +179,8 @@ html.canvas-fallback .fallback-ocean{display:block}
  font-size:12px;font-weight:700;transition:background .25s,border-color .25s,transform .25s}
 .mill-explore:hover,.mill-explore:focus-visible{transform:translateY(-2px);border-color:#C3905B;background:#FDF6EA}
 .mill-categories{position:absolute;z-index:8;inset:0;pointer-events:none}
-.mill-category{position:absolute;right:clamp(24px,6vw,105px);width:clamp(178px,18vw,320px);
- display:flex;align-items:center;gap:15px;text-align:left;opacity:.39;transform:translateY(12px);
+.mill-category{position:absolute;right:clamp(24px,6vw,105px);width:clamp(208px,20vw,352px);
+ display:flex;align-items:center;gap:13px;text-align:left;opacity:.34;transform:translateY(12px);
  color:#1C4D4E;background:none;border:none;padding:8px 0;cursor:pointer;
  transition:opacity .65s ease,transform .65s cubic-bezier(.2,.8,.2,1),color .35s;
  pointer-events:none;filter:drop-shadow(0 1px 2px #113A4020)}
@@ -188,8 +188,18 @@ html.canvas-fallback .fallback-ocean{display:block}
 .mill-category.is-revealed{opacity:1;transform:translateY(0);pointer-events:auto;color:#F6F1E4;
  text-shadow:0 2px 12px #11383FC7}
 .mill-category-1{top:27%}.mill-category-2{top:47%}.mill-category-3{top:67%}
-.mill-category-no{align-self:flex-start;font:600 11px 'DM Sans',sans-serif;letter-spacing:.15em;color:#BD9868;padding-top:10px}
-.mill-category-name{font:400 clamp(23px,2vw,33px)/1.15 Georgia,serif;letter-spacing:-.04em}
+.mill-category-no{align-self:flex-start;font:600 11px 'DM Sans',sans-serif;letter-spacing:.15em;color:#D6AA79;padding-top:10px}
+.mill-category-symbol{display:grid;place-items:center;width:48px;height:48px;flex:0 0 48px;
+ border-radius:50%;color:#F8E4C0;border:1px solid #F8E4C055;
+ background:radial-gradient(circle at 33% 24%,#FFFFFF29,#FFFFFF0B 70%);
+ box-shadow:inset 0 1px 0 #FFF9E63B,0 3px 14px #183E4418;
+ -webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);
+ transition:background .4s,border-color .4s,box-shadow .4s}
+.mill-category-symbol svg{width:25px;height:25px;display:block}
+.mill-category.is-revealed .mill-category-symbol{border-color:#F6E4BD88;
+ background:radial-gradient(circle at 35% 25%,#FFFFFF47,#C5E4D433 85%);
+ box-shadow:inset 0 1px 0 #FFF7E970,0 5px 25px #092F3B22}
+.mill-category-name{font:400 clamp(23px,2vw,33px)/1.15 Georgia,serif;letter-spacing:-.04em;flex:1}
 .mill-category-mark{font:400 24px Arial,sans-serif;align-self:flex-start;opacity:.3;margin-left:auto}
 .mill-category.is-revealed:hover .mill-category-mark,.mill-category[aria-pressed="true"] .mill-category-mark{opacity:1;color:#F8DDB3}
 .mill-category.is-revealed:hover,.mill-category[aria-pressed="true"]{color:#FFFAE9;transform:translateX(-4px)}
@@ -213,7 +223,9 @@ html.canvas-fallback .fallback-ocean{display:block}
  .mill-wheel{left:52%;height:min(78svh,730px)}
  .mill-text{width:34vw;left:4.5vw}
  .mill-text h2{font-size:clamp(40px,4.9vw,65px)}
- .mill-category{right:3.2vw;width:19vw;gap:10px}
+ .mill-category{right:3.2vw;width:26vw;gap:8px}
+ .mill-category-symbol{width:38px;height:38px;flex-basis:38px}
+ .mill-category-symbol svg{width:21px;height:21px}
  .mill-category-name{font-size:clamp(20px,2.3vw,29px)}
 }
 @media(max-width:670px){
@@ -227,8 +239,10 @@ html.canvas-fallback .fallback-ocean{display:block}
  .mill-wheel{left:38%;height:min(46svh,420px);filter:drop-shadow(0 9px 9px #62503A22)}
  .mill-category{right:12px;width:44%;gap:6px}
  .mill-category-1{top:55%}.mill-category-2{top:67%}.mill-category-3{top:79%}
- .mill-category-no{font-size:9px;padding-top:4px}
- .mill-category-name{font-size:clamp(18px,5vw,25px)}
+ .mill-category-no{display:none}
+ .mill-category-symbol{width:32px;height:32px;flex-basis:32px}
+ .mill-category-symbol svg{width:19px;height:19px}
+ .mill-category-name{font-size:clamp(17px,4.5vw,24px)}
  .mill-category-mark{font-size:17px}
  .mill-selection{right:13px;bottom:9px;width:46%;font-size:10px}
  .mill-scroll-note{display:none}
@@ -375,17 +389,17 @@ html.canvas-fallback .fallback-ocean{display:block}
 </div>
   <div class="mill-categories" role="group" aria-label="Оберіть напрям бухгалтерського супроводу">
    <button class="mill-category mill-category-1" data-mill-category="0" type="button" aria-label="IT та фриланс" aria-pressed="false" disabled>
- <span class="mill-category-no">01</span>
+ <span class="mill-category-no">01</span><span class="mill-category-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="12" rx="1.5"/><path d="M2.5 20h19M9 16l-1 4m7-4 1 4"/></svg></span>
  <span class="mill-category-name">IT та<br>фриланс</span>
  <span class="mill-category-mark" aria-hidden="true">↗</span>
 </button>
 <button class="mill-category mill-category-2" data-mill-category="1" type="button" aria-label="ФОП та підприємці" aria-pressed="false" disabled>
- <span class="mill-category-no">02</span>
+ <span class="mill-category-no">02</span><span class="mill-category-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7.6" r="3.1"/><path d="M5.1 20v-1.2c0-3.5 3.1-5.7 6.9-5.7s6.9 2.2 6.9 5.7V20z"/></svg></span>
  <span class="mill-category-name">ФОП та<br>підприємці</span>
  <span class="mill-category-mark" aria-hidden="true">↗</span>
 </button>
 <button class="mill-category mill-category-3" data-mill-category="2" type="button" aria-label="Малий бізнес" aria-pressed="false" disabled>
- <span class="mill-category-no">03</span>
+ <span class="mill-category-no">03</span><span class="mill-category-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><rect x="5" y="12" width="3" height="7"/><rect x="11" y="8" width="3" height="11"/><rect x="17" y="4" width="3" height="15"/></svg></span>
  <span class="mill-category-name">Малий<br>бізнес</span>
  <span class="mill-category-mark" aria-hidden="true">↗</span>
 </button>
@@ -807,6 +821,6 @@ resize();position=scrollProgress();tick=requestAnimationFrame(frame);
 </script>
 <script type="module" src="./assets/js/origami3d.js?v=28-mist-ocean" onerror="window.__enableCanvasFallback?.('module-load-error')"></script>
 <script src="./assets/js/watermill-scene.js?v=31-waterfall-on-entry" defer></script>
-<script type="module" src="./assets/js/watermill3d.js?v=31-stream-on-entry"></script>
+<script type="module" src="./assets/js/watermill3d.js?v=32-premium-materials-water"></script>
 </body>
 </html>
