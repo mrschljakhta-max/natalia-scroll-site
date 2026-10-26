@@ -170,7 +170,7 @@
   const real3D=stage.classList.contains("is-mill-webgl");
   if(!real3D)rotor.setAttribute('transform','rotate('+(rot*180/Math.PI).toFixed(3)+' 300 290)');
   const surface=real3D
-   ?h*(1-.865*smooth(.17,.975,progress))
+   ?h*(1-.87*smooth(.14,.985,progress))
    :drawFill(progress,t);
   if(!real3D)drawFall(progress,t);
   // Lightweight state bridge. The 3D renderer owns its wheel and water meshes;

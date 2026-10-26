@@ -23,22 +23,57 @@ if(stage&&target){
   renderer.setClearColor(0xFFFFFF,0);
   renderer.outputColorSpace=THREE.SRGBColorSpace;
   renderer.toneMapping=THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure=1.2;
+  renderer.toneMappingExposure=1.05;
   renderer.domElement.setAttribute("aria-hidden","true");
   target.appendChild(renderer.domElement);
   scene=new THREE.Scene();
   camera=new THREE.OrthographicCamera(-8,8,5,-5,.1,60);
   camera.position.set(0,0,23);camera.lookAt(0,0,0);
-  const ambient=new THREE.HemisphereLight(0xFFFAEC,0x356D68,2.0);scene.add(ambient);
-  const key=new THREE.DirectionalLight(0xFFF0CE,3.8);key.position.set(-5,8,13);scene.add(key);
-  const edge=new THREE.DirectionalLight(0x98C8C5,2.1);edge.position.set(8,1,-7);scene.add(edge);
-  const glow=new THREE.PointLight(0xFFDDB4,46,18,1.4);glow.position.set(3,2,8);scene.add(glow);
+  // Broad warm studio keys replace chrome-like lighting.
+  const ambient=new THREE.HemisphereLight(0xF7F5EA,0x466C69,1.45);scene.add(ambient);
+  const key=new THREE.DirectionalLight(0xFFF0D7,2.65);key.position.set(-7,9,13);scene.add(key);
+  const edge=new THREE.DirectionalLight(0xA9C9C2,1.45);edge.position.set(7,3,-6);scene.add(edge);
+  const glow=new THREE.PointLight(0xF8DBB9,17,20,2);glow.position.set(4,5,7);scene.add(glow);
   assembly=new THREE.Group();scene.add(assembly);
-  const gold=new THREE.MeshPhysicalMaterial({color:0xCBA06A,metalness:.56,roughness:.25,clearcoat:.88,clearcoatRoughness:.19});
-  const lightGold=new THREE.MeshPhysicalMaterial({color:0xF0D6AB,metalness:.46,roughness:.28,clearcoat:.7});
-  const darkGold=new THREE.MeshStandardMaterial({color:0x8E633E,metalness:.5,roughness:.43});
-  const porcelain=new THREE.MeshPhysicalMaterial({color:0xE8DDCB,roughness:.57,metalness:.12,clearcoat:.15});
-  const porcelainEdge=new THREE.MeshStandardMaterial({color:0xFAF4E5,roughness:.56});
+  // Satin brushed brass; restrained reflections make the circular form
+  // feel machined and substantial instead of plastic or mirror-chrome.
+  const gold=new THREE.MeshPhysicalMaterial({color:0xBA8750,metalness:.72,roughness:.48,clearcoat:.14,clearcoatRoughness:.55});
+  const lightGold=new THREE.MeshPhysicalMaterial({color:0xD8B17A,metalness:.64,roughness:.39,clearcoat:.20,clearcoatRoughness:.56});
+  const darkGold=new THREE.MeshStandardMaterial({color:0x765539,metalness:.65,roughness:.57});
+  // A gently varied mineral surface, authored procedurally and only once.
+  // Fine warm flecks and subtle grain replace the previous flat cream fill.
+  const stoneCanvas=document.createElement("canvas");
+  stoneCanvas.width=stoneCanvas.height=384;
+  const stoneContext=stoneCanvas.getContext("2d",{willReadFrequently:true});
+  stoneContext.fillStyle="#e9e0d2";stoneContext.fillRect(0,0,384,384);
+  const stonePixels=stoneContext.getImageData(0,0,384,384);
+  let seed=421381;
+  const random=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};
+  for(let y=0;y<384;y++)for(let x=0;x<384;x++){
+   const i=(y*384+x)*4;
+   const mineral=3*Math.sin(x*.031+y*.012)+2*Math.sin(y*.047-x*.008);
+   const fleck=(random()-.5)*11;
+   const tone=mineral+fleck;
+   stonePixels.data[i]=Math.round(Math.max(0,Math.min(255,229+tone)));
+   stonePixels.data[i+1]=Math.round(Math.max(0,Math.min(255,220+tone)));
+   stonePixels.data[i+2]=Math.round(Math.max(0,Math.min(255,205+tone)));
+   stonePixels.data[i+3]=255;
+  }
+  stoneContext.putImageData(stonePixels,0,0);
+  stoneContext.strokeStyle="rgba(143,122,93,.055)";
+  for(let i=0;i<30;i++){
+   const x=random()*390,y=random()*390;
+   stoneContext.beginPath();stoneContext.moveTo(x,y);
+   stoneContext.bezierCurveTo(x+8,y-3,x+24,y+5,x+34,y+2);
+   stoneContext.lineWidth=.6+random()*.8;stoneContext.stroke();
+  }
+  const stoneMap=new THREE.CanvasTexture(stoneCanvas);
+  stoneMap.colorSpace=THREE.SRGBColorSpace;
+  stoneMap.wrapS=stoneMap.wrapT=THREE.RepeatWrapping;
+  stoneMap.repeat.set(1.5,2.2);
+  const porcelain=new THREE.MeshPhysicalMaterial({color:0xFFFFFF,map:stoneMap,
+    bumpMap:stoneMap,bumpScale:.028,roughness:.83,metalness:0,clearcoat:.06});
+  const porcelainEdge=new THREE.MeshStandardMaterial({color:0xF0E5D4,roughness:.78});
   materials.push(gold,lightGold,darkGold,porcelain,porcelainEdge);
   function mesh(geo,mat,parent=assembly){
    geometries.push(geo);
@@ -73,33 +108,39 @@ if(stage&&target){
   // Actual 3D rotating rotor: two concentric raised rims, spoke barrels
   // in different depth planes and 12 individually extruded water-catching cups.
   rotor=new THREE.Group();assembly.add(rotor);
-  torus(2.31,.18,-.37,darkGold,rotor);
-  torus(2.31,.18,.38,gold,rotor);
-  torus(2.15,.046,.57,lightGold,rotor);
-  torus(1.87,.052,.25,darkGold,rotor);
-  torus(1.89,.032,.30,lightGold,rotor);
-  torus(2.31,.042,.59,lightGold,rotor);
+  torus(2.31,.215,-.45,darkGold,rotor);
+  torus(2.31,.19,.40,gold,rotor);
+  torus(2.15,.036,.55,lightGold,rotor);
+  torus(1.89,.055,.19,darkGold,rotor);
+  torus(1.90,.027,.26,lightGold,rotor);
+  torus(2.31,.038,.61,lightGold,rotor);
   const up=new THREE.Vector3(0,1,0);
-  for(let i=0;i<12;i++){
-   const a=i*Math.PI/6;
+  const PADDLE_COUNT=10;
+  const boltGeometry=new THREE.SphereGeometry(.066,12,8);
+  geometries.push(boltGeometry);
+  for(let i=0;i<PADDLE_COUNT;i++){
+   const a=i*Math.PI*2/PADDLE_COUNT;
    const radial=new THREE.Vector3(Math.sin(a),Math.cos(a),0);
-   const spoke=mesh(new THREE.CylinderGeometry(.070,.084,2.19,10,1),i%3===0?lightGold:gold,rotor);
+   const spoke=mesh(new THREE.CylinderGeometry(.062,.083,2.19,12,1),i%3===0?lightGold:gold,rotor);
    spoke.position.set(radial.x*1.17,radial.y*1.17,.17);
    spoke.quaternion.setFromUnitVectors(up,radial);
    const spokeBack=mesh(new THREE.CylinderGeometry(.034,.044,2.08,8),darkGold,rotor);
    spokeBack.position.set(radial.x*1.17,radial.y*1.17,-.33);
    spokeBack.quaternion.setFromUnitVectors(up,radial);
-   const bucket=mesh(new THREE.BoxGeometry(.52,.36,.86,2,1,2),i%2?gold:lightGold,rotor);
+   const bucket=mesh(new THREE.BoxGeometry(.57,.35,.95,2,2,2),i%2?gold:lightGold,rotor);
    bucket.position.set(radial.x*2.3,radial.y*2.3,.03);
    bucket.rotation.z=-a;
    const innerCup=mesh(new THREE.BoxGeometry(.42,.08,.72),darkGold,rotor);
    innerCup.position.set(radial.x*2.44,radial.y*2.44,.05);
    innerCup.rotation.z=-a;
+   const rivet=new THREE.Mesh(boltGeometry,lightGold);
+   rivet.position.set(radial.x*2.29,radial.y*2.29,.625);
+   rotor.add(rivet);
   }
   const hubBack=mesh(new THREE.CylinderGeometry(.59,.59,.67,64),darkGold,rotor);
   hubBack.rotation.x=Math.PI/2;
   hubBack.position.z=.12;
-  const hubFront=mesh(new THREE.CylinderGeometry(.42,.47,.68,64),gold,rotor);
+  const hubFront=mesh(new THREE.CylinderGeometry(.46,.49,.69,64),gold,rotor);
   hubFront.rotation.x=Math.PI/2;hubFront.position.z=.58;
   const hubDisc=mesh(new THREE.CylinderGeometry(.25,.25,.055,64),lightGold);
   hubDisc.rotation.x=Math.PI/2;hubDisc.position.z=1.02;
@@ -119,30 +160,40 @@ if(stage&&target){
    "void main(){vUv=uv; vec4 w=modelMatrix*vec4(position,1.);vWorld=w.xyz;",
    "gl_Position=projectionMatrix*viewMatrix*w;}"
   ].join("\n");
+  // A layered body of water, not a repeating caustics screensaver.
+  // Low-frequency refraction and soft irregular sun patches preserve its mass.
   const waterFragment=[
    "uniform float uTime;uniform float uLevel;uniform float uOpacity;",
    "uniform vec3 uDeep;uniform vec3 uMid;uniform vec3 uLight;uniform vec3 uSun;",
    "varying vec2 vUv;varying vec3 vWorld;",
-   "float band(vec2 p){return sin(p.x*57.+sin(p.y*32.+uTime*.84)*1.9)",
-   " *sin(p.y*35.-p.x*18.+uTime*1.22);}",
+   "float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}",
+   "float noise(vec2 p){vec2 i=floor(p),f=fract(p);",
+   " f=f*f*(3.-2.*f);",
+   " return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),",
+   " mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),f.x),f.y);}",
    "void main(){",
-   " float surf=uLevel+.013*sin(vUv.x*12.+uTime*.95)+.007*sin(vUv.x*29.-uTime*1.18);",
-   " if(uLevel<.002 || vUv.y>surf)discard;",
-   " float d=clamp((surf-vUv.y)*2.1,0.,1.);",
-   " vec2 uv=vUv;",
-   " float ripple=sin(uv.x*38.+sin(uv.y*25.+uTime)*1.8-uTime*2.1)",
-   "   *sin(uv.y*31.-uv.x*14.+uTime*.93);",
-   " float caustic=pow(max(0.,band(uv)+.26),6.)*.31;",
-   " float sun=pow(max(0.,.5+.5*sin(uv.x*73.-uv.y*55.+uTime*1.42)),16.)*.18;",
-   " vec3 col=mix(uLight,uDeep,pow(d,.66)*.84);",
-   " col=mix(col,uMid,.18+max(0.,ripple)*.11);",
-   " col+=uSun*(caustic+sun);",
-   " float lip=1.-smoothstep(.006,.045,abs(vUv.y-surf));",
-   " col=mix(col,uSun,lip*.6);",
-   " float edge=pow(1.-vUv.x,9.)*.12;",
-   " col+=uLight*edge;",
-   " float opacity=uOpacity*(.82+.17*d)+.10*lip;",
-   " gl_FragColor=vec4(col,clamp(opacity,0.,.99));",
+   " vec2 uv=vUv;float t=uTime;",
+   " float swell=.0065*sin(uv.x*12.7+t*.62)+.0035*sin(uv.x*25.3-t*.53);",
+   " float surf=uLevel+swell;",
+   " if(uLevel<.002||uv.y>surf)discard;",
+   " float depth=clamp((surf-uv.y)/max(surf,.12),0.,1.);",
+   " float warp=noise(uv*vec2(3.8,4.9)+vec2(t*.11,-t*.075))-.5;",
+   " vec2 f=uv*vec2(6.8,7.8)+vec2(warp*.7,warp*.9);",
+   " float caustic=noise(f+vec2(t*.21,-t*.15));",
+   " caustic=mix(caustic,noise(f*1.78-vec2(t*.07,t*.11)),.30);",
+   " float broad=sin(uv.x*7.3+uv.y*6.9+t*.32+warp*.7);",
+   " float shade=.018*broad+.032*(caustic-.5);",
+   " vec3 col=mix(uLight,uDeep,pow(depth,.82)*.76);",
+   " col=mix(col,uMid,.12+max(0.,warp)*.10);",
+   " col+=uSun*(.012+.042*pow(max(0.,caustic-.54),2.));",
+   " col+=uLight*shade;",
+   " float rim=1.-smoothstep(0.,.025,abs(uv.y-surf));",
+   " col=mix(col,uLight+uSun*.17,rim*.46);",
+   " float side=pow(1.-uv.x,6.);col+=uLight*side*.065;",
+   " float lightFromTop=(1.-depth)*.095;",
+   " col+=uSun*lightFromTop;",
+   " float opacity=clamp(uOpacity*(.83+.13*depth)+rim*.11,0.,.97);",
+   " gl_FragColor=vec4(col,opacity);",
    " #include <colorspace_fragment>",
    "}"
   ].join("\n");
@@ -153,31 +204,68 @@ if(stage&&target){
   }),scene);
   materials.push(sea.material);
   sea.position.z=-.30;
+  // The moving lip is a separate small, curved GPU surface in front of the
+  // volume: a real 3D edge with shimmer, not a hard flat dividing line.
+  const surfaceUniforms={uTime:waterUniforms.uTime,uLevel:waterUniforms.uLevel,
+   uSun:waterUniforms.uSun,uLight:waterUniforms.uLight};
+  const surfaceVertex=[
+   "uniform float uTime; varying vec2 vUv;",
+   "void main(){vUv=uv;vec3 p=position;",
+   "p.y+=.035*sin(uv.x*12.7+uTime*.62)+.018*sin(uv.x*25.3-uTime*.53);",
+   "p.z+=.028*sin(uv.x*10.5+uTime*.38);",
+   "gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}"
+  ].join("\n");
+  const surfaceFragment=[
+   "uniform float uTime;uniform vec3 uSun;uniform vec3 uLight;",
+   "varying vec2 vUv;",
+   "void main(){",
+   " float center=1.-abs(vUv.y-.5)*2.;",
+   " float beam=.68+.32*sin(vUv.x*17.1+uTime*.57);",
+   " vec3 col=mix(uLight,uSun,.16+.15*beam);",
+   " gl_FragColor=vec4(col,pow(max(0.,center),2.2)*.36);",
+   " #include <colorspace_fragment>",
+   "}"
+  ].join("\n");
+  const surface=mesh(new THREE.PlaneGeometry(1,.17,96,4),new THREE.ShaderMaterial({
+   uniforms:surfaceUniforms,vertexShader:surfaceVertex,fragmentShader:surfaceFragment,
+   transparent:true,depthWrite:false,side:THREE.DoubleSide,toneMapped:false
+  }),scene);
+  materials.push(surface.material);
+  surface.position.z=.26;
   // A moving three-dimensional curtain of water drops from the sea surface
   // onto the ACTUAL top bucket of the wheel, not an unrelated graphic.
   const streamUniforms={
    uTime:{value:0},uStrength:{value:0},
    uPale:{value:rgb("#EDFFF1")},uAqua:{value:rgb("#55BBC0")}
   };
+  // Waterfall glints are slow, irregular and edge-feathered; never parallel
+  // fluorescent threads. The shader flows over a translucent 3D water core.
   const fallVertex=[
    "uniform float uTime;varying vec2 vUv;",
    "void main(){vUv=uv;vec3 p=position;",
-   "p.x+=sin(uv.y*12.+uTime*1.9)*.046+sin(uv.y*27.-uTime*2.1)*.027;",
-   "p.z+=sin(uv.y*11.+uTime*1.5)*.07;",
+   "float bend=.040*sin(uv.y*7.4+uTime*1.1)+.024*sin(uv.y*16.-uTime*1.7);",
+   "p.x+=bend+.024*sin(uv.x*9.+uv.y*12.+uTime*1.2);",
+   "p.z+=.045*cos(uv.y*8.-uTime*1.13);",
    "gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}"
   ].join("\n");
   const fallFragment=[
    "uniform float uTime;uniform float uStrength;",
    "uniform vec3 uPale;uniform vec3 uAqua;varying vec2 vUv;",
+   "float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}",
+   "float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);",
+   "return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),",
+   "mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),f.x),f.y);}",
    "void main(){",
-   " float stripes=sin(vUv.x*49.+vUv.y*16.-uTime*2.7);",
-   " float strands=sin(vUv.x*90.-vUv.y*30.+uTime*2.4);",
-   " float curl=pow(1.-abs(vUv.x-.5)*2.,.75);",
-   " float light=.4+.28*stripes+.14*strands;",
-   " vec3 col=mix(uAqua,uPale,clamp(light+.29,0.,1.));",
-   " float sides=smoothstep(0.,.12,vUv.x)*(1.-smoothstep(.85,1.,vUv.x));",
-   " float alpha=(.50+.42*curl)*sides*uStrength;",
-   " gl_FragColor=vec4(col,alpha);",
+   " vec2 uv=vUv;float t=uTime;",
+   " float distort=noise(uv*vec2(4.,9.)+vec2(t*.3,-t*.68));",
+   " float curl=.5+.5*sin((uv.x+distort*.12)*10.5+uv.y*5.-t*.67);",
+   " float droplets=noise(uv*vec2(9.,17.)+vec2(t*.26,-t*1.15));",
+   " float light=.24+.25*curl+.22*droplets;",
+   " vec3 col=mix(uAqua,uPale,clamp(light,0.,.9));",
+   " float sides=smoothstep(0.,.16,uv.x)*(1.-smoothstep(.86,1.,uv.x));",
+   " float center=1.-abs(uv.x-.5)*2.;",
+   " float alpha=(.36+.25*center+.13*droplets)*sides*uStrength;",
+   " gl_FragColor=vec4(col,clamp(alpha,0.,.75));",
    " #include <colorspace_fragment>",
    "}"
   ].join("\n");
@@ -187,6 +275,24 @@ if(stage&&target){
   }),scene);
   materials.push(fall.material);
   fall.position.set(0,3.74,1.04);
+  // Slightly warped cylindrical volume behind the fluid skin. Reflections
+  // travel over curved faces and convey thickness without pipes or machinery.
+  const fallCoreGeometry=new THREE.CylinderGeometry(.155,.205,2.6,20,38,true);
+  const corePos=fallCoreGeometry.attributes.position;
+  for(let i=0;i<corePos.count;i++){
+   const x=corePos.getX(i),y=corePos.getY(i),z=corePos.getZ(i);
+   const turbulence=1+.085*Math.sin(y*5.3)+.044*Math.sin(y*13.7);
+   corePos.setXYZ(i,x*turbulence+.035*Math.sin(y*3.4),y,z*turbulence);
+  }
+  fallCoreGeometry.computeVertexNormals();
+  const waterCoreMaterial=new THREE.MeshPhysicalMaterial({
+   color:0xA0D4D2,metalness:0,roughness:.13,transmission:.25,
+   thickness:.28,transparent:true,opacity:.30,depthWrite:false,
+   side:THREE.DoubleSide,clearcoat:.34,clearcoatRoughness:.15
+  });
+  materials.push(waterCoreMaterial);
+  const waterCore=mesh(fallCoreGeometry,waterCoreMaterial,scene);
+  waterCore.position.set(0,3.74,.86);
   // Secondary translucent thickness catches the sun in front of the flow.
   crest=mesh(new THREE.PlaneGeometry(.18,2.48,12,48),new THREE.MeshBasicMaterial({
    color:0xD6FAF0,transparent:true,opacity:.11,depthWrite:false,
@@ -200,18 +306,21 @@ if(stage&&target){
    uTime:{value:0},uDark:{value:rgb("#216D75")},
    uBright:{value:rgb("#9AD5CD")},uSun:{value:rgb("#FFF0D4")}
   };
+  // Sea inherited from scene 04: broad glints and moving wavelets,
+  // avoiding the previous repeated diagonal-wireframe appearance.
   const topFrag=[
    "uniform float uTime;uniform vec3 uDark;uniform vec3 uBright;uniform vec3 uSun;",
    "varying vec2 vUv;varying vec3 vWorld;",
    "void main(){",
-   " float wave=sin(vUv.x*31.+uTime*.95)*.022+sin(vUv.x*71.-uTime*1.3)*.012;",
-   " if(vUv.y<.11+wave)discard;",
-   " float lines=pow(max(0.,sin(vUv.x*38.+vUv.y*37.+uTime*.73)),13.);",
-   " float sheen=pow(max(0.,sin(vUv.x*83.-vUv.y*13.-uTime*1.2)),19.);",
-   " vec3 color=mix(uBright,uDark,clamp(vUv.y*.78,0.,1.));",
-   " color+=uSun*(lines*.15+sheen*.30);",
-   " float alpha=1.-smoothstep(.91,1.,vUv.y)*.12;",
-   " gl_FragColor=vec4(color,alpha);",
+   " float t=uTime;vec2 uv=vUv;",
+   " float wave=.014*sin(uv.x*18.3+t*.59)+.008*sin(uv.x*37.4-t*.76);",
+   " if(uv.y<.13+wave)discard;",
+   " float broad=.5+.5*sin(uv.x*16.5+sin(uv.y*10.7+t*.23)*.49+t*.59);",
+   " float ripple=.5+.5*sin(uv.x*29.4-uv.y*8.3-t*.71);",
+   " vec3 color=mix(uDark,uBright,clamp(.38+.30*(1.-uv.y)+.08*broad,0.,1.));",
+   " float diffuseGlow=.018+.045*pow(broad,7.)*ripple;",
+   " color+=uSun*diffuseGlow;",
+   " gl_FragColor=vec4(color,.96);",
    " #include <colorspace_fragment>",
    "}"
   ].join("\n");
@@ -241,17 +350,24 @@ if(stage&&target){
    const start=.12;
    sea.scale.x=W*.5-start;
    sea.position.x=(W*.5+start)*.5;
+   surface.scale.x=sea.scale.x;
+   surface.position.x=sea.position.x;
    seaTop.scale.x=W;
    seaTop.position.x=0;
    // Narrow screens keep the centered water source and smaller sculpture
    // beneath the intro while preserving a separate column for service choices.
    const mobile=width<=670;
-   assembly.scale.setScalar(mobile?.54:width<1120?.82:1);
-   assembly.position.set(mobile?-W*.22:width<1120?-.05:0,mobile?-2.35:width<1120?-.54:0,0);
+   const sculptureScale=mobile?.54:width<1120?.82:1;
+   assembly.scale.setScalar(sculptureScale);
+   // This exactly anchors the sculptural plinth to the viewport bottom
+   // at every aspect ratio instead of leaving a tablet-sized floating gap.
+   assembly.position.set(mobile?-W*.22:width<1120?-.05:0,-5+5*sculptureScale,0);
    const top=assembly.position.y+2.31*assembly.scale.x;
    const length=5.05-top;
    fall.position.set(assembly.position.x,(5.05+top)*.5,1.04);
    fall.scale.y=length/2.6;
+   waterCore.position.set(assembly.position.x,(5.05+top)*.5,.86);
+   waterCore.scale.y=length/2.6;
    crest.position.set(assembly.position.x+.15,(5.05+top)*.5,1.1);
    crest.scale.y=length/2.48;
   }
@@ -270,6 +386,8 @@ if(stage&&target){
    const level=smooth(.14,.985,p)*.87;
    waterUniforms.uLevel.value=level;
    waterUniforms.uTime.value=time*.001;
+   surface.position.y=-5+10*level;
+   surface.visible=level>.006;
    // The stream flows as soon as the sea spills into this scene;
    // scrolling strengthens the waterfall and then accelerates the wheel.
    streamUniforms.uStrength.value=.38+.62*smooth(.015,.25,p);
