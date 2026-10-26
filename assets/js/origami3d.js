@@ -592,41 +592,50 @@ DOCUMENT_IMAGE_FILES.forEach((filename,index)=>{
   console.warn("Using generated-paper fallback:",filename);
  });
 });
+/* The camera follows one master page while supporting pages recede:
+   three depth tiers, soft orbit banking and time-subtle drift. All scroll
+   positions stay reversible and no additional master paper is rendered. */
 function updateVortex(p,t){
  const pull=smooth(.115,.315,p),shrink=smooth(.390,.510,p);
- const assemble=smooth(.440,.530,p);
- const mobile=innerWidth<670,time=reduce.matches?0:t*.00008;
- vortex.position.set(mobile?0:1.30,mobile?-.4:0,0);
- const targetX=mobile?0:.50,targetY=mobile?-.34:-.19;
+ const assemble=smooth(.440,.530,p),focus=smooth(.265,.405,p);
+ const mobile=width<670,baseTime=reduce.matches?0:t*.00008;
+ const breath=reduce.matches?0:t*.00024;
+ vortex.position.set(mobile?0:1.25,mobile?-.44:0,0);
+ const targetX=mobile?.12:.55,targetY=mobile?-.36:-.19;
  for(let idx=0;idx<docs.length;idx++){
-  const d=docs[idx],m=d.mesh,angle=d.angle+(p-.12)*14*d.orbit+time;
+  const d=docs[idx],m=d.mesh,angle=d.angle+(p-.12)*14*d.orbit+baseTime*d.tempo;
   const radius=d.radius*(1-shrink*.87);
-  let x=mix(d.x,Math.cos(angle)*radius*.83,pull),
-      y=mix(d.y,Math.sin(angle)*radius*.77,pull),
-      z=mix(d.z,Math.sin(angle*1.1+d.phase)*radius*.29,pull),
-      rx=mix(d.tilt,Math.sin(angle)*.30,pull),
-      ry=mix(d.spin*.30,Math.cos(angle)*.37,pull),
-      rz=mix(d.spin,angle*.12,pull);
+  const driftX=Math.sin(breath*d.tempo+d.drift)*.11;
+  const driftY=Math.cos(breath*.77+d.phase)*.095;
+  const stageX=mobile?d.x*.44-.33:d.x;
+  const stageY=mobile?d.y*.62-.35:d.y;
+  const depth=mobile?d.z*.48:d.z;
+  let x=mix(stageX+driftX,Math.cos(angle)*radius*.83,pull),
+      y=mix(stageY+driftY,Math.sin(angle)*radius*.77,pull),
+      z=mix(depth,Math.sin(angle*1.1+d.phase)*radius*.28+d.layer*1.17-1.17,pull);
+  const bank=Math.sin(angle*1.3+d.drift)*.115;
+  let rx=mix(d.tilt+bank*.4,Math.sin(angle)*.29,pull),
+      ry=mix(d.spin*.30,Math.cos(angle)*.35,pull),
+      rz=mix(d.spin*.28+bank,angle*.12,pull);
   if(idx===0){
-   // This document is not rendered twice: the *single master sheet mesh*
-   // occupies its precise pose from frame zero and grows to fill the scene.
-   x=mix(x,targetX,assemble);y=mix(y,targetY,assemble);z=mix(z,0,assemble);
+   // selected document lives ONLY inside the unchanged sheetMesh.
+   x=mix(x,targetX,assemble);y=mix(y,targetY,assemble);z=mix(z,.35,assemble);
    rx=mix(rx,.016,assemble);ry=mix(ry,-.03,assemble);
    rz=mix(rz,-.012,assemble);
    selectedPaperPose={x,y,z,rx,ry,rz};
    m.visible=false;
   }else{
-   x=mix(x,targetX+(.35+.75*d.order)*Math.cos(d.phase),assemble);
-   y=mix(y,targetY+(.35+.75*d.order)*Math.sin(d.phase),assemble);
-   z=mix(z,-.6-d.order*.35,assemble);
-   m.scale.setScalar((.88+.19*d.order)*(1-.34*shrink));
-   m.material.opacity=(1-smooth(.447,.513,p))*(.88+.12*d.order);
+   const recession=smooth(.295,.465,p)*(1-assemble);
+   x=mix(x,targetX+(.45+.88*d.order)*Math.cos(d.phase),assemble);
+   y=mix(y,targetY+(.40+.83*d.order)*Math.sin(d.phase),assemble);
+   z=mix(z,-1.0-d.order*.40,assemble)-recession*(1.2+d.order*.72);
+   const baseSize=(.87+.20*d.order)*(d.layer===0?.82:d.layer===2?1.19:1);
+   m.scale.setScalar(baseSize*(1-.27*shrink)*mix(1,.70,recession));
+   m.material.opacity=(1-smooth(.447,.513,p))*d.focusTint*mix(1,.70,focus);
    m.visible=p<.514&&(!mobile||idx<18);
    m.position.set(x,y,z);
    m.rotation.set(rx,ry,rz);
    if(m.visible&&!reduce.matches){
-    // Stable edge-local airflow: a continuous paper sheet ripples without
-    // tumbling like plastic. Geometry springs back as the vortex assembles.
     const waveFade=1-smooth(.395,.507,p);
     const points=m.geometry.attributes.position,base=d.baseShape;
     for(let j=0;j<points.count;j++){
