@@ -75,7 +75,10 @@ html.canvas-fallback .fallback-ocean{display:block}
 .eyebrow{display:flex;align-items:center;gap:12px;font-size:10px;letter-spacing:.24em;font-weight:700;text-transform:uppercase;color:#c6d8cb;margin-bottom:25px}.eyebrow::before{content:'';height:1px;width:35px;background:currentColor;opacity:.7}
 .story-copy h1,.story-copy h2{font-family:Georgia,'Times New Roman',serif;font-size:clamp(47px,5.9vw,94px);font-weight:400;line-height:1.05;letter-spacing:-.055em;margin:0 0 22px;text-wrap:balance}.story-copy h1 em,.story-copy h2 em{font-style:italic;color:#c9dfcb}
 .story-copy p{font-size:clamp(13px,1.13vw,17px);line-height:1.85;max-width:390px;color:#e4eee5b7;margin:0}
-.story-copy[data-act="2"]{top:-25px}.story-copy[data-act="3"] h2 em{color:#a57854}.story-copy[data-act="3"] p{color:#234c47}
+.story-copy[data-act="2"]{top:-25px}
+/* Preserve the approved two-line typography on the longer third heading. */
+.story-copy[data-act="2"] h2{font-size:clamp(38px,4.75vw,74px)}
+@media(max-width:670px){.story-copy[data-act="2"] h2{font-size:clamp(28px,8vw,41px)}}.story-copy[data-act="3"] h2 em{color:#a57854}.story-copy[data-act="3"] p{color:#234c47}
 .ending-copy{color:#163338!important}.ending-copy .eyebrow{color:#516963}.ending-copy h2{color:#163338}.ending-copy h2 em{color:#a57854}
 .end-signature{display:flex;gap:14px;align-items:center;margin-top:31px;color:#2e5549;font-size:11px;letter-spacing:.11em;font-weight:800}.end-signature::before{content:'';width:38px;height:1px;background:#2e5549}
 .chapter-rail{position:absolute;right:clamp(18px,3.4vw,58px);top:50%;transform:translateY(-50%);display:grid;gap:18px;z-index:10}.chapter-dot{display:flex;align-items:center;gap:12px;justify-content:flex-end;padding:7px 0;border:0;color:#e5eee6a0;background:none}.chapter-dot span{font-size:9px;letter-spacing:.12em;font-weight:700;opacity:0;transform:translateX(7px);transition:.25s}.chapter-dot::after{content:'';display:block;width:5px;height:5px;border-radius:100px;background:#d9e9d688;transition:.25s}.chapter-dot.active span,.chapter-dot:hover span,.chapter-dot:focus-visible span{opacity:1;transform:none}.chapter-dot.active{color:#f6f2e9}.chapter-dot.active::after{width:11px;height:11px;background:#f0e4c9;box-shadow:0 0 0 5px #fff7}
