@@ -73,7 +73,7 @@ footer{margin-top:80px;border-top:1px solid #74928c3c;padding-top:25px;font-size
 <label class="opt"><input type="checkbox" id="showguide" checked> Показувати межі колеса в редакторі</label>
 <label class="opt"><input type="checkbox" id="mirror" checked> Дзеркально відобразити тільки колесо</label>
 </section></div>
-<p class="warning">Важливо: віддзеркалення змінює напрям обертання лише тоді, коли у вихідному ролику він стабільно протилежний. Якщо модель змінює напрям посеред ролика, одного дзеркального монтажу недостатньо. Експорт використовує браузерний відеокодек і може зберігатися у форматі WebM. Вода та водоспад окремо не генеруються й не переробляються.</p>
+<p class="warning">Автоматичний перегляд із Runway використовує тимчасове посилання. Для експорту відео потрібно відкрити завантажений MP4 локально — браузер не дозволяє записувати віддалене відео через Canvas. Важливо: віддзеркалення змінює напрям обертання лише тоді, коли у вихідному ролику він стабільно протилежний. Якщо модель змінює напрям посеред ролика, одного дзеркального монтажу недостатньо. Експорт використовує браузерний відеокодек і може зберігатися у форматі WebM. Вода та водоспад окремо не генеруються й не переробляються.</p>
 <footer><span>© Film Lab v39 / експериментальний монтаж</span><span>Локальна обробка · 0 кредитів Runway · без серверного завантаження</span></footer>
 </div>
 <video id="source" muted playsinline preload="auto" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none"></video>
@@ -86,7 +86,8 @@ const params={cx:58.3,cy:53,rx:17,ry:31,feather:8};const comps={cx:'xc',cy:'yc',
 const mirror=$('mirror'),showguide=$('showguide');
 let ready=false,objectUrl=null,recording=false,recorded=null,originalName='waterwheel-runway-v39',scrubbing=false;
 const hostedSource='./assets/video/waterwheel-runway-source-v39.mp4';
-let selectedLocal=false;
+let selectedLocal=false,sourceIsExternal=false;
+const runwayFallback="https://dnznrvs05pmza.cloudfront.net/kling-3-0-pro/943788538137562791/One_uninterrupted_10_second_16_9_ultra_photorealistic_cinematic_CGI_film__Locked_perfectly_FRONTAL_c.mp4?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiNWIxYzM0NzE0ODZiNTQyZiIsImJ1Y2tldCI6InJ1bndheS10YXNrLWFydGlmYWN0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MzIxODI4OX0._OCR5ueP4x_ubbaqMwE4l3TRg3Ao_VEA8ZVbtJE16DQ";
 const layer=document.createElement('canvas'),lx=layer.getContext('2d',{willReadFrequently:false});
 function note(s){status.textContent=s}
 function setupGuide(){
@@ -121,7 +122,7 @@ file.addEventListener('change',()=>{
  const f=file.files?.[0];if(!f)return;
  if(f.type&&!f.type.startsWith('video/')){note('Обери MP4 або WebM.');return}
  if(objectUrl)URL.revokeObjectURL(objectUrl);
- objectUrl=URL.createObjectURL(f);selectedLocal=true;originalName=f.name.replace(/\.[^.]+$/,'');
+ objectUrl=URL.createObjectURL(f);selectedLocal=true;sourceIsExternal=false;originalName=f.name.replace(/\.[^.]+$/,'');
  ready=false;stage.classList.remove('loaded');indicator.classList.remove('ready');
  video.pause();video.src=objectUrl;video.muted=true;video.loop=true;video.load();
  note('Читання локального відео...');
@@ -130,12 +131,19 @@ video.addEventListener('loadedmetadata',()=>{
  if(!isFinite(video.duration)||video.duration<=0)return note('Не вдалося визначити тривалість відео.');
  canvas.width=layer.width=video.videoWidth;canvas.height=layer.height=video.videoHeight;
  stage.style.aspectRatio=video.videoWidth+'/'+video.videoHeight;
- ready=true;stage.classList.add('loaded');indicator.classList.add('ready');indicator.textContent='Локальне CGI підключено';
- timeline.disabled=false;toggle.disabled=false;exportBtn.disabled=false;poster.disabled=false;setupGuide();
- note('Відкрито '+video.videoWidth+' × '+video.videoHeight+' / '+video.duration.toFixed(1)+' с. Редактор готовий.');
+ ready=true;stage.classList.add('loaded');indicator.classList.add('ready');indicator.textContent=sourceIsExternal?'Runway CGI · перегляд':'Локальне CGI підключено';
+ timeline.disabled=false;toggle.disabled=false;exportBtn.disabled=sourceIsExternal;poster.disabled=sourceIsExternal;setupGuide();
+ note(sourceIsExternal?'Перегляд ролика Runway підключено автоматично ('+video.duration.toFixed(1)+' с). Для експорту обробленого відео відкрий MP4 із комп’ютера: віддалений файл захищений від запису браузером.':'Відкрито '+video.videoWidth+' × '+video.videoHeight+' / '+video.duration.toFixed(1)+' с. Редактор готовий.');
  video.play().then(()=>{toggle.textContent='Ⅱ Пауза'}).catch(()=>{toggle.textContent='▶ Відтворити'});
 });
-video.addEventListener('error',()=>{ready=false;indicator.classList.remove('ready');indicator.textContent='Відео недоступне';note(selectedLocal?'Не вдалося прочитати вибраний файл. Перевір MP4 або WebM.':'Відео ще публікується або тимчасово недоступне. Перезавантаж сторінку трохи пізніше або завантаж MP4 вручну.');});
+video.addEventListener('error',()=>{
+ if(!selectedLocal&&!sourceIsExternal){
+  sourceIsExternal=true;video.pause();video.removeAttribute('src');video.load();video.src=runwayFallback;video.load();
+  indicator.textContent='Прямий перегляд з Runway';note('Підключаємо ролик безпосередньо з Runway…');return;
+ }
+ ready=false;indicator.classList.remove('ready');indicator.textContent='Відео недоступне';
+ note(selectedLocal?'Не вдалося прочитати вибраний файл. Перевір MP4 або WebM.':'Тимчасове посилання Runway недоступне. Натисни «Відкрити CGI-відео» і вибери завантажений MP4.');
+});
 toggle.addEventListener('click',async()=>{if(!ready||recording)return;if(video.paused){await video.play();toggle.textContent='Ⅱ Пауза'}else{video.pause();toggle.textContent='▶ Відтворити'}});
 timeline.addEventListener('input',()=>{if(ready&&!recording){scrubbing=true;video.currentTime=video.duration*Number(timeline.value)/1000}});
 timeline.addEventListener('change',()=>scrubbing=false);
