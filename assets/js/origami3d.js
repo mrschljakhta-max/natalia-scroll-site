@@ -219,18 +219,34 @@ function paperFlex(u,v,p,time=0){
    sheets, but is computed on the existing uninterrupted folding geometry.
    Every paper edge samples this same warp; it fades out before first hinge. */
 function heroVortexWarp(u,v,p,time=0){
- const turbulence=smooth(.11,.235,p)*(1-smooth(.39,.523,p));
- const idle=.13*(1-smooth(.17,.50,p));
- const force=reduce.matches?0:Math.max(turbulence,idle);
- if(force<=.00001)return [0,0];
- const x=W*(u-.5),edge=Math.abs(u-.5)*2,tip=Math.abs(v-.5)*2;
- const phase=time*.84+v*2.05;
- const theta=.25*force*(v-.5)*Math.sin(phase+.65*u);
- const dx=x*(Math.cos(theta)-1);
- const z=x*Math.sin(theta)
-  +force*.041*Math.pow(edge,2.3)*Math.sin(phase*1.21+u*2.8)
-  +force*.021*Math.pow(edge*tip,2.1)*Math.sin(time*1.13+u*3.2);
- return [dx,z];
+ // Hero = the SAME actual sheet that becomes the boat. A clearly visible
+ // corner fold responds to wind, then unfolds before the origami handoff.
+ const ambient=.74*(1-smooth(.35,.520,p));
+ const gust=.20*smooth(.105,.22,p)*(1-smooth(.365,.485,p));
+ const force=reduce.matches?0:ambient+gust;
+ if(force<.00001)return [0,0,0];
+ const x=W*(u-.5),z0=0;
+ const twist=.43*force*(v-.5)*(.87+.13*Math.sin(time*.67+u*2));
+ const twistX=x*(Math.cos(twist)-1);
+ const twistZ=x*Math.sin(twist);
+ // Top right corner folds on a slanted line, with a real XY silhouette
+ // change, instead of only making an imperceptible Z displacement.
+ const slope=.42;
+ const nX=1/W,nY=slope/H,normalLength=Math.hypot(nX,nY);
+ const signed=((u-.64)+slope*(v-.55))/normalLength;
+ let dx=twistX,dy=0,dz=twistZ;
+ if(signed>0){
+  const foldAngle=.98*force*(.86+.14*Math.sin(time*.9+.8))*
+    smooth(0,.11,signed);
+  const retreat=signed*(1-Math.cos(foldAngle));
+  dx-=retreat*nX/normalLength;
+  dy-=retreat*nY/normalLength;
+  dz+=signed*Math.sin(foldAngle);
+ }
+ const edge=Math.abs(u-.5)*2;
+ dz+=force*.085*Math.pow(edge,2.15)*
+   (.73+.27*Math.sin(time*.71+v*4));
+ return [dx,dy,dz];
 }
 function positionFromUV(u,v,p,time=0){
  const x0=W*(u-.5),y0=H*(v-.5),folded=foldPoint(x0,y0,p),
@@ -238,8 +254,8 @@ function positionFromUV(u,v,p,time=0){
          u<=.5?smooth(.887,.961,p):smooth(.921,.998,p);
  const wind=heroVortexWarp(u,v,p,time);
  return [mix(folded[0],final[0],morph)+wind[0],
-   mix(folded[1],final[1],morph),
-   mix(folded[2],final[2],morph)+paperFlex(u,v,p,time)+wind[1]];
+   mix(folded[1],final[1],morph)+wind[1],
+   mix(folded[2],final[2],morph)+paperFlex(u,v,p,time)+wind[2]];
 }
 /* Physical paper edge strips. These are SIDE WALLS of the same deforming
    sheet, not a second sheet or a cross-faded boat model. Each strip follows
@@ -485,8 +501,8 @@ function updateSheet(p,time){
   const morph=uvy<.34-.00001?hull:uvx<=.5?port:starboard;
   const wind=heroVortexWarp(uvx,uvy,p,time);
   const x=mix(folded[0],final[0],morph)+wind[0],
-        y=mix(folded[1],final[1],morph),
-        z=mix(folded[2],final[2],morph)+paperFlex(uvx,uvy,p,time)+wind[1];
+        y=mix(folded[1],final[1],morph)+wind[1],
+        z=mix(folded[2],final[2],morph)+paperFlex(uvx,uvy,p,time)+wind[2];
   pos.setXYZ(i,x,y,z);
   let c=neutral.clone();
   if(uvy<.34){
@@ -884,7 +900,7 @@ try{
   target.style.display="none";
   window.__enableCanvasFallback?.("webgl-context-lost");
 },{passive:true});
- window.__origami3DDiagnostics={engine:"Three.js WebGL",controller:"GSAP ScrollTrigger",sheetMeshes:halves.length,sheetVertices:halves.reduce((n,o)=>n+o.geo.attributes.position.count,0),vortexMeshes:docs.length,boatFacets:8,sailFacets:4,geometryVersion:"v8-sculpted-contours",oneContinuousSheet:true,contourPaths:creaseRibbons.length,contactShadow:true,seaShader:"v10-gpu-water",atmosphericSky:true,paperPBR:"v11-cotton-stock",paperMaps:["albedo","normal","roughness"],paperMapResolution:paperMaps.dimensions,physicalPaperEdges:paperEdges.length,edgeThickness:.014,airFlex:"reversible-pre-fold",documentImages:documentImageStatus,documentTypes:DOCUMENT_IMAGE_FILES.length,paperPhysics:"v15-twist-curl-crease",paperPhysicsStats,heroWind:true,vortexDirection:"v14-cinematic-parallax",depthTiers:3,focusOnSameSheet:true,vortexDocumentCount:VORTEX_COUNT};
+ window.__origami3DDiagnostics={engine:"Three.js WebGL",controller:"GSAP ScrollTrigger",sheetMeshes:halves.length,sheetVertices:halves.reduce((n,o)=>n+o.geo.attributes.position.count,0),vortexMeshes:docs.length,boatFacets:8,sailFacets:4,geometryVersion:"v8-sculpted-contours",oneContinuousSheet:true,contourPaths:creaseRibbons.length,contactShadow:true,seaShader:"v10-gpu-water",atmosphericSky:true,paperPBR:"v11-cotton-stock",paperMaps:["albedo","normal","roughness"],paperMapResolution:paperMaps.dimensions,physicalPaperEdges:paperEdges.length,edgeThickness:.014,airFlex:"reversible-pre-fold",documentImages:documentImageStatus,documentTypes:DOCUMENT_IMAGE_FILES.length,paperPhysics:"v16-visible-paper-flaps",paperPhysicsStats,heroWind:true,vortexDirection:"v14-cinematic-parallax",depthTiers:3,focusOnSameSheet:true,vortexDocumentCount:VORTEX_COUNT};
 }catch(err){
  window.__origami3DReady=false;window.__natalia3d=false;
  target.style.display="none";
