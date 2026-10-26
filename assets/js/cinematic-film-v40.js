@@ -95,7 +95,7 @@
     v.src=source;v.load();
   }
   async function resolveSource(segment){
-    const local=new URL("../../"+segment.localSrc,document.currentScript?.src||location.href);
+    const local=new URL("./"+segment.localSrc,location.href);
     try{
       const h=await fetch(local.href,{method:"HEAD",cache:"no-store"});
       if(h.ok && (/video|octet-stream/i).test(h.headers.get("content-type")||"video"))return local.href;
