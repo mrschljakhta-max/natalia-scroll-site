@@ -20,7 +20,7 @@ h1{font:400 clamp(39px,5.2vw,83px)/1.04 Georgia,serif;letter-spacing:-.05em;marg
 .indicator{font-size:10px;display:flex;align-items:center;gap:9px;color:#a3bbb5}.indicator:before{content:'';width:7px;height:7px;background:#9ca5a1;border-radius:50%}.indicator.ready:before{background:#7bd2ac;box-shadow:0 0 16px #7bd2aca3}
 .stage{position:relative;aspect-ratio:16/9;background:linear-gradient(100deg,#e9e1d2,#9fccc7);overflow:hidden}
 canvas{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:contain}
-.empty{position:absolute;inset:0;display:grid;align-content:center;justify-items:center;gap:13px;color:#154c4b;text-align:center;background:radial-gradient(circle at 62% 49%,#ffffff2d,transparent 45%)}
+.empty{position:absolute;inset:0;display:grid;align-content:center;justify-items:center;gap:13px;color:#154c4b;text-align:center;background:radial-gradient(circle at 62% 49%,#ffffff88,transparent 55%),linear-gradient(135deg,#f2e7d7,#bad9d3)}
 .empty strong{font:400 clamp(24px,3.3vw,48px)/1.1 Georgia,serif;max-width:500px}.empty span{font-size:13px;max-width:420px;padding:0 20px}
 .wheel-guide{position:absolute;box-sizing:border-box;border:2px dashed #f5d390;box-shadow:0 0 0 1px #093e46;border-radius:50%;pointer-events:none;display:none;transform:translate(-50%,-50%)}
 .stage.loaded .empty{display:none}
@@ -53,21 +53,21 @@ footer{margin-top:80px;border-top:1px solid #74928c3c;padding-top:25px;font-size
 <nav><a href="./index.html" class="brand">НАТАЛІЯ &amp; АННА<small>БУХГАЛТЕРСЬКИЙ СУПРОВІД</small></a><a class="back" href="./cinematic-video-v38.html">← Film Lab v38</a></nav>
 <div class="intro"><div><span class="eyebrow">FILM LAB / EXPERIMENT 39</span><h1>Точний напрям.<br><em>Жива кінематографія.</em></h1></div><p class="lead">Монтажне виправлення латунного колеса без повторної AI-генерації. Зберігаємо воду, світло та всі інші частини оригінального кадру.</p></div>
 <section class="studio" aria-label="Кінематографічний відеоредактор">
-<div class="toolbar"><span class="label">CINEMATIC SOURCE <strong>→</strong> MIRRORED WHEEL</span><span class="indicator" id="indicator">Очікуємо MP4</span></div>
-<div class="stage" id="stage"><canvas id="frame" width="1920" height="1080" aria-label="Перегляд відредагованого відео"></canvas><div class="wheel-guide" id="guide"></div><div class="empty"><strong>Твій CGI-рендер. Правильний рух.</strong><span>Оберіть останній відеофайл із Runway — він обробляється лише у браузері, без завантаження на сервер.</span></div></div>
+<div class="toolbar"><span class="label">CINEMATIC SOURCE <strong>→</strong> MIRRORED WHEEL</span><span class="indicator" id="indicator">Підключаємо CGI...</span></div>
+<div class="stage" id="stage"><canvas id="frame" width="1920" height="1080" aria-label="Перегляд відредагованого відео"></canvas><div class="wheel-guide" id="guide"></div><div class="empty"><strong>Твій CGI-рендер. Правильний рух.</strong><span>Підключаємо останній ролик автоматично. Якщо потрібно, можна також вибрати власний відеофайл.</span></div></div>
 <div class="playback"><button id="toggle" disabled>▶ Відтворити</button><input type="range" id="timeline" min="0" max="1000" value="0" disabled aria-label="Час відео"><span class="time" id="time">0:00 / 0:00</span></div>
 </section>
 <div class="body">
-<section class="panel"><h2>01 / Відео</h2><p>Завантаж оригінальний MP4 із Runway. Дзеркальне відображення застосовується тільки до області колеса; потік та заповнення справа залишаються оригінальними.</p>
+<section class="panel"><h2>01 / Відео</h2><p>Останній CGI-рендер підключається автоматично. Можеш відкрити інший MP4 для порівняння. Дзеркальне відображення застосовується тільки до колеса; вода й освітлення залишаються оригінальними.</p>
 <div class="actions"><label class="fileBtn" for="file">+ Відкрити CGI-відео<input id="file" type="file" accept="video/mp4,video/webm,video/quicktime"></label><button class="primary" id="export" disabled>↓ Експортувати відео</button><button class="minor" id="poster" disabled>Кадр PNG</button></div>
-<div class="status" id="status" role="status">Джерело не вибрано. Відкрий останній 10-секундний ролик Runway.</div>
+<div class="status" id="status" role="status">Підключаємо CGI-відео автоматично...</div>
 </section>
 <section class="panel"><h2>02 / Точне маскування</h2><p>Положення за замовчуванням підібрано під останній ролик. Якщо обриси колеса трохи не збігаються, відкоригуй їх повзунками.</p>
 <div class="controls">
-<div class="field"><label for="cx">Центр X <output id="xc">56%</output></label><input type="range" id="cx" min="30" max="80" step=".1" value="56"></div>
-<div class="field"><label for="cy">Центр Y <output id="yc">52.5%</output></label><input type="range" id="cy" min="20" max="80" step=".1" value="52.5"></div>
-<div class="field"><label for="rx">Радіус X <output id="xr">19%</output></label><input type="range" id="rx" min="9" max="30" step=".1" value="19"></div>
-<div class="field"><label for="ry">Радіус Y <output id="yr">32.5%</output></label><input type="range" id="ry" min="15" max="45" step=".1" value="32.5"></div>
+<div class="field"><label for="cx">Центр X <output id="xc">58.3%</output></label><input type="range" id="cx" min="30" max="80" step=".1" value="58.3"></div>
+<div class="field"><label for="cy">Центр Y <output id="yc">53%</output></label><input type="range" id="cy" min="20" max="80" step=".1" value="53"></div>
+<div class="field"><label for="rx">Радіус X <output id="xr">17%</output></label><input type="range" id="rx" min="9" max="30" step=".1" value="17"></div>
+<div class="field"><label for="ry">Радіус Y <output id="yr">31%</output></label><input type="range" id="ry" min="15" max="45" step=".1" value="31"></div>
 <div class="field"><label for="feather">М'якість краю <output id="featherv">8%</output></label><input type="range" id="feather" min="1" max="22" step="1" value="8"></div>
 </div>
 <label class="opt"><input type="checkbox" id="showguide" checked> Показувати межі колеса в редакторі</label>
@@ -82,9 +82,11 @@ footer{margin-top:80px;border-top:1px solid #74928c3c;padding-top:25px;font-size
 'use strict';
 const $=id=>document.getElementById(id),video=$('source'),canvas=$('frame'),ctx=canvas.getContext('2d',{alpha:false});
 const stage=$('stage'),guide=$('guide'),file=$('file'),status=$('status'),timeline=$('timeline'),time=$('time'),toggle=$('toggle'),exportBtn=$('export'),poster=$('poster'),indicator=$('indicator');
-const params={cx:56,cy:52.5,rx:19,ry:32.5,feather:8};const comps={cx:'xc',cy:'yc',rx:'xr',ry:'yr',feather:'featherv'};
+const params={cx:58.3,cy:53,rx:17,ry:31,feather:8};const comps={cx:'xc',cy:'yc',rx:'xr',ry:'yr',feather:'featherv'};
 const mirror=$('mirror'),showguide=$('showguide');
-let ready=false,objectUrl=null,recording=false,recorded=null,originalName='waterwheel',scrubbing=false;
+let ready=false,objectUrl=null,recording=false,recorded=null,originalName='waterwheel-runway-v39',scrubbing=false;
+const hostedSource='./assets/video/waterwheel-runway-source-v39.mp4';
+let selectedLocal=false;
 const layer=document.createElement('canvas'),lx=layer.getContext('2d',{willReadFrequently:false});
 function note(s){status.textContent=s}
 function setupGuide(){
@@ -119,7 +121,7 @@ file.addEventListener('change',()=>{
  const f=file.files?.[0];if(!f)return;
  if(f.type&&!f.type.startsWith('video/')){note('Обери MP4 або WebM.');return}
  if(objectUrl)URL.revokeObjectURL(objectUrl);
- objectUrl=URL.createObjectURL(f);originalName=f.name.replace(/\.[^.]+$/,'');
+ objectUrl=URL.createObjectURL(f);selectedLocal=true;originalName=f.name.replace(/\.[^.]+$/,'');
  ready=false;stage.classList.remove('loaded');indicator.classList.remove('ready');
  video.pause();video.src=objectUrl;video.muted=true;video.loop=true;video.load();
  note('Читання локального відео...');
@@ -133,7 +135,7 @@ video.addEventListener('loadedmetadata',()=>{
  note('Відкрито '+video.videoWidth+' × '+video.videoHeight+' / '+video.duration.toFixed(1)+' с. Редактор готовий.');
  video.play().then(()=>{toggle.textContent='Ⅱ Пауза'}).catch(()=>{toggle.textContent='▶ Відтворити'});
 });
-video.addEventListener('error',()=>{note('Не вдалося прочитати файл. Перевір формат MP4 або WebM.');ready=false});
+video.addEventListener('error',()=>{ready=false;indicator.classList.remove('ready');indicator.textContent='Відео недоступне';note(selectedLocal?'Не вдалося прочитати вибраний файл. Перевір MP4 або WebM.':'Відео ще публікується або тимчасово недоступне. Перезавантаж сторінку трохи пізніше або завантаж MP4 вручну.');});
 toggle.addEventListener('click',async()=>{if(!ready||recording)return;if(video.paused){await video.play();toggle.textContent='Ⅱ Пауза'}else{video.pause();toggle.textContent='▶ Відтворити'}});
 timeline.addEventListener('input',()=>{if(ready&&!recording){scrubbing=true;video.currentTime=video.duration*Number(timeline.value)/1000}});
 timeline.addEventListener('change',()=>scrubbing=false);
@@ -163,5 +165,9 @@ exportBtn.addEventListener('click',async()=>{
  try{await video.play();toggle.textContent='Ⅱ Експорт';note('Записуємо оброблений ролик... ('+video.duration.toFixed(1)+' с у реальному часі)')}catch(e){note('Не вдалося розпочати експорт: '+e.message);done()}
 });
 window.addEventListener('pagehide',()=>{if(objectUrl)URL.revokeObjectURL(objectUrl)});
+// Default production source: real Runway CGI stored on the same GitHub Pages origin.
+// Local-file picker remains optional, never mandatory.
+video.src=hostedSource+'?v=39';
+video.muted=true;video.loop=true;video.preload='auto';video.load();
 })();
 </script></body></html>
