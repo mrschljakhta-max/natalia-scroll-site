@@ -519,14 +519,21 @@ let seed=1317;
 function rng(){seed=(1664525*seed+1013904223)>>>0;return seed/4294967296}
 for(let i=0;i<25;i++){
  const pw=.80+rng()*.31,ph=pw*1.36;
- const g=new THREE.PlaneGeometry(pw,ph,2,3);
+ // Subdivided real sheet, not a flat billboard: enough vertices for mild air flutter.
+ const g=new THREE.PlaneGeometry(pw,ph,8,12);
  const a=g.attributes.position;
  const bend=.007+rng()*.017;
  for(let j=0;j<a.count;j++){
   const x=a.getX(j),y=a.getY(j);
-  a.setZ(j,Math.sin((x/pw+.5)*Math.PI)*Math.sin((y/ph+.5)*Math.PI)*bend);
+  const u=x/pw+.5,v=y/ph+.5;
+  const mainBend=Math.sin(u*Math.PI)*Math.sin(v*Math.PI)*bend;
+  const cornerLift=i%3===1
+   ? .018*Math.pow(u,3)*Math.sin(v*Math.PI*.78)
+   : i%3===2?.014*Math.sin(v*Math.PI*1.3)*(2*u-1):0;
+  a.setZ(j,mainBend+cornerLift);
  }
  g.computeVertexNormals();
+ const baseShape=new Float32Array(a.array);
  const material=new THREE.MeshStandardMaterial({
   map:textures[i%textures.length],side:THREE.DoubleSide,
   normalMap:paperMaps.normal,normalScale:new THREE.Vector2(.085,.085),
@@ -536,7 +543,7 @@ for(let i=0;i<25;i++){
  const mesh=new THREE.Mesh(g,material);mesh.castShadow=true;vortex.add(mesh);
  const theta=rng()*Math.PI*2;
  docs.push({
-  mesh,pw,ph,angle:theta,radius:1.0+rng()*3.3,orbit:.67+rng()*.30,
+  mesh,pw,ph,baseShape,shape:i%3,angle:theta,radius:1.0+rng()*3.3,orbit:.67+rng()*.30,
   order:rng(),x:-.55+rng()*7.5,y:-2.9+rng()*6.15,z:-1.6+rng()*2.9,
   phase:rng()*6.28,tilt:(rng()-.5)*.36,spin:(rng()-.5)*.95
  });
@@ -570,9 +577,24 @@ function updateVortex(p,t){
    z=mix(z,-.6-d.order*.35,assemble);
    m.scale.setScalar((.88+.19*d.order)*(1-.34*shrink));
    m.material.opacity=(1-smooth(.447,.513,p))*(.88+.12*d.order);
-   m.visible=p<.514;
+   m.visible=p<.514&&(!mobile||idx<18);
    m.position.set(x,y,z);
    m.rotation.set(rx,ry,rz);
+   if(m.visible&&!reduce.matches){
+    // Stable edge-local airflow: a continuous paper sheet ripples without
+    // tumbling like plastic. Geometry springs back as the vortex assembles.
+    const waveFade=1-smooth(.395,.507,p);
+    const points=m.geometry.attributes.position,base=d.baseShape;
+    for(let j=0;j<points.count;j++){
+     const k=j*3,u=base[k]/d.pw+.5,v=base[k+1]/d.ph+.5;
+     const edgeFlex=.28+.72*Math.pow(Math.abs(2*u-1),2);
+     const flutter=(.004+d.order*.009)*edgeFlex*waveFade
+       *Math.sin(t*.00115+d.phase+v*5.3+u*2.1);
+     points.setZ(j,base[k+2]+flutter);
+    }
+    points.needsUpdate=true;
+    m.geometry.computeVertexNormals();
+   }
   }
  }
 }
