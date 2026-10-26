@@ -46,8 +46,9 @@ async function check(viewport,reducedMotion="no-preference"){
   assert.equal(late.labels,3,"all three service categories should be activated by water rise");
   assert.ok(early.pixel.some((c,i)=>i<3&&Math.abs(c-late.pixel[i])>25),
     "right-hand sea should visually change as water rises");
-  assert.ok(late.angle<early.angle||Math.abs(late.angle-early.angle)>0.1,
-    "wheel must actually animate while scroll progresses");
+  if(reducedMotion!=="reduce")
+    assert.ok(Math.abs(late.angle-early.angle)>0.05,
+      "wheel must actually animate while scroll progresses");
 
   if(viewport.width>790){
    await page.locator('[data-cine-service="0"]').click();
