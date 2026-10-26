@@ -494,8 +494,10 @@ if(stage&&target){
    const motion=smooth(.05,.97,p);
    const desired=reduce.matches?0:motion*(.20+4.1*Math.pow(motion,1.48));
    speed+=(desired-speed)*(1-Math.exp(-delta/200));
+   // The camera looks along -Z: negative Z rotation is visually clockwise.
+   // Keep angular speed positive; only its visual orientation is reversed.
    rotation=(rotation+speed*delta/1000)%(Math.PI*2);
-   rotor.rotation.z=rotation;
+   rotor.rotation.z=-rotation;
    const level=smooth(.14,.985,p)*.87;
    waterUniforms.uLevel.value=level;
    waterUniforms.uTime.value=time*.001;
@@ -534,6 +536,7 @@ if(stage&&target){
     waterfall:"animated translucent 3D mesh",rightWater:"single GPU-shaded surface",
     angularVelocity:Number(speed.toFixed(2)),waterLevel:Number(level.toFixed(3)),
     wheelRadius:2.31,frontFacing:true,seaLinked:true,
+    wheelDirection:"clockwise",rotationRadians:Number(rotor.rotation.z.toFixed(3)),
     materialVersion:33,brassTextures:true,softReflections:true,
     liquidVolume:true,sprayParticles:drops
    };
