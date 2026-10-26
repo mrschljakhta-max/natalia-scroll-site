@@ -215,12 +215,31 @@ function paperFlex(u,v,p,time=0){
  return relax*(.016*Math.sin(v*7.8+phase)*(.24+.76*edge)
    +.009*Math.sin(u*6.4+v*3.9-phase*.73));
 }
+/* The selected document uses the SAME soft wind response as the other
+   sheets, but is computed on the existing uninterrupted folding geometry.
+   Every paper edge samples this same warp; it fades out before first hinge. */
+function heroVortexWarp(u,v,p,time=0){
+ const turbulence=smooth(.11,.235,p)*(1-smooth(.39,.523,p));
+ const idle=.13*(1-smooth(.17,.50,p));
+ const force=reduce.matches?0:Math.max(turbulence,idle);
+ if(force<=.00001)return [0,0];
+ const x=W*(u-.5),edge=Math.abs(u-.5)*2,tip=Math.abs(v-.5)*2;
+ const phase=time*.84+v*2.05;
+ const theta=.25*force*(v-.5)*Math.sin(phase+.65*u);
+ const dx=x*(Math.cos(theta)-1);
+ const z=x*Math.sin(theta)
+  +force*.041*Math.pow(edge,2.3)*Math.sin(phase*1.21+u*2.8)
+  +force*.021*Math.pow(edge*tip,2.1)*Math.sin(time*1.13+u*3.2);
+ return [dx,z];
+}
 function positionFromUV(u,v,p,time=0){
  const x0=W*(u-.5),y0=H*(v-.5),folded=foldPoint(x0,y0,p),
        final=yachtPoint(x0,y0),morph=v<.34-.00001?smooth(.851,.925,p):
          u<=.5?smooth(.887,.961,p):smooth(.921,.998,p);
- return [mix(folded[0],final[0],morph),mix(folded[1],final[1],morph),
-    mix(folded[2],final[2],morph)+paperFlex(u,v,p,time)];
+ const wind=heroVortexWarp(u,v,p,time);
+ return [mix(folded[0],final[0],morph)+wind[0],
+   mix(folded[1],final[1],morph),
+   mix(folded[2],final[2],morph)+paperFlex(u,v,p,time)+wind[1]];
 }
 /* Physical paper edge strips. These are SIDE WALLS of the same deforming
    sheet, not a second sheet or a cross-faded boat model. Each strip follows
@@ -464,9 +483,10 @@ function updateSheet(p,time){
   const folded=foldPoint(x0,y0,p);
   const final=yachtPoint(x0,y0);
   const morph=uvy<.34-.00001?hull:uvx<=.5?port:starboard;
-  const x=mix(folded[0],final[0],morph),
+  const wind=heroVortexWarp(uvx,uvy,p,time);
+  const x=mix(folded[0],final[0],morph)+wind[0],
         y=mix(folded[1],final[1],morph),
-        z=mix(folded[2],final[2],morph)+paperFlex(uvx,uvy,p,time);
+        z=mix(folded[2],final[2],morph)+paperFlex(uvx,uvy,p,time)+wind[1];
   pos.setXYZ(i,x,y,z);
   let c=neutral.clone();
   if(uvy<.34){
@@ -552,7 +572,8 @@ const VORTEX_COUNT=25,GOLDEN_ANGLE=Math.PI*(3-Math.sqrt(5));
 for(let i=0;i<VORTEX_COUNT;i++){
  const pw=.80+rng()*.31,ph=pw*1.36;
  // Subdivided real sheet, not a flat billboard: enough vertices for mild air flutter.
- const g=new THREE.PlaneGeometry(pw,ph,8,12);
+ const isCompact=matchMedia("(max-width: 670px)").matches;
+ const g=new THREE.PlaneGeometry(pw,ph,isCompact?12:18,isCompact?16:24);
  const a=g.attributes.position;
  const bend=.007+rng()*.017;
  for(let j=0;j<a.count;j++){
@@ -588,7 +609,15 @@ for(let i=0;i<VORTEX_COUNT;i++){
   angle:theta,radius:1.0+rng()*3.2,orbit:.64+rng()*.34,
   order:rng(),x:initialX,y:initialY,z:initialZ,
   phase:rng()*6.28,tilt:(rng()-.5)*.36,spin:(rng()-.5)*.95,
-  drift:rng()*Math.PI*2,tempo:.62+rng()*.90
+  drift:rng()*Math.PI*2,tempo:.62+rng()*.90,
+  // Seeded individual aerodynamic response: no Math.random per frame.
+  stiffness:.56+rng()*.33,
+  twistStrength:.20+rng()*.16,
+  curlStrength:.048+rng()*.056,
+  creaseStrength:.064+rng()*.050,
+  dragBias:rng()*2-1,
+  foldDirection:rng()<.5?-1:1,
+  creasePhase:rng()*Math.PI*2
  });
 }
 /* Swap to the exact four image-generated paper scans after image decoding.
@@ -618,6 +647,75 @@ DOCUMENT_IMAGE_FILES.forEach((filename,index)=>{
 /* The camera follows one master page while supporting pages recede:
    three depth tiers, soft orbit banking and time-subtle drift. All scroll
    positions stay reversible and no additional master paper is rendered. */
+
+/* VORTEX PAPER MICRO-PHYSICS — an inexpensive, deterministic elastic-sheet
+   approximation. Paper is still a single, textured, double-sided mesh per
+   document. Each vertex is recomputed FROM its immutable base coordinates,
+   not from last frame: no accumulated drift, shear or irreversible bending.
+
+   1) axial twist: a real rotation of each row about the long axis (X and Z);
+   2) drag curl: edges and corners are drawn back by the moving air;
+   3) transient fold impulse: a brief crease across the grain, then release.
+   The active force is scroll-controlled and fades before page selection. */
+const paperPhysicsStats={active:0,peakDisplacement:0};
+function deformVortexPaper(d,p,timeMs,orbitSpeed=1){
+ const m=d.mesh;
+ const pos=m.geometry.attributes.position,base=d.baseShape;
+ // A little organic motion during chaos; highest bending in the actual
+ // vortex, all elastic deformation disappears before origami folding.
+ const turbulence=smooth(.105,.225,p)*(1-smooth(.355,.484,p));
+ const ambient=.16*(1-smooth(.155,.430,p));
+ const force=reduce.matches?0:Math.max(ambient,turbulence);
+ const t=timeMs*.001;
+ if(force<=.0001){
+  if(d.physicsDirty){
+   pos.array.set(base);
+   pos.needsUpdate=true;m.geometry.computeVertexNormals();
+   d.physicsDirty=false;
+  }
+  return;
+ }
+ const flexibility=1-d.stiffness*.54;
+ const intensity=force*flexibility*(.86+.14*Math.min(1.6,Math.abs(orbitSpeed)));
+ const flutter=t*(1.2+d.tempo*.34)+d.creasePhase;
+ const pulse=Math.pow(Math.max(0,Math.sin(flutter)),4);
+ const twistPhase=t*(.80+d.tempo*.22)+d.phase;
+ const curlPhase=t*(1.02+d.tempo*.33)+d.drift;
+ const folds= d.foldDirection;
+ const uvSweep=.23*(.5+Math.sin(curlPhase*.31)*.5)+.12*d.dragBias;
+ let peak=0;
+ for(let j=0;j<pos.count;j++){
+  const k=j*3,x=base[k],y=base[k+1],baseZ=base[k+2];
+  const u=x/d.pw+.5,v=y/d.ph+.5;
+  const edge=Math.abs(u-.5)*2,end=Math.abs(v-.5)*2;
+  // Rows rotate differently: real axial twist, not just Z displacement.
+  const twist=intensity*d.twistStrength*(2*v-1)*
+    Math.sin(twistPhase+u*1.55);
+  const rotatedX=x*Math.cos(twist)-baseZ*Math.sin(twist);
+  let z=baseZ*Math.cos(twist)+x*Math.sin(twist);
+  const curl=intensity*d.curlStrength*Math.pow(edge,2.35)*
+    Math.sin(curlPhase+v*2.25+d.dragBias);
+  const tip=intensity*d.curlStrength*.65*Math.pow(end,2.7)*
+    Math.pow(edge,1.7)*Math.sin(curlPhase*.83+u*3.1);
+  // This shallow moving diagonal fold has a narrow crease shadow produced
+  // by the geometry's own recomputed vertex normals.
+  const creaseCoord=(u-.5)-uvSweep*(v-.5);
+  const signed=Math.max(0,folds*creaseCoord);
+  const creaseLine=Math.exp(-Math.pow(creaseCoord/.072,2));
+  const crease=intensity*d.creaseStrength*pulse*
+    (Math.min(.5,signed)*1.3-.20*creaseLine);
+  const shear=intensity*.012*(v-.5)*Math.sin(twistPhase+u*4.5);
+  z+=curl+tip+crease;
+  pos.setXYZ(j,rotatedX+shear,y,z);
+  peak=Math.max(peak,Math.abs(z-baseZ));
+ }
+ pos.needsUpdate=true;
+ m.geometry.computeVertexNormals();
+ d.physicsDirty=true;
+ paperPhysicsStats.active++;
+ paperPhysicsStats.peakDisplacement=Math.max(paperPhysicsStats.peakDisplacement,peak);
+}
+
 function updateVortex(p,t){
  const pull=smooth(.115,.315,p),shrink=smooth(.390,.510,p);
  const assemble=smooth(.440,.530,p),focus=smooth(.265,.405,p);
@@ -625,6 +723,8 @@ function updateVortex(p,t){
  const breath=reduce.matches?0:t*.00024;
  vortex.position.set(mobile?0:1.25,mobile?-.44:0,0);
  const targetX=mobile?.12:.55,targetY=mobile?-.36:-.19;
+ paperPhysicsStats.active=0;
+ paperPhysicsStats.peakDisplacement=0;
  for(let idx=0;idx<docs.length;idx++){
   const d=docs[idx],m=d.mesh,angle=d.angle+(p-.12)*14*d.orbit+baseTime*d.tempo;
   const radius=d.radius*(1-shrink*.87);
@@ -658,18 +758,12 @@ function updateVortex(p,t){
    m.visible=p<.514&&(!mobile||idx<18);
    m.position.set(x,y,z);
    m.rotation.set(rx,ry,rz);
-   if(m.visible&&!reduce.matches){
-    const waveFade=1-smooth(.395,.507,p);
-    const points=m.geometry.attributes.position,base=d.baseShape;
-    for(let j=0;j<points.count;j++){
-     const k=j*3,u=base[k]/d.pw+.5,v=base[k+1]/d.ph+.5;
-     const edgeFlex=.28+.72*Math.pow(Math.abs(2*u-1),2);
-     const flutter=(.004+d.order*.009)*edgeFlex*waveFade
-       *Math.sin(t*.00115+d.phase+v*5.3+u*2.1);
-     points.setZ(j,base[k+2]+flutter);
-    }
-    points.needsUpdate=true;
-    m.geometry.computeVertexNormals();
+   if(m.visible){
+    // A paper's speed through the spiral sets how strongly it responds.
+    const orbitSpeed=14*d.orbit*d.radius*(1-shrink*.87);
+    deformVortexPaper(d,p,t,orbitSpeed*.1);
+   }else{
+    d.physicsDirty=false;
    }
   }
  }
@@ -759,7 +853,7 @@ try{
   target.style.display="none";
   window.__enableCanvasFallback?.("webgl-context-lost");
 },{passive:true});
- window.__origami3DDiagnostics={engine:"Three.js WebGL",controller:"GSAP ScrollTrigger",sheetMeshes:halves.length,sheetVertices:halves.reduce((n,o)=>n+o.geo.attributes.position.count,0),vortexMeshes:docs.length,boatFacets:8,sailFacets:4,geometryVersion:"v8-sculpted-contours",oneContinuousSheet:true,contourPaths:creaseRibbons.length,contactShadow:true,seaShader:"v10-gpu-water",atmosphericSky:true,paperPBR:"v11-cotton-stock",paperMaps:["albedo","normal","roughness"],paperMapResolution:paperMaps.dimensions,physicalPaperEdges:paperEdges.length,edgeThickness:.014,airFlex:"reversible-pre-fold",documentImages:documentImageStatus,documentTypes:DOCUMENT_IMAGE_FILES.length,vortexDirection:"v14-cinematic-parallax",depthTiers:3,focusOnSameSheet:true,vortexDocumentCount:VORTEX_COUNT};
+ window.__origami3DDiagnostics={engine:"Three.js WebGL",controller:"GSAP ScrollTrigger",sheetMeshes:halves.length,sheetVertices:halves.reduce((n,o)=>n+o.geo.attributes.position.count,0),vortexMeshes:docs.length,boatFacets:8,sailFacets:4,geometryVersion:"v8-sculpted-contours",oneContinuousSheet:true,contourPaths:creaseRibbons.length,contactShadow:true,seaShader:"v10-gpu-water",atmosphericSky:true,paperPBR:"v11-cotton-stock",paperMaps:["albedo","normal","roughness"],paperMapResolution:paperMaps.dimensions,physicalPaperEdges:paperEdges.length,edgeThickness:.014,airFlex:"reversible-pre-fold",documentImages:documentImageStatus,documentTypes:DOCUMENT_IMAGE_FILES.length,paperPhysics:"v15-twist-curl-crease",paperPhysicsStats,heroWind:true,vortexDirection:"v14-cinematic-parallax",depthTiers:3,focusOnSameSheet:true,vortexDocumentCount:VORTEX_COUNT};
 }catch(err){
  window.__origami3DReady=false;window.__natalia3d=false;
  target.style.display="none";
