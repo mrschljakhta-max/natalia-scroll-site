@@ -6,7 +6,7 @@
  */
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js";
 import {createPaperMaterialMaps} from "./paper-materials.js?v=11-pbr-paper";
-import {createCinematicFinale} from "./cinematic-finale.js?v=28-deep-teal-palette";
+import {createCinematicFinale} from "./cinematic-finale.js?v=42-living-ocean";
 
 const stage=document.getElementById("stage");
 const journey=document.getElementById("experience");
