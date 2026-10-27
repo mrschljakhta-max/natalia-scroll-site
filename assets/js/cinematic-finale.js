@@ -115,7 +115,7 @@ export function createCinematicFinale(THREE,{scene,paperMaps,reduce,mobile=false
  " color=mix(color,uNear,(1.0-distanceFade)*.19);",
  " color+=uHorizon*fresnel*.15;",
  " float crest=waves(q);",
- " float slope=length(vec2(dFdx(vWorld.y),dFdy(vWorld.y)));",
+ " float slope=length(N.xz);",
  " color+=uFoam*smoothstep(.08,.24,slope)*.11;",
  " // The golden sun glitters as hundreds of tiny changing reflections,",
  " // tightly limited to the right third. Not an artificial glowing pipe.",
