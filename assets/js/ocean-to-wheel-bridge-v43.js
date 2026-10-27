@@ -33,8 +33,13 @@
    enabled=shouldBridge;
    root.classList.toggle("ocean-to-wheel-bridge",enabled);
   }
-  if(shouldBridge)root.style.setProperty("--ocean-wheel-progress",progress.toFixed(5));
-  else root.style.removeProperty("--ocean-wheel-progress");
+  if(shouldBridge){
+   root.style.setProperty("--ocean-wheel-progress",progress.toFixed(5));
+   root.style.setProperty("--ocean-wheel-translate",((1-progress)*100).toFixed(4)+"vw");
+  } else {
+   root.style.removeProperty("--ocean-wheel-progress");
+   root.style.removeProperty("--ocean-wheel-translate");
+  }
   window.__oceanWheelBridge={
    active:shouldBridge,progress:+progress.toFixed(4),
    storyProgress:+p.toFixed(4),section05Top:+next.top.toFixed(1),
