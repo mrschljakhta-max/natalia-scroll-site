@@ -19,6 +19,25 @@ export function createCinematicFinale(THREE,{scene,paperMaps,reduce,mobile=false
    parseInt(hex.slice(5,7),16)/255
  );
  const seaLevel=-1.79;
+ // Four pooled circular disturbances; a click creates real surface displacement.
+ const ripplePool=Array.from({length:4},()=>({x:0,z:0,start:-10000,strength:0}));
+ let rippleIndex=0;
+ function ringAt(x,z,t,r){
+  const age=t-r.start;
+  if(age<0||age>9||!r.strength)return 0;
+  const d=Math.hypot(x-r.x,z-r.z);
+  const phase=d-age*2.25;
+  return r.strength*.19*Math.sin(phase*5.2)
+   *Math.exp(-phase*phase*1.8)*Math.exp(-age*.20)/(1+d*.105);
+ }
+ function addRipple(x,z,t,strength=1){
+  if(reduce.matches||!Number.isFinite(x)||!Number.isFinite(z))return false;
+  if(Math.abs(x)>52||z>29||z< -88)return false;
+  const r=ripplePool[rippleIndex];
+  r.x=x;r.z=z;r.start=t;r.strength=clamp(strength,.25,1);
+  rippleIndex=(rippleIndex+1)%ripplePool.length;
+  return true;
+ }
 
  // Calm, multi-directional ocean. The same formula is evaluated on GPU and
  // on CPU under the paper vessel, preventing the boat from rocking out of
@@ -41,11 +60,32 @@ export function createCinematicFinale(THREE,{scene,paperMaps,reduce,mobile=false
   }
   // Motion-free geometric wake is only a subtle optical accent. Boat bob
   // is sampled from swells, not from its own generated wake.
+  // Match GPU ripple displacement and slope under the paper vessel.
+  const eps=.06;
+  for(const r of ripplePool){
+   height+=ringAt(x,z,time,r);
+   dx+=(ringAt(x+eps,z,time,r)-ringAt(x-eps,z,time,r))/(2*eps);
+   dz+=(ringAt(x,z+eps,time,r)-ringAt(x,z-eps,time,r))/(2*eps);
+  }
   return {height,dx,dz};
  }
  const shaderCommon=[
  "uniform float uTime;",
  "uniform vec2 uBoat;",
+ "uniform vec4 uRipples[4];",
+ "float interactionWaves(vec2 p){",
+ " float res=0.0;",
+ " for(int i=0;i<4;i++){",
+ "  vec4 rip=uRipples[i];",
+ "  float age=uTime-rip.z;",
+ "  if(age>=0.0 && age<9.0 && rip.w>0.0){",
+ "   float d=distance(p,rip.xy);",
+ "   float phase=d-age*2.25;",
+ "   res+=rip.w*.19*sin(phase*5.2)*exp(-phase*phase*1.8)*exp(-age*.20)/(1.0+d*.105);",
+ "  }",
+ " }",
+ " return res;",
+ "}",
  "float waves(vec2 p){",
  " float t=uTime;",
  " float a=sin(dot(p,vec2(.60,.24))*1.30-t*.39)*.078;",
@@ -54,7 +94,7 @@ export function createCinematicFinale(THREE,{scene,paperMaps,reduce,mobile=false
  " float d=sin(dot(p,vec2(-.75,.66))*12.20+t*1.06+2.30)*.0045;",
  " float r=length((p-uBoat)*vec2(1.0,1.15));",
  " float wake=sin(r*7.4-t*1.22)*exp(-r*1.72)*.007;",
- " return a+b+c+d+wake;",
+ " return a+b+c+d+wake+interactionWaves(p);",
  "}"
  ].join("\n");
  const u={
@@ -62,6 +102,7 @@ export function createCinematicFinale(THREE,{scene,paperMaps,reduce,mobile=false
   uReveal:{value:0},
   uMood:{value:0},
   uBoat:{value:new THREE.Vector2(1.8,0)},
+  uRipples:{value:Array.from({length:4},()=>new THREE.Vector4(0,0,-10000,0))},
   uSunX:{value:5.2},
   uDeep:{value:RGB("#0B4655")},
   uMid:{value:RGB("#146D80")},
@@ -137,6 +178,8 @@ export function createCinematicFinale(THREE,{scene,paperMaps,reduce,mobile=false
  " float wake=pow(.5+.5*sin(d*10.0-uTime*1.15),6.0)",
  "            *exp(-d*1.45)*smoothstep(.08,.38,d);",
  " color+=uFoam*(wake*.16+bow*.040);",
+ " float interaction=interactionWaves(q);",
+ " color+=uFoam*min(.19,abs(interaction)*.95);",
  " float horizonFog=1.0-smoothstep(33.0,76.0,vDistance);",
  " float alpha=mix(.94,.995,fresnel)*horizonFog*uReveal;",
  " gl_FragColor=vec4(clamp(color,0.0,1.0),alpha);",
@@ -170,17 +213,23 @@ export function createCinematicFinale(THREE,{scene,paperMaps,reduce,mobile=false
   u.uMood.value=mood;
   u.uBoat.value.set(small?0:1.8,0);
   u.uSunX.value=small?1.35:5.2;
+  for(let i=0;i<ripplePool.length;i++){
+   const r=ripplePool[i];
+   u.uRipples.value[i].set(r.x,r.z,r.start,r.strength);
+  }
   ocean.visible=reveal>.001;
   lastReveal=reveal;
  }
  return {
-  update,sea:ocean,sampleSurface,
+  update,sea:ocean,sampleSurface,addRipple,
+  get activeRippleCount(){return ripplePool.filter(r=>r.strength>0).length},
   waveVertices:geometry.attributes.position.count,
   get reveal(){return lastReveal;},
   diagnostics:{
-   version:42,engine:"real-time GPU ocean",
+   version:43,engine:"real-time interactive GPU ocean",
    timeIndependentOfScroll:true,scrollControlsRevealOnly:true,
-   waveFamilies:4,waterMesh:true,goldSpecular:true,wake:true,
+   waveFamilies:4,interactiveRippleSlots:4,
+   rippleCpuGpuConsistent:true,waterMesh:true,goldSpecular:true,wake:true,
    boat:"one continuous origami sheet, no 2.5D stand-in",
    geometry:"world-space subdivided plane, vertex displacement",
    shader:"analytic multi-band wave normals / moving sun highlights",

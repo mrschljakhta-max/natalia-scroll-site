@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#102D38"><title>Сцена 04 · Живий океан — інтерактивна лабораторія</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#0d2831;color:#ecede7;font:13px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
+iframe{display:block;width:100vw;height:100dvh;border:0;background:#13282c}
+aside{position:fixed;z-index:10;left:16px;bottom:17px;max-width:min(490px,calc(100% - 32px));padding:13px 15px 11px;border:1px solid #ffffff2b;border-radius:18px;background:#112D35E8;backdrop-filter:blur(20px);box-shadow:0 14px 45px #001E2D60}
+header{display:flex;gap:12px;justify-content:space-between;align-items:center;font-weight:700;letter-spacing:.06em;font-size:11px;margin-bottom:9px}
+button{border:1px solid #ffffff38;background:#ffffff11;color:inherit;padding:9px 11px;border-radius:8px;cursor:pointer;font:inherit}
+button:hover,button:focus-visible{background:#ffffff2a;outline-color:#eed6ab}button:focus-visible{outline:2px solid #eed6ab;outline-offset:2px}
+.controls{display:flex;flex-wrap:wrap;gap:6px}p{font-size:11px;color:#bad7d4;margin:8px 0 0}
+#diagnostics{font:11px/1.6 ui-monospace,Consolas,monospace;margin:7px 0 0;color:#d4c4a9}
+@media(max-width:500px){aside{left:8px;bottom:8px;max-width:calc(100% - 16px);padding:10px}button{padding:7px}}
+</style></head><body>
+<iframe id="site" title="Реальна сцена четвертого розділу — живий океан" src="./index.html?v=43#experience"></iframe>
+<aside aria-label="Тестова панель інтерактивної сцени">
+<header><span>SCENE 04 / LIVING OCEAN</span><span>THREE.JS · v43</span></header>
+<div class="controls">
+<button type="button" data-progress=".946">Поглянути на океан</button>
+<button type="button" id="wave">Створити хвилю</button>
+<button type="button" data-progress=".982">Перехід вправо</button>
+<button type="button" id="reset">Повернутись</button>
+</div>
+<p>Спробуйте натиснути безпосередньо на воду в кадрі. Відпустіть скрол: море продовжуватиме рухатися.</p>
+<div id="diagnostics" aria-live="off">Очікуємо завантаження 3D-сцени…</div>
+</aside>
+<script>
+const frame=document.getElementById("site"),status=document.getElementById("diagnostics");
+function pos(p){try{const w=frame.contentWindow,d=w.document,journey=d.getElementById("experience");if(!journey)return;const h=w.innerHeight;const dPx=journey.offsetHeight-h;w.scrollTo({top:journey.offsetTop+p*dPx,behavior:"smooth"})}catch(e){status.textContent=String(e)}}
+document.querySelectorAll("[data-progress]").forEach(b=>b.addEventListener("click",()=>pos(Number(b.dataset.progress))));
+document.getElementById("reset").addEventListener("click",()=>pos(0));
+document.getElementById("wave").addEventListener("click",()=>{
+ try{const w=frame.contentWindow,d=w.document,stage=d.getElementById("stage");const b=stage.getBoundingClientRect(),x=b.left+b.width*.59,y=b.top+b.height*.75;
+ for(const type of ["pointerdown","pointerup"])stage.dispatchEvent(new w.PointerEvent(type,{bubbles:true,pointerId:71,pointerType:"mouse",clientX:x,clientY:y}));
+ }catch(e){status.textContent=String(e)}
+});
+frame.addEventListener("load",()=>setTimeout(()=>pos(.946),700));
+setInterval(()=>{try{const w=frame.contentWindow,o=w.__livingOceanV42,r=w.__oceanWheelBridge;if(!o){status.textContent="3D-сцена ще завантажується";return}
+status.textContent="Час світу: "+o.realTimeSeconds+" c · хвиля: "+o.waterHeight+" · човник: "+o.boatBob+"\n"+
+"Скрол: "+o.progress+" · міст вправо: "+(r?r.progress:0)+" · останній дотик: "+(o.lastRipple?"так":"ні");
+}catch(e){status.textContent="Результат недоступний: "+String(e)}},350);
+</script></body></html>

@@ -6,7 +6,7 @@
  */
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js";
 import {createPaperMaterialMaps} from "./paper-materials.js?v=11-pbr-paper";
-import {createCinematicFinale} from "./cinematic-finale.js?v=42-living-ocean";
+import {createCinematicFinale} from "./cinematic-finale.js?v=43-ripple-waves";
 
 const stage=document.getElementById("stage");
 const journey=document.getElementById("experience");
@@ -849,6 +849,58 @@ function renderCinematicLayers(p,t){
 // Independent real-time buoyancy; scroll controls the morph only.
 // A critically damped spring follows the SAME GPU wave sampled on the CPU.
 let boatRise=0,boatRiseVelocity=0,boatRoll=0,boatPitch=0,boatFrameTime=0;
+let pointerX=0,pointerY=0,lookX=0,lookY=0;
+let lastWorldTime=0;
+const raycaster=new THREE.Raycaster();
+const touchPoint=new THREE.Vector2();
+const surfacePlane=new THREE.Plane(new THREE.Vector3(0,1,0),1.79);
+const rayHit=new THREE.Vector3();
+let pressStart=null;
+function registerSeaInteraction(){
+ function setPointer(e){
+  const r=stage.getBoundingClientRect();
+  pointerX=clamp(((e.clientX-r.left)/Math.max(r.width,1)-0.5)*2,-1,1);
+  pointerY=clamp(((e.clientY-r.top)/Math.max(r.height,1)-0.5)*2,-1,1);
+ }
+ function eligible(e){
+  return progress>.895 &&
+   !reduce.matches &&
+   !e.target.closest('a,button,input,select,textarea,[role="button"]');
+ }
+ stage.addEventListener("pointermove",e=>{
+  if(e.pointerType!=="mouse"&&e.pointerType!=="pen")return;
+  if(progress>.87)setPointer(e);
+ },{passive:true});
+ stage.addEventListener("pointerleave",()=>{pointerX=0;pointerY=0},{passive:true});
+ stage.addEventListener("pointerdown",e=>{
+  if(!eligible(e))return;
+  pressStart={x:e.clientX,y:e.clientY,t:performance.now(),id:e.pointerId};
+ },{passive:true});
+ stage.addEventListener("pointercancel",()=>{pressStart=null},{passive:true});
+ stage.addEventListener("pointerup",e=>{
+  const down=pressStart;pressStart=null;
+  if(!down||down.id!==e.pointerId||!eligible(e))return;
+  if(Math.hypot(down.x-e.clientX,down.y-e.clientY)>14||
+     performance.now()-down.t>850)return; // a scroll gesture, not a tap
+  const rect=stage.getBoundingClientRect();
+  const nx=(e.clientX-rect.left)/Math.max(rect.width,1);
+  const ny=(e.clientY-rect.top)/Math.max(rect.height,1);
+  if(ny<.54||nx<0||nx>1||ny>1)return; // sky, outside stage
+  touchPoint.set(nx*2-1,1-ny*2);
+  raycaster.setFromCamera(touchPoint,camera);
+  if(raycaster.ray.intersectPlane(surfacePlane,rayHit)){
+   finale.addRipple(rayHit.x,rayHit.z,lastWorldTime,1);
+   window.__oceanLastTap={x:+rayHit.x.toFixed(3),z:+rayHit.z.toFixed(3),
+      at:lastWorldTime,screenX:nx,screenY:ny};
+  }
+ },{passive:true});
+ // Keyboard and assistive-technology alternative, invisible unless focused.
+ const tapButton=document.getElementById('oceanTapButton');
+ if(tapButton)tapButton.addEventListener('click',()=>{
+  if(progress>.895)finale.addRipple(width<670?0:1.8,-1.4,lastWorldTime,.85);
+ });
+}
+
 let width=0,height=0,progress=0,previous=0,active=true;
 function resize(){
  const rect=stage.getBoundingClientRect(),w=Math.max(1,rect.width),h=Math.max(1,rect.height);
@@ -862,14 +914,26 @@ function tick(time){
  resize();
  const p=clamp(progress);
  const mobile=width<670;
+ lastWorldTime=time;
  updateVortex(p,time*1000);
  updateSheet(p,time);
  // Slight parallax makes the folding object read as 3D, but never hides the folds.
  const lensFocus=smooth(.25,.385,p)*(1-smooth(.433,.559,p));
- camera.position.x=mix(-.10,.14,smooth(.58,.94,p));
- camera.position.y=mix(.13,.62,smooth(.76,1,p));
+ // Very small inertial mouse parallax, only after the boat appears.
+ const dtLook=boatFrameTime?Math.min(.05,Math.max(0,time-boatFrameTime)):1/60;
+ const pointerK=1-Math.exp(-dtLook*2.4);
+ lookX+=(pointerX-lookX)*pointerK;
+ lookY+=(pointerY-lookY)*pointerK;
+ const parallax=reduce.matches?0:smooth(.895,.985,p)*(1-smooth(.948,1,p));
+ const exit=smooth(.949,1,p);
+ // True virtual camera drift to the right on the way to the wheel.
+ // Pointer offsets stay small enough to preserve the approved composition.
+ const travel=exit*3.05;
+ camera.position.x=mix(-.10,.14,smooth(.58,.94,p))+lookX*.075*parallax+travel;
+ camera.position.y=mix(.13,.62,smooth(.76,1,p))-lookY*.038*parallax;
  camera.position.z=(mobile?12.9:13.8)-lensFocus*(mobile?.28:.52);
- camera.lookAt(0,mix(0,.76,smooth(.78,1,p)),0);
+ camera.lookAt(travel*.84+lookX*.023*parallax,
+   mix(0,.76,smooth(.78,1,p))-lookY*.012*parallax,0);
  // Scroll determines whether the paper is a completed sailboat.
  // Physical time determines what it does AFTER the wheel is released.
  // updateSheet() resets the base pose every tick; these offsets never drift.
@@ -884,8 +948,9 @@ function tick(time){
  boatRiseVelocity*=Math.exp(-damping*dt);
  boatRise+=boatRiseVelocity*dt;
  const waveEase=1-Math.exp(-dt*3.7);
- boatRoll+=(-sample.dx*.37-boatRoll)*waveEase;
- boatPitch+=(sample.dz*.34-boatPitch)*waveEase;
+ // Limit storm-like impulse; a paper sailboat can never flip.
+ boatRoll+=(clamp(-sample.dx*.18,-.065,.065)-boatRoll)*waveEase;
+ boatPitch+=(clamp(sample.dz*.17,-.055,.055)-boatPitch)*waveEase;
  sailGroup.position.y+=boatRise*afloat;
  sailGroup.rotation.z+=boatRoll*afloat;
  sailGroup.rotation.x+=boatPitch*afloat;
@@ -897,7 +962,9 @@ function tick(time){
    waterHeight:+sample.height.toFixed(4),boatBob:+(boatRise*afloat).toFixed(4),
    boatRollDegrees:+(boatRoll*afloat*180/Math.PI).toFixed(3),
    boatPitchDegrees:+(boatPitch*afloat*180/Math.PI).toFixed(3),
-   oceanContinuesWhenScrollStops:true,videoUsed:false
+   oceanContinuesWhenScrollStops:true,videoUsed:false,
+   cursorParallax:true,interactionRipples:true,
+   rightwardTransition:true,lastRipple:window.__oceanLastTap||null
  };
  renderCinematicLayers(p,time);
  // Reveal WebGL only after its first real render (never display a blank canvas).
@@ -918,6 +985,7 @@ try{
   invalidateOnRefresh:true,onUpdate:()=>{}
  },onUpdate(){progress=scrub.p}});
  GS.ticker.add(tick);
+ registerSeaInteraction();
  document.addEventListener("visibilitychange",()=>{active=!document.hidden;if(active)resize()});
  window.addEventListener("resize",resize,{passive:true});
  renderer.domElement.addEventListener("webglcontextlost",()=>{
@@ -932,7 +1000,7 @@ try{
   return {scrollProgress:progress,poseProgress:yachtPoseProgress(progress),
    samples:[0,.17,.34,.51,.68,.85,1].map(r=>at(Math.min(a.count-1,Math.floor(r*(a.count-1)))))};
  };
-  window.__origami3DDiagnostics={engine:"Three.js WebGL",controller:"GSAP ScrollTrigger",sheetMeshes:halves.length,sheetVertices:halves.reduce((n,o)=>n+o.geo.attributes.position.count,0),vortexMeshes:docs.length,boatFacets:8,sailFacets:4,geometryVersion:"v8-sculpted-contours",oneContinuousSheet:true,contourPaths:creaseRibbons.length,contactShadow:true,seaShader:"v42-living-ocean-procedural-glints",atmosphericSky:true,paperPBR:"v11-cotton-stock",paperMaps:["albedo","normal","roughness"],paperMapResolution:paperMaps.dimensions,physicalPaperEdges:paperEdges.length,edgeThickness:.014,airFlex:"reversible-pre-fold",documentImages:documentImageStatus,documentTypes:DOCUMENT_IMAGE_FILES.length,paperPhysics:"v16-visible-paper-flaps",finalScene:"v20-approved-yacht-shape-locked",waveVertices:finale.waveVertices,finale:finale.diagnostics,finalPoseProgress:FINAL_YACHT_POSE_PROGRESS,paperPhysicsStats,heroWind:true,vortexDirection:"v14-cinematic-parallax",depthTiers:3,focusOnSameSheet:true,vortexDocumentCount:VORTEX_COUNT};
+  window.__origami3DDiagnostics={engine:"Three.js WebGL",controller:"GSAP ScrollTrigger",sheetMeshes:halves.length,sheetVertices:halves.reduce((n,o)=>n+o.geo.attributes.position.count,0),vortexMeshes:docs.length,boatFacets:8,sailFacets:4,geometryVersion:"v8-sculpted-contours",oneContinuousSheet:true,contourPaths:creaseRibbons.length,contactShadow:true,seaShader:"v43-gpu-cpu-interactive-ripple-world",atmosphericSky:true,paperPBR:"v11-cotton-stock",paperMaps:["albedo","normal","roughness"],paperMapResolution:paperMaps.dimensions,physicalPaperEdges:paperEdges.length,edgeThickness:.014,airFlex:"reversible-pre-fold",documentImages:documentImageStatus,documentTypes:DOCUMENT_IMAGE_FILES.length,paperPhysics:"v16-visible-paper-flaps",finalScene:"v20-approved-yacht-shape-locked",waveVertices:finale.waveVertices,finale:finale.diagnostics,finalPoseProgress:FINAL_YACHT_POSE_PROGRESS,paperPhysicsStats,heroWind:true,vortexDirection:"v14-cinematic-parallax",depthTiers:3,focusOnSameSheet:true,vortexDocumentCount:VORTEX_COUNT};
 }catch(err){
  window.__origami3DReady=false;window.__natalia3d=false;
  target.style.display="none";

@@ -362,6 +362,42 @@ html.canvas-fallback .fallback-ocean{display:block}
  .stage.is-day .sun-bloom,.stage.is-day .sea-haze{animation:none!important}
 }
 
+
+/* Scene 04 / Interaction engine — GPU water, mouse and touch in world space.
+   The 16:9 composition remains EXACTLY the approved boat/sun/typography.
+   The fifth scene itself (not a mock-up) slides in from the right. */
+html.ocean-to-wheel-bridge #watermillStage{
+  position:fixed!important;inset:0!important;
+  top:0!important;left:0!important;right:0!important;bottom:auto!important;
+  width:100vw!important;height:100svh!important;min-height:0!important;
+  transform:translate3d(var(--ocean-wheel-translate,100vw),0,0)!important;
+  z-index:1000!important;overflow:hidden;
+  pointer-events:none!important;will-change:transform;
+  box-shadow:-32px 0 64px rgba(8,56,65,.13);
+}
+html.ocean-to-wheel-bridge #watermillStage::before{
+  content:"";position:absolute;inset:0 auto 0 0;width:5px;z-index:1000;
+  background:linear-gradient(180deg,rgba(72,158,159,.12),rgba(220,249,234,.36));
+  pointer-events:none;
+}
+/* A keyboard-accessible ripple trigger without disturbing the set dressing. */
+.ocean-ripple-keyboard{
+  position:absolute;left:-10000px;top:auto;width:1px;height:1px;
+  overflow:hidden;white-space:nowrap;z-index:20;
+}
+.ocean-ripple-keyboard:focus-visible{
+  left:clamp(18px,4vw,72px);top:auto;bottom:22px;
+  width:auto;height:auto;padding:12px 18px;border:1px solid #548D8B;
+  border-radius:99px;background:#F5F1E8;color:#153C42;outline:2px solid #fff;
+  overflow:visible;font:600 13px/1.2 Arial,sans-serif;
+}
+@media(prefers-reduced-motion:reduce){
+ html.ocean-to-wheel-bridge #watermillStage{
+   position:sticky!important;transform:none!important;
+   pointer-events:auto!important;box-shadow:none;
+ }
+}
+
 </style>
 </head>
 <body>
@@ -378,6 +414,7 @@ html.canvas-fallback .fallback-ocean{display:block}
   </div>
   <canvas id="paperCanvas" aria-hidden="true"></canvas>
   <div id="origami3d" aria-hidden="true"></div>
+  <button type="button" class="ocean-ripple-keyboard" id="oceanTapButton" aria-label="Створити хвилю на морі">Створити хвилю на морі</button>
 
   <div class="topbar">
     <a class="brand" href="#experience" aria-label="Наталія та Анна — на початок"><span class="sail-mark" aria-hidden="true"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="markA" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f2f2de"/><stop offset=".48" stop-color="#abc5b1"/><stop offset="1" stop-color="#57826f"/></linearGradient><linearGradient id="markB" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f4dbb7"/><stop offset="1" stop-color="#af7a5c"/></linearGradient></defs><path d="M40 12L40 53L16 54Z" fill="url(#markA)" stroke="#f6f0db" stroke-width="1.3"/><path d="M45 23L64 54L45 54Z" fill="url(#markB)" stroke="#f4ddc1" stroke-width="1.3"/><path d="M9 56L71 56L58 66L23 65Z" fill="#ede8d8" stroke="#d5e1d0" stroke-width="1.3"/><path d="M16 56L41 62L64 56M40 12L33 52" fill="none" stroke="#769889" stroke-width="1.5"/><path d="M13 71Q39 65 67 71" fill="none" stroke="#c99d7b" stroke-width="1.8" stroke-linecap="round"/></svg></span><span class="brand-name">НАТАЛІЯ &amp; АННА<small>БУХГАЛТЕРСЬКИЙ СУПРОВІД</small></span></a>
@@ -523,7 +560,8 @@ function updateText(p){
   // Never draw two full-page story headings on top of each other.
   // The outgoing chapter fades completely BEFORE the incoming starts.
   const enter=i===0?1:smooth((p-a-.005)/.019);
-  const leave=i===3?1:1-smooth((p-b+.025)/.014);
+  // The fourth heading recedes during the reversible horizontal portal.
+  const leave=i===3?1-smooth((p-.951)/.046):1-smooth((p-b+.025)/.014);
   const vis=enter*leave;
   el.style.opacity=vis.toFixed(3);
   el.style.transform='translate3d(0,'+((1-vis)*16).toFixed(1)+'px,0)';
@@ -913,10 +951,11 @@ resize();position=scrollProgress();tick=requestAnimationFrame(frame);
 {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
 "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"}}
 </script>
-<script type="module" src="./assets/js/origami3d.js?v=42-living-ocean" onerror="window.__enableCanvasFallback?.('module-load-error')"></script>
+<script type="module" src="./assets/js/origami3d.js?v=43-interactive-sea" onerror="window.__enableCanvasFallback?.('module-load-error')"></script>
 <script src="./assets/js/watermill-scene.js?v=31-waterfall-on-entry" defer></script>
 <script type="module" src="./assets/js/watermill3d.js?v=35-gltf-hdri-water"></script>
 
 <script src="./assets/js/cinematic-film-v40.js?v=40" defer></script>
+<script src="./assets/js/ocean-to-wheel-bridge-v43.js?v=43" defer></script>
 </body>
 </html>
