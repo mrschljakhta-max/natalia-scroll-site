@@ -6,7 +6,7 @@
  */
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js";
 import {createPaperMaterialMaps} from "./paper-materials.js?v=11-pbr-paper";
-import {createCinematicFinale} from "./cinematic-finale.js?v=28-deep-teal-palette";
+import {createCinematicFinale} from "./cinematic-finale.js?v=42-living-ocean";
 
 const stage=document.getElementById("stage");
 const journey=document.getElementById("experience");
@@ -846,6 +846,9 @@ function renderCinematicLayers(p,t){
  renderer.render(scene,camera);
 }
 
+// Independent real-time buoyancy; scroll controls the morph only.
+// A critically damped spring follows the SAME GPU wave sampled on the CPU.
+let boatRise=0,boatRiseVelocity=0,boatRoll=0,boatPitch=0,boatFrameTime=0;
 let width=0,height=0,progress=0,previous=0,active=true;
 function resize(){
  const rect=stage.getBoundingClientRect(),w=Math.max(1,rect.width),h=Math.max(1,rect.height);
@@ -867,11 +870,35 @@ function tick(time){
  camera.position.y=mix(.13,.62,smooth(.76,1,p));
  camera.position.z=(mobile?12.9:13.8)-lensFocus*(mobile?.28:.52);
  camera.lookAt(0,mix(0,.76,smooth(.78,1,p)),0);
- // At rest, the one-paper yacht and its crease details move together.
- const afloat=smooth(.970,1,p);
- sailGroup.rotation.z+=(reduce.matches?0:Math.sin(time*.63)*.010*afloat);
- sailGroup.position.y+=(reduce.matches?0:Math.sin(time*.81)*.016*afloat);
+ // Scroll determines whether the paper is a completed sailboat.
+ // Physical time determines what it does AFTER the wheel is released.
+ // updateSheet() resets the base pose every tick; these offsets never drift.
+ const afloat=reduce.matches?0:smooth(.933,.989,p);
+ const dt=boatFrameTime?Math.min(.05,Math.max(0,time-boatFrameTime)):1/60;
+ boatFrameTime=time;
+ const sample=finale.sampleSurface(mobile?0:1.8,0,time);
+ const desiredRise=sample.height*1.12;
+ // Damped suspension: no abrupt snapping at wave crests or scroll pauses.
+ const spring=11.5,damping=7.6;
+ boatRiseVelocity+=(desiredRise-boatRise)*spring*dt;
+ boatRiseVelocity*=Math.exp(-damping*dt);
+ boatRise+=boatRiseVelocity*dt;
+ const waveEase=1-Math.exp(-dt*3.7);
+ boatRoll+=(-sample.dx*.37-boatRoll)*waveEase;
+ boatPitch+=(sample.dz*.34-boatPitch)*waveEase;
+ sailGroup.position.y+=boatRise*afloat;
+ sailGroup.rotation.z+=boatRoll*afloat;
+ sailGroup.rotation.x+=boatPitch*afloat;
+ // A minuscule, genuinely time-driven paper flutter, not more bobbing.
+ sailGroup.rotation.y+=(reduce.matches?0:Math.sin(time*.41)*.006*afloat);
  finale.update(p,time,{mobile});
+ window.__livingOceanV42={
+   mode:'real-time-Three.js',progress:+p.toFixed(4),realTimeSeconds:+time.toFixed(2),
+   waterHeight:+sample.height.toFixed(4),boatBob:+(boatRise*afloat).toFixed(4),
+   boatRollDegrees:+(boatRoll*afloat*180/Math.PI).toFixed(3),
+   boatPitchDegrees:+(boatPitch*afloat*180/Math.PI).toFixed(3),
+   oceanContinuesWhenScrollStops:true,videoUsed:false
+ };
  renderCinematicLayers(p,time);
  // Reveal WebGL only after its first real render (never display a blank canvas).
  if(!window.__origami3DReady){
@@ -905,7 +932,7 @@ try{
   return {scrollProgress:progress,poseProgress:yachtPoseProgress(progress),
    samples:[0,.17,.34,.51,.68,.85,1].map(r=>at(Math.min(a.count-1,Math.floor(r*(a.count-1)))))};
  };
-  window.__origami3DDiagnostics={engine:"Three.js WebGL",controller:"GSAP ScrollTrigger",sheetMeshes:halves.length,sheetVertices:halves.reduce((n,o)=>n+o.geo.attributes.position.count,0),vortexMeshes:docs.length,boatFacets:8,sailFacets:4,geometryVersion:"v8-sculpted-contours",oneContinuousSheet:true,contourPaths:creaseRibbons.length,contactShadow:true,seaShader:"v18-worldspace-animated-surface",atmosphericSky:true,paperPBR:"v11-cotton-stock",paperMaps:["albedo","normal","roughness"],paperMapResolution:paperMaps.dimensions,physicalPaperEdges:paperEdges.length,edgeThickness:.014,airFlex:"reversible-pre-fold",documentImages:documentImageStatus,documentTypes:DOCUMENT_IMAGE_FILES.length,paperPhysics:"v16-visible-paper-flaps",finalScene:"v20-approved-yacht-shape-locked",waveVertices:finale.waveVertices,finale:finale.diagnostics,finalPoseProgress:FINAL_YACHT_POSE_PROGRESS,paperPhysicsStats,heroWind:true,vortexDirection:"v14-cinematic-parallax",depthTiers:3,focusOnSameSheet:true,vortexDocumentCount:VORTEX_COUNT};
+  window.__origami3DDiagnostics={engine:"Three.js WebGL",controller:"GSAP ScrollTrigger",sheetMeshes:halves.length,sheetVertices:halves.reduce((n,o)=>n+o.geo.attributes.position.count,0),vortexMeshes:docs.length,boatFacets:8,sailFacets:4,geometryVersion:"v8-sculpted-contours",oneContinuousSheet:true,contourPaths:creaseRibbons.length,contactShadow:true,seaShader:"v42-living-ocean-procedural-glints",atmosphericSky:true,paperPBR:"v11-cotton-stock",paperMaps:["albedo","normal","roughness"],paperMapResolution:paperMaps.dimensions,physicalPaperEdges:paperEdges.length,edgeThickness:.014,airFlex:"reversible-pre-fold",documentImages:documentImageStatus,documentTypes:DOCUMENT_IMAGE_FILES.length,paperPhysics:"v16-visible-paper-flaps",finalScene:"v20-approved-yacht-shape-locked",waveVertices:finale.waveVertices,finale:finale.diagnostics,finalPoseProgress:FINAL_YACHT_POSE_PROGRESS,paperPhysicsStats,heroWind:true,vortexDirection:"v14-cinematic-parallax",depthTiers:3,focusOnSameSheet:true,vortexDocumentCount:VORTEX_COUNT};
 }catch(err){
  window.__origami3DReady=false;window.__natalia3d=false;
  target.style.display="none";
