@@ -1,12 +1,6 @@
-/**
- * Scene 05 — genuinely dimensional brass wheel and flowing sea.
- * Perspective depth comes from extruded stone, 3D toruses, volumetric spokes,
- * bucket geometry and dynamic GPU-shaded water — not SVG/card mockups.
- * All geometry faces the camera (frontal angle).
- */
+/** Scene 05: folded cotton-paper wheel, continuous flow and rising water. */
 import * as THREE from "three";
-import {GLTFLoader} from "three/addons/loaders/GLTFLoader.js";
-import {RGBELoader} from "three/addons/loaders/RGBELoader.js";
+import {createPaperMaterialMaps} from "./paper-materials.js?v=11-pbr-paper";
 
 const stage=document.getElementById("watermillStage");
 const target=document.getElementById("millWebGL");
@@ -18,8 +12,8 @@ if(stage&&target){
  let splash=null,seaTop=null,active=false,visible=false,scheduled=false,prev=0,frameCount=0,rotation=0,speed=0;
  let width=1,height=1,W=16;
  const materials=[],geometries=[];
- let assembly=null,loadedRotor=null,hdriApplied=false,gltfApplied=false;
- let waterSurface3D=null,waterSurfaceBase=null,assetLoading=false;
+ let assembly=null;
+ let waterSurface3D=null,waterSurfaceBase=null;
  try{
   renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:"high-performance"});
   renderer.setPixelRatio(Math.min(devicePixelRatio||1,matchMedia("(max-width:670px)").matches?1.1:1.4));
@@ -38,258 +32,72 @@ if(stage&&target){
   const edge=new THREE.DirectionalLight(0xA9C9C2,1.45);edge.position.set(7,3,-6);scene.add(edge);
   const glow=new THREE.PointLight(0xF8DBB9,17,20,2);glow.position.set(4,5,7);scene.add(glow);
   assembly=new THREE.Group();scene.add(assembly);
-  // Six physically reflected studio softboxes, generated without an HDRI asset
-  // or extra network dependency. Three.js PMREM filters this environment.
-  const envFaces=[];
-  for(let i=0;i<6;i++){
-   const c=document.createElement("canvas");c.width=c.height=160;
-   const cx=c.getContext("2d");
-   const bg=cx.createLinearGradient(0,0,160,160);
-   bg.addColorStop(0,i===2?"#F7F1E5":"#DEE6E1");
-   bg.addColorStop(.55,i===3?"#A0C5C3":"#CCCEC5");
-   bg.addColorStop(1,i===4?"#C1CEC8":"#8DAEB1");
-   cx.fillStyle=bg;cx.fillRect(0,0,160,160);
-   const box=cx.createRadialGradient(i%2?101:56,32,2,i%2?101:56,32,116);
-   box.addColorStop(0,"rgba(255,250,229,.95)");
-   box.addColorStop(.38,"rgba(255,248,229,.47)");
-   box.addColorStop(1,"rgba(255,249,238,0)");
-   cx.fillStyle=box;cx.fillRect(0,0,160,160);
-   cx.fillStyle="rgba(255,254,248,.36)";
-   cx.fillRect(i%2?95:38,0,14,132);
-   envFaces.push(c);
-  }
-  const studioEnv=new THREE.CubeTexture(envFaces);
-  studioEnv.colorSpace=THREE.SRGBColorSpace;
-  studioEnv.needsUpdate=true;
-  scene.environment=studioEnv;
-  scene.environmentIntensity=.82;
-  // Real brushed-metal micro-surface, roughness variation and microscopic
-  // scratches encoded in repeatable procedural PBR textures (not paint-on
-  // glossy streaks); deterministic and generated once at startup.
-  const texSize=384,normalData=new Uint8Array(texSize*texSize*4),
-   roughData=new Uint8Array(texSize*texSize*4);
-  let grainSeed=1559;
-  const grain=()=>{grainSeed=(grainSeed*1664525+1013904223)>>>0;return grainSeed/4294967296};
-  const scratches=Array.from({length:23},()=>({x:Math.floor(grain()*texSize),
-   width:.6+grain()*2,weight:.6+grain()*.4}));
-  for(let y=0;y<texSize;y++)for(let x=0;x<texSize;x++){
-   let scratch=0;
-   for(const line of scratches){
-    const distance=Math.min(Math.abs(x-line.x),texSize-Math.abs(x-line.x));
-    scratch+=Math.exp(-distance*distance/(line.width*line.width))*line.weight;
-   }
-   const tremor=grain()-.5;
-   const waviness=Math.sin(y*.11+x*.017)+.55*Math.sin(y*.42-x*.013);
-   const k=(y*texSize+x)*4;
-   const nx=128+Math.max(-25,Math.min(25,scratch*8+tremor*8));
-   const ny=128+waviness*3+tremor*5;
-   normalData[k]=Math.round(Math.min(255,nx));
-   normalData[k+1]=Math.round(Math.min(255,ny));
-   normalData[k+2]=253;normalData[k+3]=255;
-   const rough=Math.round(Math.max(96,Math.min(196,135+scratch*14+tremor*13+waviness*4)));
-   roughData[k]=rough;roughData[k+1]=rough;roughData[k+2]=rough;roughData[k+3]=255;
-  }
-  const mapFrom=(pixels)=>{
-   const tex=new THREE.DataTexture(pixels,texSize,texSize,THREE.RGBAFormat);
-   tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.anisotropy=4;
-   tex.generateMipmaps=true;tex.minFilter=THREE.LinearMipmapLinearFilter;
-   tex.magFilter=THREE.LinearFilter;tex.needsUpdate=true;return tex;
-  };
-  const brassNormal=mapFrom(normalData),brassRoughness=mapFrom(roughData);
-  // Satin brushed brass; restrained reflections make the circular form
-  // feel machined and substantial instead of plastic or mirror-chrome.
-  const gold=new THREE.MeshPhysicalMaterial({color:0xBC925D,metalness:.82,roughness:.80,
-   roughnessMap:brassRoughness,normalMap:brassNormal,normalScale:new THREE.Vector2(.15,.15),
-   envMapIntensity:.86,clearcoat:.055,clearcoatRoughness:.65});
-  const lightGold=new THREE.MeshPhysicalMaterial({color:0xD9B582,metalness:.73,roughness:.74,
-   roughnessMap:brassRoughness,normalMap:brassNormal,normalScale:new THREE.Vector2(.12,.12),
-   envMapIntensity:.88,clearcoat:.075,clearcoatRoughness:.68});
-  const darkGold=new THREE.MeshStandardMaterial({color:0x755338,metalness:.64,roughness:.86,
-   roughnessMap:brassRoughness,envMapIntensity:.60});
-  // A gently varied mineral surface, authored procedurally and only once.
-  // Fine warm flecks and subtle grain replace the previous flat cream fill.
-  const stoneCanvas=document.createElement("canvas");
-  stoneCanvas.width=stoneCanvas.height=384;
-  const stoneContext=stoneCanvas.getContext("2d",{willReadFrequently:true});
-  stoneContext.fillStyle="#e9e0d2";stoneContext.fillRect(0,0,384,384);
-  const stonePixels=stoneContext.getImageData(0,0,384,384);
-  let seed=421381;
-  const random=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};
-  for(let y=0;y<384;y++)for(let x=0;x<384;x++){
-   const i=(y*384+x)*4;
-   const mineral=3*Math.sin(x*.031+y*.012)+2*Math.sin(y*.047-x*.008);
-   const fleck=(random()-.5)*11;
-   const tone=mineral+fleck;
-   stonePixels.data[i]=Math.round(Math.max(0,Math.min(255,229+tone)));
-   stonePixels.data[i+1]=Math.round(Math.max(0,Math.min(255,220+tone)));
-   stonePixels.data[i+2]=Math.round(Math.max(0,Math.min(255,205+tone)));
-   stonePixels.data[i+3]=255;
-  }
-  stoneContext.putImageData(stonePixels,0,0);
-  stoneContext.strokeStyle="rgba(143,122,93,.055)";
-  for(let i=0;i<30;i++){
-   const x=random()*390,y=random()*390;
-   stoneContext.beginPath();stoneContext.moveTo(x,y);
-   stoneContext.bezierCurveTo(x+8,y-3,x+24,y+5,x+34,y+2);
-   stoneContext.lineWidth=.6+random()*.8;stoneContext.stroke();
-  }
-  const stoneMap=new THREE.CanvasTexture(stoneCanvas);
-  stoneMap.colorSpace=THREE.SRGBColorSpace;
-  stoneMap.wrapS=stoneMap.wrapT=THREE.RepeatWrapping;
-  stoneMap.repeat.set(1.5,2.2);
-  const porcelain=new THREE.MeshPhysicalMaterial({color:0xFFFFFF,map:stoneMap,
-    bumpMap:stoneMap,bumpScale:.028,roughness:.83,metalness:0,clearcoat:.06});
-  const porcelainEdge=new THREE.MeshStandardMaterial({color:0xF0E5D4,roughness:.78});
-  materials.push(gold,lightGold,darkGold,porcelain,porcelainEdge);
+  const paperMaps=createPaperMaterialMaps(THREE,renderer,{mobile:matchMedia("(max-width:670px)").matches});
+  const paper=(color)=>new THREE.MeshStandardMaterial({color,map:paperMaps.fiber,
+   normalMap:paperMaps.normal,normalScale:new THREE.Vector2(.13,.13),
+   roughnessMap:paperMaps.roughness,roughness:.94,metalness:0,side:THREE.DoubleSide});
+  const ivory=paper(0xf2ead8),sage=paper(0x9bb6a4),shade=paper(0x718f80),copper=paper(0xb38165);
+  materials.push(ivory,sage,shade,copper);
   function mesh(geo,mat,parent=assembly){
    geometries.push(geo);
    const m=new THREE.Mesh(geo,mat);parent.add(m);return m;
   }
-  function torus(radius,tube,z,mat,parent){
-   const m=mesh(new THREE.TorusGeometry(radius,tube,14,144),mat,parent);
+  // A twelve-sided folded annulus has distinct front, back and edge planes.
+  // The same fibrous material as the paper boat is used for every surface.
+  function ring(radius,thickness,z,material,parent){
+   const shape=new THREE.Shape(),hole=new THREE.Path(),n=12;
+   for(let i=0;i<=n;i++){
+    const a=i*Math.PI*2/n, x=Math.sin(a)*radius,y=Math.cos(a)*radius;
+    if(i===0)shape.moveTo(x,y);else shape.lineTo(x,y);
+    const ah=-a,hx=Math.sin(ah)*(radius-thickness),hy=Math.cos(ah)*(radius-thickness);
+    if(i===0)hole.moveTo(hx,hy);else hole.lineTo(hx,hy);
+   }
+   shape.holes.push(hole);
+   const m=mesh(new THREE.ExtrudeGeometry(shape,{depth:.045,bevelEnabled:false,steps:1}),material,parent);
    m.position.z=z;return m;
   }
-  // Continuous, tapered architectural pedestal, its base precisely at y=-5.
-  const outline=new THREE.Shape();
-  outline.moveTo(-.29,.11);
-  outline.bezierCurveTo(-.55,-.38,-.53,-1.20,-.64,-2.23);
-  outline.bezierCurveTo(-.8,-3.45,-1.06,-4.22,-1.55,-4.79);
-  outline.lineTo(1.55,-4.79);
-  outline.bezierCurveTo(1.06,-4.22,.8,-3.45,.64,-2.23);
-  outline.bezierCurveTo(.53,-1.2,.55,-.38,.29,.11);
-  outline.closePath();
-  const pedestal=mesh(new THREE.ExtrudeGeometry(outline,{
-   depth:.65,bevelEnabled:true,bevelThickness:.075,bevelSize:.065,bevelSegments:4,steps:1,curveSegments:22
-  }),porcelain);
-  pedestal.position.z=-.68;
-  const foot=mesh(new THREE.BoxGeometry(3.95,.28,.86),porcelain);
-  foot.position.set(0,-4.86,-.20);
-  const footLip=mesh(new THREE.BoxGeometry(3.92,.035,.89),porcelainEdge);
-  footLip.position.set(0,-4.70,-.19);
-  // Subtle hand-painted contact occlusion behind the wheel and the pedestal.
-  // These are translucent decals, not heavy post-processing passes.
-  const aoCanvas=document.createElement("canvas");aoCanvas.width=aoCanvas.height=256;
-  const aoc=aoCanvas.getContext("2d");
-  const g=aoc.createRadialGradient(128,128,12,128,128,128);
-  g.addColorStop(0,"rgba(40,29,19,.56)");
-  g.addColorStop(.48,"rgba(50,37,24,.27)");
-  g.addColorStop(1,"rgba(60,48,31,0)");
-  aoc.fillStyle=g;aoc.fillRect(0,0,256,256);
-  const aoMap=new THREE.CanvasTexture(aoCanvas);aoMap.colorSpace=THREE.SRGBColorSpace;
-  const contact=mesh(new THREE.PlaneGeometry(5.5,5.5),new THREE.MeshBasicMaterial({
-   map:aoMap,transparent:true,opacity:.19,depthWrite:false,polygonOffset:true,polygonOffsetFactor:1
-  }),assembly);
-  contact.position.set(0,0,-.86);
-  const shadow=mesh(new THREE.PlaneGeometry(5.1,.35),new THREE.MeshBasicMaterial({
-   color:0x5A5447,transparent:true,opacity:.065,depthWrite:false
-  }));
-  materials.push(shadow.material,contact.material);
-  shadow.position.set(0,-4.97,-.45);
-  // Actual 3D rotating rotor: two concentric raised rims, spoke barrels
-  // in different depth planes and 12 individually extruded water-catching cups.
+  // A folded A-frame replaces the heavy mineral pedestal.
+  const stand=new THREE.Shape();
+  stand.moveTo(-.26,.25);stand.lineTo(-1.40,-4.79);stand.lineTo(1.40,-4.79);
+  stand.lineTo(.26,.25);stand.closePath();
+  const support=mesh(new THREE.ExtrudeGeometry(stand,{depth:.46,bevelEnabled:false}),ivory);
+  support.position.z=-.65;
+  const fold=new THREE.BufferGeometry();
+  fold.setAttribute('position',new THREE.Float32BufferAttribute([0,.25,-.14,0,-4.79,.05,1.40,-4.79,-.14],3));
+  fold.setAttribute('uv',new THREE.Float32BufferAttribute([.5,1,.5,0,1,0],2));fold.computeVertexNormals();
+  mesh(fold,sage);
+  const foot=mesh(new THREE.BoxGeometry(3.6,.16,.82),ivory);foot.position.set(0,-4.91,-.25);
+  const footEdge=mesh(new THREE.BoxGeometry(3.55,.025,.85),sage);footEdge.position.set(0,-4.82,-.24);
   rotor=new THREE.Group();assembly.add(rotor);
-  torus(2.31,.215,-.45,darkGold,rotor);
-  torus(2.31,.19,.40,gold,rotor);
-  torus(2.15,.036,.55,lightGold,rotor);
-  torus(1.89,.055,.19,darkGold,rotor);
-  torus(1.90,.027,.26,lightGold,rotor);
-  torus(2.31,.038,.61,lightGold,rotor);
+  ring(2.43,.20,-.38,shade,rotor);
+  ring(2.43,.20,.43,ivory,rotor);
+  ring(2.21,.035,.49,sage,rotor);
+  const PADDLE_COUNT=12;
   const up=new THREE.Vector3(0,1,0);
-  const PADDLE_COUNT=10;
-  const boltGeometry=new THREE.SphereGeometry(.066,12,8);
-  geometries.push(boltGeometry);
   for(let i=0;i<PADDLE_COUNT;i++){
-   const a=i*Math.PI*2/PADDLE_COUNT;
-   const radial=new THREE.Vector3(Math.sin(a),Math.cos(a),0);
-   const spoke=mesh(new THREE.CylinderGeometry(.062,.083,2.19,12,1),i%3===0?lightGold:gold,rotor);
-   spoke.position.set(radial.x*1.17,radial.y*1.17,.17);
+   const a=i*Math.PI*2/PADDLE_COUNT,radial=new THREE.Vector3(Math.sin(a),Math.cos(a),0);
+   const spoke=mesh(new THREE.BoxGeometry(.16,2.14,.20),i%3?sage:ivory,rotor);
+   spoke.position.set(radial.x*1.20,radial.y*1.20,.08);
    spoke.quaternion.setFromUnitVectors(up,radial);
-   const spokeBack=mesh(new THREE.CylinderGeometry(.034,.044,2.08,8),darkGold,rotor);
-   spokeBack.position.set(radial.x*1.17,radial.y*1.17,-.33);
-   spokeBack.quaternion.setFromUnitVectors(up,radial);
-   const bucket=mesh(new THREE.BoxGeometry(.57,.35,.95,2,2,2),i%2?gold:lightGold,rotor);
-   bucket.position.set(radial.x*2.3,radial.y*2.3,.03);
-   bucket.rotation.z=-a;
-   const innerCup=mesh(new THREE.BoxGeometry(.42,.08,.72),darkGold,rotor);
-   innerCup.position.set(radial.x*2.44,radial.y*2.44,.05);
-   innerCup.rotation.z=-a;
-   const rivet=new THREE.Mesh(boltGeometry,lightGold);
-   rivet.position.set(radial.x*2.29,radial.y*2.29,.625);
-   rotor.add(rivet);
+   const crease=mesh(new THREE.BoxGeometry(.025,2.14,.025),ivory,spoke);
+   crease.position.set(-.038,0,.115);
+   const cup=new THREE.Group();rotor.add(cup);
+   cup.position.set(radial.x*2.32,radial.y*2.32,0);cup.rotation.z=-a;
+   // Open trough: folded bottom and two flared lips, never a solid box.
+   const points=[[-.30,-.13,-.39],[.30,-.13,-.39],[-.30,-.13,.39],[.30,-.13,.39],
+    [-.35,.18,-.52],[.35,.18,-.52],[-.35,.18,.52],[.35,.18,.52]];
+   const geo=new THREE.BufferGeometry();
+   geo.setAttribute('position',new THREE.Float32BufferAttribute(points.flat(),3));
+   geo.setAttribute('uv',new THREE.Float32BufferAttribute([0,.3,1,.3,0,.7,1,.7,0,0,1,0,0,1,1,1],2));
+   geo.setIndex([0,2,1,1,2,3,4,0,5,5,0,1,2,6,3,3,6,7]);geo.computeVertexNormals();
+   mesh(geo,i%4===0?copper:ivory,cup);
   }
-  // Dark mechanical joint behind the axle adds convincing depth at the hub.
-  const joint=mesh(new THREE.CylinderGeometry(.67,.67,.12,64),darkGold,rotor);
-  joint.rotation.x=Math.PI/2;joint.position.z=-.13;
-  const hubBack=mesh(new THREE.CylinderGeometry(.59,.59,.67,64),darkGold,rotor);
-  hubBack.rotation.x=Math.PI/2;
-  hubBack.position.z=.12;
-  const hubFront=mesh(new THREE.CylinderGeometry(.46,.49,.69,64),gold,rotor);
-  hubFront.rotation.x=Math.PI/2;hubFront.position.z=.58;
-  const hubDisc=mesh(new THREE.CylinderGeometry(.25,.25,.055,64),lightGold);
-  hubDisc.rotation.x=Math.PI/2;hubDisc.position.z=1.02;
-  const axle=mesh(new THREE.CylinderGeometry(.105,.105,.09,32),darkGold);
-  axle.rotation.x=Math.PI/2;axle.position.z=1.08;
-  const hubRing=torus(.28,.017,1.076,lightGold,assembly);
-  // Water is GPU shaded with moving caustics, volume, refraction and real
-  // wave crest. The RIGHT side is a single liquid region (no tubes or tiers).
-  // First-party glTF sculptural asset, authored for this exact front camera.
-  // Existing wheel remains as a complete fallback until the replacement is
-  // confirmed loaded and parsed. The glTF geometry has curved catch-paddles
-  // and a forged rim profile instead of assembled torus/box placeholders.
-  function loadPremiumAssets(){
-   if(assetLoading)return;
-   assetLoading=true;
-   const wheelUrl=new URL("../models/studio-waterwheel-v35.gltf",import.meta.url);
-   new GLTFLoader().load(wheelUrl.href,asset=>{
-    loadedRotor=asset.scene;
-    loadedRotor.traverse(obj=>{
-     if(!obj.isMesh)return;
-     // Our bespoke geometry uses topology optimized for a tiny glTF.
-     // Generate UVs on import so PBR micro-scratch normal/roughness maps
-     // work correctly even when the source meshes omit TEXCOORD_0.
-     const geo=obj.geometry,vertices=geo.getAttribute("position");
-     if(vertices&&!geo.getAttribute("uv")){
-      const uv=new Float32Array(vertices.count*2);
-      for(let i=0;i<vertices.count;i++){
-       uv[i*2]=vertices.getX(i)*.17+.5;
-       uv[i*2+1]=vertices.getY(i)*.17+.5;
-      }
-      geo.setAttribute("uv",new THREE.BufferAttribute(uv,2));
-     }
-     const n=obj.material?.name||"";
-     obj.material=n.includes("Champagne")?lightGold:
-      n.includes("Dark")?darkGold:gold;
-     obj.castShadow=false;obj.receiveShadow=false;
-     obj.frustumCulled=false;
-    });
-    assembly.add(loadedRotor);
-    loadedRotor.rotation.z=rotor.rotation.z;
-    rotor.visible=false;
-    hubDisc.visible=false;
-    axle.visible=false;
-    hubRing.visible=false;
-    gltfApplied=true;
-   },undefined,error=>{
-    window.__watermillAssetWarning="glTF wheel unavailable; displaying original 3D fallback";
-    console.warn("Watermill glTF fallback:",error);
-   });
-   // Actual CC0 studio HDRI, deliberately low-resolution (1K) and fetched
-   // only when scene 05 approaches the viewport. The procedural cube
-   // environment already set above remains when off-line / CORS-blocked.
-   const hdr="https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/studio_small_09_1k.hdr";
-   new RGBELoader().load(hdr,texture=>{
-    const generator=new THREE.PMREMGenerator(renderer);
-    const pack=generator.fromEquirectangular(texture);
-    scene.environment=pack.texture;
-    scene.environmentIntensity=.82;
-    hdriApplied=true;
-    texture.dispose();
-    generator.dispose();
-   },undefined,error=>{
-    window.__watermillHDRIWarning="HDRI unavailable; using procedural environment";
-    console.warn("Watermill HDRI fallback:",error);
-   });
-  }
+  const hub=mesh(new THREE.CylinderGeometry(.39,.45,.96,12),ivory,rotor);
+  hub.rotation.x=Math.PI/2;hub.position.z=.12;
+  const cap=mesh(new THREE.CylinderGeometry(.22,.22,.04,8),sage,rotor);
+  cap.rotation.x=Math.PI/2;cap.position.z=.64;
+  const pin=mesh(new THREE.CylinderGeometry(.065,.065,.055,6),copper);
+  pin.rotation.x=Math.PI/2;pin.position.z=.68;
   const rgb=x=>new THREE.Color(x);
   const waterUniforms={
    uTime:{value:0},uLevel:{value:0},uDeep:{value:rgb("#1E6873")},
@@ -406,16 +214,16 @@ if(stage&&target){
   // A moving three-dimensional curtain of water drops from the sea surface
   // onto the ACTUAL top bucket of the wheel, not an unrelated graphic.
   const streamUniforms={
-   uTime:{value:0},uStrength:{value:0},
+   uTime:{value:0},uStrength:{value:0},uBend:{value:0},
    uPale:{value:rgb("#EDFFF1")},uAqua:{value:rgb("#55BBC0")}
   };
   // Waterfall glints are slow, irregular and edge-feathered; never parallel
   // fluorescent threads. The shader flows over a translucent 3D water core.
   const fallVertex=[
-   "uniform float uTime;varying vec2 vUv;",
+   "uniform float uTime;uniform float uBend;varying vec2 vUv;",
    "void main(){vUv=uv;vec3 p=position;",
    "float bend=.040*sin(uv.y*7.4+uTime*1.1)+.024*sin(uv.y*16.-uTime*1.7);",
-   "p.x+=bend+.024*sin(uv.x*9.+uv.y*12.+uTime*1.2);",
+   "p.x+=bend+.024*sin(uv.x*9.+uv.y*12.+uTime*1.2)+uBend*smoothstep(.58,1.10,p.y+1.3);",
    "p.z+=.045*cos(uv.y*8.-uTime*1.13);",
    "gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}"
   ].join("\n");
@@ -472,6 +280,29 @@ if(stage&&target){
   }),scene);
   materials.push(crest.material);
   crest.position.set(.15,3.72,1.1);
+  const outletUniforms={...streamUniforms,uStrength:{value:.7},uBend:{value:0}};
+  const outletGeometry=new THREE.PlaneGeometry(1,1,36,1);
+  const outletUV=outletGeometry.attributes.uv;
+  const outlet=mesh(outletGeometry,new THREE.ShaderMaterial({uniforms:outletUniforms,
+   vertexShader:fallVertex,fragmentShader:fallFragment,transparent:true,
+   side:THREE.DoubleSide,depthWrite:false,toneMapped:false}),scene);
+  materials.push(outlet.material);
+  function updateOutlet(level){
+   const scale=assembly.scale.x,startX=assembly.position.x+2.15*scale;
+   const startY=assembly.position.y-.72*scale;
+   const endX=Math.min(W*.46,startX+2.3),endY=Math.min(startY-.18,-5+10*level);
+   const attr=outletGeometry.attributes.position;
+   for(let i=0;i<attr.count;i++){
+    const q=outletUV.getX(i),side=outletUV.getY(i)-.5;
+    const x=THREE.MathUtils.lerp(startX,endX,q);
+    const y=THREE.MathUtils.lerp(startY,endY,q)+Math.sin(q*Math.PI)*.26;
+    attr.setXYZ(i,x,y+side*.16,1.10);
+   }
+   attr.needsUpdate=true;
+   // At a full reservoir the same current continues beneath the surface.
+   outlet.material.opacity=1;
+   outletUniforms.uStrength.value=.64*(1-.65*smooth(.5,.87,level));
+  }
   // Surface of the SEA ABOVE this scene is also 3D, with continuous
   // reflective wave bands linking to the previous chapter.
   const topUniforms={
@@ -548,41 +379,42 @@ if(stage&&target){
    // Narrow screens keep the centered water source and smaller sculpture
    // beneath the intro while preserving a separate column for service choices.
    const mobile=width<=670;
-   const sculptureScale=mobile?.54:width<1120?.82:1;
+   const sculptureScale=mobile?.46:width<1120?.82:1;
    assembly.scale.setScalar(sculptureScale);
    // This exactly anchors the sculptural plinth to the viewport bottom
    // at every aspect ratio instead of leaving a tablet-sized floating gap.
-   assembly.position.set(mobile?-W*.22:width<1120?-.05:0,-5+5*sculptureScale,0);
-   const top=assembly.position.y+2.31*assembly.scale.x;
+   assembly.position.set(mobile?-W*.24:width<1120?-.05:0,-5+5*sculptureScale,0);
+   const top=assembly.position.y+2.10*assembly.scale.x;
+   const hitX=assembly.position.x+1.03*assembly.scale.x;
    const length=5.05-top;
-   fall.position.set(assembly.position.x,(5.05+top)*.5,1.04);
+   streamUniforms.uBend.value=mobile?W*.43-hitX:0;
+   waterCore.visible=crest.visible=!mobile;
+   fall.position.set(hitX,(5.05+top)*.5,1.04);
    fall.scale.y=length/2.6;
-   waterCore.position.set(assembly.position.x,(5.05+top)*.5,.86);
+   waterCore.position.set(hitX,(5.05+top)*.5,.86);
    waterCore.scale.y=length/2.6;
-   crest.position.set(assembly.position.x+.15,(5.05+top)*.5,1.1);
+   crest.position.set(hitX+.15,(5.05+top)*.5,1.1);
    crest.scale.y=length/2.48;
   }
   let lastFrame=0;
-  function schedule(){if(active&&!scheduled&&visible){scheduled=true;requestAnimationFrame(frame)}}
+  function schedule(){if(active&&!scheduled&&visible&&!document.hidden){scheduled=true;requestAnimationFrame(frame)}}
   function frame(time){
    scheduled=false;
    if(!visible||!active)return;
-   // A fully decoded cinematic film replaces the old GPU scene. Keep the
-   // Three.js fallback alive but avoid unnecessary render work underneath it.
-   if(stage.classList.contains('has-cinematic-film')){lastFrame=time;schedule();return;}
    const delta=lastFrame?Math.min(50,time-lastFrame):16;lastFrame=time;
    const p=window.__watermillState?.progress??0;
+   const clock=reduce.matches?0:time;
    const motion=smooth(.05,.97,p);
-   const desired=reduce.matches?0:motion*(.20+4.1*Math.pow(motion,1.48));
+   const desired=reduce.matches?0:.13+.56*motion;
    speed+=(desired-speed)*(1-Math.exp(-delta/200));
    // The camera looks along -Z: negative Z rotation is visually clockwise.
    // Keep angular speed positive; only its visual orientation is reversed.
    rotation=(rotation+speed*delta/1000)%(Math.PI*2);
    rotor.rotation.z=-rotation;
-   if(loadedRotor)loadedRotor.rotation.z=-rotation;
+
    const level=smooth(.14,.985,p)*.87;
    waterUniforms.uLevel.value=level;
-   waterUniforms.uTime.value=time*.001;
+   waterUniforms.uTime.value=clock*.001;
    surface.position.y=-5+10*level;
    surface.visible=level>.006;
    waterSurface3D.visible=level>.025;
@@ -591,8 +423,8 @@ if(stage&&target){
     const attr=waterSurface3D.geometry.attributes.position;
     for(let i=0;i<attr.count;i++){
      const x=waterSurfaceBase[i*3],y=waterSurfaceBase[i*3+1];
-     const swell=.022*Math.sin(x*13.8+time*.00049+y*4.6)
-      +.011*Math.sin(x*29.7-time*.00085+y*7.4);
+     const swell=.022*Math.sin(x*13.8+clock*.00049+y*4.6)
+      +.011*Math.sin(x*29.7-clock*.00085+y*7.4);
      attr.setZ(i,swell);
     }
     attr.needsUpdate=true;
@@ -601,20 +433,20 @@ if(stage&&target){
    // The stream flows as soon as the sea spills into this scene;
    // scrolling strengthens the waterfall and then accelerates the wheel.
    streamUniforms.uStrength.value=.38+.62*smooth(.015,.25,p);
-   streamUniforms.uTime.value=time*.001;
-   topUniforms.uTime.value=time*.001;
+   streamUniforms.uTime.value=clock*.001;
+   topUniforms.uTime.value=clock*.001;
    crest.material.opacity=.065*streamUniforms.uStrength.value;
    // Subtle volume changes create a natural flowing column, while the
    // semi-transparent outer skin preserves the spray silhouette.
-   waterCore.scale.x=1+.07*Math.sin(time*.0019);
-   waterCore.scale.z=1+.12*Math.sin(time*.0021+.7);
-   waterCore.rotation.z=.016*Math.sin(time*.0016);
+   waterCore.scale.x=1+.07*Math.sin(clock*.0019);
+   waterCore.scale.z=1+.12*Math.sin(clock*.0021+.7);
+   waterCore.rotation.z=.016*Math.sin(clock*.0016);
    const array=splash.geometry.attributes.position;
    for(let i=0;i<drops;i++){
     const seed=i*2.399963,randomized=.44+(i%13)/13;
-    const q=(i*.6180339+time*.00035*(.55+i%7*.075))%1;
-    const hitX=assembly.position.x;
-    const hitY=assembly.position.y+2.31*assembly.scale.x;
+    const q=(i*.6180339+clock*.00035*(.55+i%7*.075))%1;
+    const hitX=assembly.position.x+1.03*assembly.scale.x;
+    const hitY=assembly.position.y+2.10*assembly.scale.x;
     const impulse=q*.92*randomized;
     const gravity=q*q*1.24*randomized;
     array.setXYZ(i,
@@ -625,29 +457,31 @@ if(stage&&target){
    array.needsUpdate=true;
    splash.visible=streamUniforms.uStrength.value>.08;
    mist.visible=splash.visible;
+   updateOutlet(level);
    renderer.render(scene,camera);
+   stage.dataset.wheelAngle=rotation.toFixed(3);
+   stage.dataset.waterLevel=level.toFixed(3);
    window.__watermill3D={
-    engine:"Three.js WebGL",wheelGeometry:"3D toruses, buckets and cylinders",
+    engine:"Three.js WebGL",wheelGeometry:"folded paper ring, beams and open troughs",
     waterfall:"animated translucent 3D mesh",rightWater:"single GPU-shaded surface",
     angularVelocity:Number(speed.toFixed(2)),waterLevel:Number(level.toFixed(3)),
     wheelRadius:2.31,frontFacing:true,seaLinked:true,
     wheelDirection:"clockwise",rotationRadians:Number(rotor.rotation.z.toFixed(3)),
-    materialVersion:35,brassTextures:true,softReflections:true,
-    gltfModel:gltfApplied,studioHDRI:hdriApplied,waterSurfaceMesh:!!waterSurface3D,
+    materialVersion:44,paperTextures:true,paperWheel:true,
+    continuousOutlet:true,waterSurfaceMesh:!!waterSurface3D,
     liquidVolume:true,sprayParticles:drops
    };
    schedule();
   }
-  window.__millPhotorealPBR={version:35,environment:"studio_small_09 HDRI with fallback",
-   brassNormalMap:true,brassRoughnessMap:true,contactOcclusion:true};
   const observer=new IntersectionObserver(entries=>{
    visible=entries[0].isIntersecting;
-   if(visible)loadPremiumAssets();
    if(visible){lastFrame=0;schedule();}
   },{rootMargin:"100px 0px"});
   resize();
   window.addEventListener("resize",resize,{passive:true});
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden){lastFrame=0;schedule();}});
   window.addEventListener("pagehide",()=>{active=false});
+  window.addEventListener("pageshow",()=>{active=true;lastFrame=0;schedule();});
   renderer.domElement.addEventListener("webglcontextlost",event=>{
    event.preventDefault();active=false;stage.classList.remove("is-mill-webgl");
   },false);

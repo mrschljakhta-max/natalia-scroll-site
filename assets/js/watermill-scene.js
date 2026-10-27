@@ -40,6 +40,7 @@
   C.setTransform(dpr,0,0,dpr,0,0);F.setTransform(dpr,0,0,dpr,0,0);
  }
  function targetProgress(){
+  if(window.NAStory)return window.NAStory.mill;
   const y=journey.getBoundingClientRect().top;
   return clamp(-y/Math.max(1,journey.offsetHeight-h));
  }
@@ -102,12 +103,13 @@
   const amount=.30+.70*smooth(.018,.23,p);
   if(amount<=.002)return;
   const rect=wheel.getBoundingClientRect(),parent=stage.getBoundingClientRect();
-  const cx=rect.left-parent.left+rect.width*.5;
+  const cx=rect.left-parent.left+rect.width*.67;
   const top=rect.top-parent.top+rect.height*.1;
   const start=Math.min(48,h*.052);
+  const sourceX=w<=670?w*.93:cx;
   const end=Math.max(start+18,top+Math.min(65,rect.height*.10));
   const radius=Math.max(12,Math.min(25,w*.014));
-  const fallGrad=F.createLinearGradient(cx-radius,0,cx+radius,0);
+  const fallGrad=F.createLinearGradient(Math.min(cx,sourceX)-radius,0,Math.max(cx,sourceX)+radius,0);
   fallGrad.addColorStop(0,'rgba(23,111,124,.03)');
   fallGrad.addColorStop(.20,'rgba(107,196,192,.70)');
   fallGrad.addColorStop(.46,'rgba(236,254,245,.93)');
@@ -115,18 +117,18 @@
   fallGrad.addColorStop(1,'rgba(15,101,116,.12)');
   F.save();F.globalAlpha=amount;
   F.beginPath();
-  F.moveTo(cx-radius,start);
-  F.bezierCurveTo(cx-radius*1.15,end*.35,cx-radius*.88,end*.77,cx-radius*.85,end);
+  F.moveTo(sourceX-radius,start);
+  F.bezierCurveTo(sourceX-radius,end*.75,cx-radius,end*.65,cx-radius*.85,end);
   F.quadraticCurveTo(cx,end+18,cx+radius*.9,end);
-  F.bezierCurveTo(cx+radius*.9,end*.75,cx+radius*1.1,end*.33,cx+radius,start);
+  F.bezierCurveTo(cx+radius,end*.65,sourceX+radius,end*.75,sourceX+radius,start);
   F.closePath();F.fillStyle=fallGrad;F.fill();
   // Strands emphasize motion without creating a second object or pipe.
   for(let i=0;i<13;i++){
    const ox=((i/12)-.5)*radius*1.8;
    const phase=t*(reduce.matches?0:.0007)*(1+i%3*.12)+i*1.43;
    F.beginPath();
-   F.moveTo(cx+ox,start);
-   F.bezierCurveTo(cx+ox+Math.sin(phase)*3,end*.38,cx+ox-3+Math.sin(phase+.8)*3,end*.72,cx+ox+Math.sin(phase+.3)*4,end+4);
+   F.moveTo(sourceX+ox,start);
+   F.bezierCurveTo(sourceX+ox+Math.sin(phase)*3,end*.75,cx+ox+Math.sin(phase+.8)*3,end*.65,cx+ox+Math.sin(phase+.3)*4,end+4);
    F.strokeStyle=i%3===0?'rgba(255,251,225,.78)':'rgba(195,240,234,.35)';
    F.lineWidth=i%3===0?1.6:.9;F.stroke();
   }
@@ -138,6 +140,15 @@
    F.fillStyle=i%3===0?'rgba(255,249,214,.75)':'rgba(133,216,217,.55)';
    F.fill();
   }
+  // Runoff from the wheel visibly joins the rising water on its right.
+  const ox=rect.left-parent.left+rect.width*.86;
+  const oy=rect.top-parent.top+rect.height*.46;
+  const endX=Math.min(w*.96,ox+w*.11);
+  const waterTop=h*(1-.865*smooth(.17,.975,p));
+  F.beginPath();F.moveTo(ox,oy);
+  F.quadraticCurveTo(endX,oy-10,endX,Math.max(oy+18,waterTop));
+  F.strokeStyle='rgba(107,196,192,.62)';F.lineWidth=Math.max(5,w*.006);F.stroke();
+  F.strokeStyle='rgba(239,249,224,.55)';F.lineWidth=1.5;F.stroke();
   F.restore();
  }
  function setChoice(i){
@@ -148,6 +159,7 @@
  }
  cards.forEach((card,i)=>card.addEventListener('click',()=>setChoice(i)));
  jump?.addEventListener('click',()=>{
+  if(window.NAStory){window.NAStory.goMill(1);return;}
   const offset=journey.getBoundingClientRect().top+scrollY;
   const span=Math.max(1,journey.offsetHeight-innerHeight);
   window.scrollTo({top:offset+span*.985,behavior:reduce.matches?'instant':'smooth'});
@@ -160,31 +172,11 @@
   if(!visible||!inView){lastTime=now;return;}
   const delta=lastTime?Math.min(50,now-lastTime):16;
   lastTime=now;
-  const t=now,goal=targetProgress();
+  const t=reduce.matches?0:now,goal=targetProgress();
   progress=reduce.matches?goal:lerp(progress,goal,1-Math.exp(-delta/110));
   if(Math.abs(progress-goal)<.0001)progress=goal;
-  // v40 video controls the physical scene; this legacy controller only
-  // keeps live category buttons, scroll state and accessibility in sync.
-  if(stage.classList.contains('has-cinematic-film')){
-   const waterTop=h*(1-.88*smooth(0,.665,progress));
-   window.__watermillState={progress,waterTop,active:false,engine:'pre-rendered CGI video'};
-   stage.style.setProperty('--mill-progress',progress.toFixed(4));
-   const revealAt=[.615,.52,.42]; // rising water reaches lower labels before upper ones
-   cards.forEach((card,i)=>{
-    const isShown=progress>=revealAt[i];
-    card.classList.toggle('is-revealed',isShown);
-    card.disabled=!isShown;
-    card.tabIndex=isShown?0:-1;
-    card.setAttribute('aria-hidden',String(!isShown));
-   });
-   window.__watermillDiagnostics={progress:+progress.toFixed(4),
-    waterTop:+waterTop.toFixed(1),engine:'CGI film v40',scriptInitialized:true,
-    categoriesInteractive:true,videoSegments:2};
-   schedule();
-   return;
-  }
   const motion=smooth(.065,.98,progress);
-  const targetSpeed=reduce.matches?0:motion*(.16+3.75*Math.pow(motion,1.6));
+  const targetSpeed=reduce.matches?0:.13+.56*motion;
   angularSpeed=lerp(angularSpeed,targetSpeed,1-Math.exp(-delta/280));
   rot=(rot+angularSpeed*delta/1000)%(Math.PI*2);
   const real3D=stage.classList.contains("is-mill-webgl");
@@ -197,13 +189,17 @@
   // this controller owns only scroll position, semantics and category buttons.
   window.__watermillState={progress,waterTop:surface,active:real3D};
   stage.style.setProperty('--mill-progress',progress.toFixed(4));
+  stage.dataset.millProgress=progress.toFixed(4);
+  if(!real3D){stage.dataset.wheelAngle=rot.toFixed(3);stage.dataset.waterLevel=((h-surface)/h).toFixed(3);}
   stage.style.setProperty('--wheel-activity',motion.toFixed(3));
   cards.forEach((card)=>{
-   const y=card.getBoundingClientRect().top-stage.getBoundingClientRect().top+card.offsetHeight*.45;
-   const active=progress>.22&&y>surface-8;
+   const y=card.getBoundingClientRect().top-stage.getBoundingClientRect().top;
+   const active=progress>.22&&y>surface+8;
    card.classList.toggle('is-revealed',active);
    card.disabled=!active;
    card.tabIndex=active?0:-1;
+   card.setAttribute("aria-hidden",String(!active));
+   if(!active && card.getAttribute("aria-pressed")==="true")setChoice(-1);
   });
   window.__watermillDiagnostics={
    progress:Number(progress.toFixed(3)),wheelRpm:Number((angularSpeed*60/(2*Math.PI)).toFixed(2)),

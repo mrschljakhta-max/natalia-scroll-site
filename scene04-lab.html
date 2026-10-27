@@ -12,13 +12,13 @@ button:hover,button:focus-visible{background:#ffffff2a;outline-color:#eed6ab}but
 #diagnostics{font:11px/1.6 ui-monospace,Consolas,monospace;margin:7px 0 0;color:#d4c4a9}
 @media(max-width:500px){aside{left:8px;bottom:8px;max-width:calc(100% - 16px);padding:10px}button{padding:7px}}
 </style></head><body>
-<iframe id="site" title="Реальна сцена четвертого розділу — живий океан" src="./index.html?v=43#experience"></iframe>
+<iframe id="site" title="Реальна сцена четвертого розділу — живий океан" src="./index.html?v=44#experience"></iframe>
 <aside aria-label="Тестова панель інтерактивної сцени">
-<header><span>SCENE 04 / LIVING OCEAN</span><span>THREE.JS · v43</span></header>
+<header><span>SCENE 04 / LIVING OCEAN</span><span>THREE.JS · v44</span></header>
 <div class="controls">
-<button type="button" data-progress=".946">Поглянути на океан</button>
+<button type="button" data-progress=".635">Поглянути на океан</button>
 <button type="button" id="wave">Створити хвилю</button>
-<button type="button" data-progress=".982">Перехід вправо</button>
+<button type="button" data-progress=".735">Перехід вправо</button>
 <button type="button" id="reset">Повернутись</button>
 </div>
 <p>Спробуйте натиснути безпосередньо на воду в кадрі. Відпустіть скрол: море продовжуватиме рухатися.</p>
@@ -34,9 +34,10 @@ document.getElementById("wave").addEventListener("click",()=>{
  for(const type of ["pointerdown","pointerup"])stage.dispatchEvent(new w.PointerEvent(type,{bubbles:true,pointerId:71,pointerType:"mouse",clientX:x,clientY:y}));
  }catch(e){status.textContent=String(e)}
 });
-frame.addEventListener("load",()=>setTimeout(()=>pos(.946),700));
-setInterval(()=>{try{const w=frame.contentWindow,o=w.__livingOceanV42,r=w.__oceanWheelBridge;if(!o){status.textContent="3D-сцена ще завантажується";return}
+frame.addEventListener("load",()=>setTimeout(()=>pos(.635),700));
+function dummyFallback(w){return w.document.documentElement.classList.contains('canvas-fallback')?'Резервне відображення Canvas · хвилі й навігація доступні':'3D-сцена ще завантажується'}
+setInterval(()=>{try{const w=frame.contentWindow,o=w.__livingOceanV42,r=w.NAStory;if(!o){status.textContent=dummyFallback(w);return}
 status.textContent="Час світу: "+o.realTimeSeconds+" c · хвиля: "+o.waterHeight+" · човник: "+o.boatBob+"\n"+
-"Скрол: "+o.progress+" · міст вправо: "+(r?r.progress:0)+" · останній дотик: "+(o.lastRipple?"так":"ні");
+"Скрол: "+o.progress+" · міст вправо: "+(r?r.travel.toFixed(3):0)+" · останній дотик: "+(o.lastRipple?"так":"ні");
 }catch(e){status.textContent="Результат недоступний: "+String(e)}},350);
 </script></body></html>

@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#12232a">
 <link rel="preload" as="image" type="image/svg+xml" href="./assets/images/forest-paper-texture.svg">
-<link rel="preload" as="image" type="image/svg+xml" href="./assets/images/cinematic-sea-sky.svg?v=42-golden-hour">
+<link rel="preload" as="image" type="image/svg+xml" href="./assets/images/cinematic-sea-sky.svg?v=44-golden-hour">
 <link rel="preload" as="image" href="./assets/images/documents/accounting-policy.webp" type="image/webp">
 <link rel="preload" as="image" href="./assets/images/documents/financial-charts.webp" type="image/webp">
 <link rel="preload" as="image" href="./assets/images/documents/handwritten-review.webp" type="image/webp">
 <link rel="preload" as="image" href="./assets/images/documents/handwritten-summary.webp" type="image/webp">
 <meta name="robots" content="noindex,nofollow">
 <meta name="description" content="Тривимірний скролітелінг Наталії та Анни: паперові документи у вихорі та складання орігамі-вітрильника.">
-<meta name="site-revision" content="v35-sculptural-gltf-hdri">
+<meta name="site-revision" content="v44-paper-ocean-horizontal">
 <link rel="canonical" href="https://mrschljakhta-max.github.io/natalia-scroll-site/">
 <script>
 /* Keep platform referral tracking out of the visible address bar, without
@@ -55,7 +55,7 @@ html.canvas-fallback #origami3d{opacity:0}
  transform:translateY(calc((1 - var(--day))*14px)) scale(calc(1.012 - var(--day)*.012));
  transform-origin:center;pointer-events:none;will-change:opacity,transform;overflow:hidden}
 .sea-sky{position:absolute;inset:0;
- background:#9EBFC1 url("./assets/images/cinematic-sea-sky.svg?v=28-mist-sky") center center/cover no-repeat}
+ background:#9EBFC1 url("./assets/images/cinematic-sea-sky.svg?v=44-golden-hour") center center/cover no-repeat}
 .sea-haze{position:absolute;left:0;right:0;top:49%;height:28%;
  background:linear-gradient(180deg,transparent 0%,#F2E7CF18 28%,#E8DCC74A 54%,transparent 93%);
  filter:blur(16px);opacity:.60}
@@ -362,43 +362,8 @@ html.canvas-fallback .fallback-ocean{display:block}
  .stage.is-day .sun-bloom,.stage.is-day .sea-haze{animation:none!important}
 }
 
-
-/* Scene 04 / Interaction engine — GPU water, mouse and touch in world space.
-   The 16:9 composition remains EXACTLY the approved boat/sun/typography.
-   The fifth scene itself (not a mock-up) slides in from the right. */
-html.ocean-to-wheel-bridge #watermillStage{
-  position:fixed!important;inset:0!important;
-  top:0!important;left:0!important;right:0!important;bottom:auto!important;
-  width:100vw!important;height:100svh!important;min-height:0!important;
-  transform:translate3d(var(--ocean-wheel-translate,100vw),0,0)!important;
-  z-index:1000!important;overflow:hidden;
-  pointer-events:none!important;will-change:transform;
-  box-shadow:-32px 0 64px rgba(8,56,65,.13);
-}
-html.ocean-to-wheel-bridge #watermillStage::before{
-  content:"";position:absolute;inset:0 auto 0 0;width:5px;z-index:1000;
-  background:linear-gradient(180deg,rgba(72,158,159,.12),rgba(220,249,234,.36));
-  pointer-events:none;
-}
-/* A keyboard-accessible ripple trigger without disturbing the set dressing. */
-.ocean-ripple-keyboard{
-  position:absolute;left:-10000px;top:auto;width:1px;height:1px;
-  overflow:hidden;white-space:nowrap;z-index:20;
-}
-.ocean-ripple-keyboard:focus-visible{
-  left:clamp(18px,4vw,72px);top:auto;bottom:22px;
-  width:auto;height:auto;padding:12px 18px;border:1px solid #548D8B;
-  border-radius:99px;background:#F5F1E8;color:#153C42;outline:2px solid #fff;
-  overflow:visible;font:600 13px/1.2 Arial,sans-serif;
-}
-@media(prefers-reduced-motion:reduce){
- html.ocean-to-wheel-bridge #watermillStage{
-   position:sticky!important;transform:none!important;
-   pointer-events:auto!important;box-shadow:none;
- }
-}
-
 </style>
+<link rel="stylesheet" href="./assets/css/paper-ocean.css?v=44">
 </head>
 <body>
 <a class="skip" href="#conclusion">Пропустити анімацію</a>
@@ -414,7 +379,6 @@ html.ocean-to-wheel-bridge #watermillStage::before{
   </div>
   <canvas id="paperCanvas" aria-hidden="true"></canvas>
   <div id="origami3d" aria-hidden="true"></div>
-  <button type="button" class="ocean-ripple-keyboard" id="oceanTapButton" aria-label="Створити хвилю на морі">Створити хвилю на морі</button>
 
   <div class="topbar">
     <a class="brand" href="#experience" aria-label="Наталія та Анна — на початок"><span class="sail-mark" aria-hidden="true"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="markA" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f2f2de"/><stop offset=".48" stop-color="#abc5b1"/><stop offset="1" stop-color="#57826f"/></linearGradient><linearGradient id="markB" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f4dbb7"/><stop offset="1" stop-color="#af7a5c"/></linearGradient></defs><path d="M40 12L40 53L16 54Z" fill="url(#markA)" stroke="#f6f0db" stroke-width="1.3"/><path d="M45 23L64 54L45 54Z" fill="url(#markB)" stroke="#f4ddc1" stroke-width="1.3"/><path d="M9 56L71 56L58 66L23 65Z" fill="#ede8d8" stroke="#d5e1d0" stroke-width="1.3"/><path d="M16 56L41 62L64 56M40 12L33 52" fill="none" stroke="#769889" stroke-width="1.5"/><path d="M13 71Q39 65 67 71" fill="none" stroke="#c99d7b" stroke-width="1.8" stroke-linecap="round"/></svg></span><span class="brand-name">НАТАЛІЯ &amp; АННА<small>БУХГАЛТЕРСЬКИЙ СУПРОВІД</small></span></a>
@@ -442,14 +406,6 @@ html.ocean-to-wheel-bridge #watermillStage::before{
 </section>
 <section class="watermill-journey" id="conclusion" aria-label="Кому ми допомагаємо — млин, що оживає від прокручування">
  <div class="watermill-stage" id="watermillStage">
-  <div class="mill-film-layer" id="millFilmLayer" aria-hidden="true">
-   <video id="millFilmFill" class="mill-film-video" muted playsinline webkit-playsinline preload="auto" disablepictureinpicture></video>
-   <video id="millFilmSettle" class="mill-film-video mill-film-video--settle" muted playsinline webkit-playsinline preload="auto" disablepictureinpicture></video>
-  </div>
-  <div class="mill-film-meta" aria-hidden="true">
-   <span id="millFilmStatus">CGI / НАПОВНЕННЯ</span><i class="mill-film-divider"></i>
-   <span id="millFilmPhase">Вода заповнює простір</span><span id="millFilmProgress"></span>
-  </div>
   <div class="mill-atmosphere" aria-hidden="true"></div>
   <svg class="mill-sea-ribbon" viewBox="0 0 1600 130" preserveAspectRatio="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
  <defs><linearGradient id="millTopSea" x1="0" y1="0" x2=".17" y2="1"><stop stop-color="#0C5460"/><stop offset=".30" stop-color="#2F8B8E"/><stop offset=".68" stop-color="#68B1AB"/><stop offset="1" stop-color="#B3DBCF"/></linearGradient><linearGradient id="millShimmer" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#F9EDC5" stop-opacity="0"/><stop offset=".49" stop-color="#FFF5DA" stop-opacity=".66"/><stop offset=".72" stop-color="#9FCFC3" stop-opacity=".13"/><stop offset="1" stop-color="#FFF5DA" stop-opacity="0"/></linearGradient></defs>
@@ -461,56 +417,125 @@ html.ocean-to-wheel-bridge #watermillStage::before{
   <canvas id="millFillCanvas" class="mill-fill-canvas" aria-hidden="true"></canvas>
   <div class="mill-wheel" id="millWheel" aria-hidden="true">
  <svg viewBox="0 0 600 780" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-   <linearGradient id="millGold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#8A5932"/><stop offset=".21" stop-color="#F6D4A0"/><stop offset=".50" stop-color="#C08B50"/><stop offset=".75" stop-color="#F9DFAD"/><stop offset="1" stop-color="#916033"/></linearGradient>
-   <linearGradient id="millSpokeMetal" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#80532D"/><stop offset=".5" stop-color="#F7D6A0"/><stop offset="1" stop-color="#AD7A47"/></linearGradient>
-   <linearGradient id="millPaddleMetal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#F5D3A2"/><stop offset=".46" stop-color="#BB8B55"/><stop offset="1" stop-color="#81532D"/></linearGradient>
-   <linearGradient id="millPlaster" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FBF6E9"/><stop offset=".40" stop-color="#D3C3AA"/><stop offset=".75" stop-color="#F3E5D1"/><stop offset="1" stop-color="#BCA789"/></linearGradient>
-   <radialGradient id="millHub"><stop stop-color="#FFEAC2"/><stop offset=".52" stop-color="#CEA06E"/><stop offset=".85" stop-color="#9A663D"/><stop offset="1" stop-color="#F3C98D"/></radialGradient>
-   <filter id="millDrop" x="-35%" y="-30%" width="170%" height="180%"><feGaussianBlur in="SourceAlpha" stdDeviation="13"/><feOffset dy="13"/><feComponentTransfer><feFuncA type="linear" slope=".16"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-  </defs>
-  <ellipse cx="300" cy="768" rx="252" ry="10" fill="#615340" opacity=".17"/>
-  <!-- Single architectural pedestal: its lower edge exactly meets scene bottom. -->
-  <g filter="url(#millDrop)">
-   <path d="M267 312Q240 382 234 458C225 569 192 669 155 738L125 769H475L445 738C407 669 376 569 366 458Q354 364 333 312Z" fill="url(#millPlaster)" stroke="#C1AD90" stroke-width="3"/>
-   <path d="M277 351Q254 496 239 610L206 742" fill="none" stroke="#FFF9EB" stroke-width="5" opacity=".7"/>
-   <path d="M327 351Q362 502 374 608L411 739" fill="none" stroke="#A99275" stroke-width="4" opacity=".32"/>
-   <rect x="101" y="748" width="398" height="32" rx="8" fill="url(#millPlaster)" stroke="#C6AC8F" stroke-width="3"/>
-   <path d="M115 753H483" stroke="#FFFFFF" stroke-opacity=".8" stroke-width="3"/>
-  </g>
-  <!-- All spokes, buckets and both rims rotate in the SAME XY plane. -->
-  <g id="millRotor" transform="rotate(0 300 290)">
-   <circle cx="300" cy="290" r="237" fill="none" stroke="#795336" stroke-opacity=".55" stroke-width="34" transform="translate(0 9)"/>
-   <circle cx="300" cy="290" r="235" fill="none" stroke="url(#millGold)" stroke-width="25"/>
-   <circle cx="300" cy="290" r="216" fill="none" stroke="#FCE6BD" stroke-width="3.3" opacity=".93"/>
-   <circle cx="300" cy="290" r="208" fill="none" stroke="#8C5C35" stroke-width="2" opacity=".47"/>
-   <circle cx="300" cy="290" r="176" fill="none" stroke="#BD8B58" stroke-width="4" opacity=".55"/>
-   <g transform="rotate(0 300 290)"><path d="M293 290L289 77L311 77L307 290Z" fill="url(#millSpokeMetal)" stroke="#BD8B54" stroke-width="1.4"/><rect x="280" y="45" width="40" height="33" rx="4" fill="url(#millPaddleMetal)" stroke="#A8713C" stroke-width="2"/><path d="M283 52H317" stroke="#FFF4D4" stroke-opacity=".75" stroke-width="2"/></g>
-<g transform="rotate(30 300 290)"><path d="M293 290L289 77L311 77L307 290Z" fill="url(#millSpokeMetal)" stroke="#BD8B54" stroke-width="1.4"/><rect x="280" y="45" width="40" height="33" rx="4" fill="url(#millPaddleMetal)" stroke="#A8713C" stroke-width="2"/><path d="M283 52H317" stroke="#FFF4D4" stroke-opacity=".75" stroke-width="2"/></g>
-<g transform="rotate(60 300 290)"><path d="M293 290L289 77L311 77L307 290Z" fill="url(#millSpokeMetal)" stroke="#BD8B54" stroke-width="1.4"/><rect x="280" y="45" width="40" height="33" rx="4" fill="url(#millPaddleMetal)" stroke="#A8713C" stroke-width="2"/><path d="M283 52H317" stroke="#FFF4D4" stroke-opacity=".75" stroke-width="2"/></g>
-<g transform="rotate(90 300 290)"><path d="M293 290L289 77L311 77L307 290Z" fill="url(#millSpokeMetal)" stroke="#BD8B54" stroke-width="1.4"/><rect x="280" y="45" width="40" height="33" rx="4" fill="url(#millPaddleMetal)" stroke="#A8713C" stroke-width="2"/><path d="M283 52H317" stroke="#FFF4D4" stroke-opacity=".75" stroke-width="2"/></g>
-<g transform="rotate(120 300 290)"><path d="M293 290L289 77L311 77L307 290Z" fill="url(#millSpokeMetal)" stroke="#BD8B54" stroke-width="1.4"/><rect x="280" y="45" width="40" height="33" rx="4" fill="url(#millPaddleMetal)" stroke="#A8713C" stroke-width="2"/><path d="M283 52H317" stroke="#FFF4D4" stroke-opacity=".75" stroke-width="2"/></g>
-<g transform="rotate(150 300 290)"><path d="M293 290L289 77L311 77L307 290Z" fill="url(#millSpokeMetal)" stroke="#BD8B54" stroke-width="1.4"/><rect x="280" y="45" width="40" height="33" rx="4" fill="url(#millPaddleMetal)" stroke="#A8713C" stroke-width="2"/><path d="M283 52H317" stroke="#FFF4D4" stroke-opacity=".75" stroke-width="2"/></g>
-<g transform="rotate(180 300 290)"><path d="M293 290L289 77L311 77L307 290Z" fill="url(#millSpokeMetal)" stroke="#BD8B54" stroke-width="1.4"/><rect x="280" y="45" width="40" height="33" rx="4" fill="url(#millPaddleMetal)" stroke="#A8713C" stroke-width="2"/><path d="M283 52H317" stroke="#FFF4D4" stroke-opacity=".75" stroke-width="2"/></g>
-<g transform="rotate(210 300 290)"><path d="M293 290L289 77L311 77L307 290Z" fill="url(#millSpokeMetal)" stroke="#BD8B54" stroke-width="1.4"/><rect x="280" y="45" width="40" height="33" rx="4" fill="url(#millPaddleMetal)" stroke="#A8713C" stroke-width="2"/><path d="M283 52H317" stroke="#FFF4D4" stroke-opacity=".75" stroke-width="2"/></g>
-<g transform="rotate(240 300 290)"><path d="M293 290L289 77L311 77L307 290Z" fill="url(#millSpokeMetal)" stroke="#BD8B54" stroke-width="1.4"/><rect x="280" y="45" width="40" height="33" rx="4" fill="url(#millPaddleMetal)" stroke="#A8713C" stroke-width="2"/><path d="M283 52H317" stroke="#FFF4D4" stroke-opacity=".75" stroke-width="2"/></g>
-<g transform="rotate(270 300 290)"><path d="M293 290L289 77L311 77L307 290Z" fill="url(#millSpokeMetal)" stroke="#BD8B54" stroke-width="1.4"/><rect x="280" y="45" width="40" height="33" rx="4" fill="url(#millPaddleMetal)" stroke="#A8713C" stroke-width="2"/><path d="M283 52H317" stroke="#FFF4D4" stroke-opacity=".75" stroke-width="2"/></g>
-<g transform="rotate(300 300 290)"><path d="M293 290L289 77L311 77L307 290Z" fill="url(#millSpokeMetal)" stroke="#BD8B54" stroke-width="1.4"/><rect x="280" y="45" width="40" height="33" rx="4" fill="url(#millPaddleMetal)" stroke="#A8713C" stroke-width="2"/><path d="M283 52H317" stroke="#FFF4D4" stroke-opacity=".75" stroke-width="2"/></g>
-<g transform="rotate(330 300 290)"><path d="M293 290L289 77L311 77L307 290Z" fill="url(#millSpokeMetal)" stroke="#BD8B54" stroke-width="1.4"/><rect x="280" y="45" width="40" height="33" rx="4" fill="url(#millPaddleMetal)" stroke="#A8713C" stroke-width="2"/><path d="M283 52H317" stroke="#FFF4D4" stroke-opacity=".75" stroke-width="2"/></g>
-   <circle cx="300" cy="290" r="237" fill="none" stroke="#FFF3D6" stroke-opacity=".39" stroke-width="2.7"/>
-   <circle cx="300" cy="290" r="48" fill="url(#millHub)" stroke="#B6854E" stroke-width="5"/>
-   <circle cx="300" cy="290" r="21" fill="#8C6A50" stroke="#FFF1CE" stroke-width="5"/>
-   <circle cx="300" cy="290" r="8" fill="#F9DFB4"/>
-  </g>
-  <!-- Front axle is stationary and keeps the sculpture's frontal alignment. -->
-  <circle cx="300" cy="290" r="29" fill="url(#millHub)" stroke="#F6DDB2" stroke-width="4"/>
-  <circle cx="300" cy="290" r="10" fill="#C69361" stroke="#FFF0CC" stroke-width="2"/>
- </svg>
+ <defs>
+  <linearGradient id="paperIvory" x2=".8" y2="1"><stop stop-color="#fff9e9"/><stop offset="1" stop-color="#d3cbb6"/></linearGradient>
+  <linearGradient id="paperSage" x2="1" y2=".7"><stop stop-color="#c7d7c5"/><stop offset="1" stop-color="#7e9e8c"/></linearGradient>
+ </defs>
+ <ellipse cx="300" cy="769" rx="208" ry="9" fill="#3d594d" opacity=".12"/>
+ <path d="M278 300L163 760H437L322 300Z" fill="url(#paperIvory)" stroke="#c9c8b4"/>
+ <path d="M300 308L300 760H437L322 300Z" fill="url(#paperSage)"/>
+ <path d="M298 315L298 757" stroke="#fffbed" stroke-width="3"/>
+ <path d="M126 755H474L483 779H117Z" fill="url(#paperIvory)" stroke="#c9c8b4"/>
+ <path d="M126 755H474" stroke="#fffdf0" stroke-width="4"/>
+ <g id="millRotor" transform="rotate(0 300 290)">
+<polygon points="300.00,64.00 417.00,95.35 502.65,181.00 534.00,298.00 502.65,415.00 417.00,500.65 300.00,532.00 183.00,500.65 97.35,415.00 66.00,298.00 97.35,181.00 183.00,95.35" fill="none" stroke="#6f8a79" stroke-width="28"/>
+<g transform="rotate(0 300 290)">
+ <path d="M292 290L290 70L310 70L308 290Z" fill="url(#paperIvory)" stroke="#839b88"/>
+ <path d="M296 290L296 73" fill="none" stroke="#eff4df" stroke-width="2"/>
+ <path d="M267 43L280 77H320L333 43L319 56H281Z" fill="#b4876c" stroke="#9caa92"/>
+ <path d="M267 43L281 56L280 77Z" fill="#fff9e8"/>
+ <path d="M333 43L319 56L320 77Z" fill="#9eb09a"/>
+ <path d="M281 56H319" stroke="#fff9eb" stroke-width="2"/>
+ </g>
+<g transform="rotate(30 300 290)">
+ <path d="M292 290L290 70L310 70L308 290Z" fill="url(#paperSage)" stroke="#839b88"/>
+ <path d="M296 290L296 73" fill="none" stroke="#eff4df" stroke-width="2"/>
+ <path d="M267 43L280 77H320L333 43L319 56H281Z" fill="#ede6d5" stroke="#9caa92"/>
+ <path d="M267 43L281 56L280 77Z" fill="#fff9e8"/>
+ <path d="M333 43L319 56L320 77Z" fill="#9eb09a"/>
+ <path d="M281 56H319" stroke="#fff9eb" stroke-width="2"/>
+ </g>
+<g transform="rotate(60 300 290)">
+ <path d="M292 290L290 70L310 70L308 290Z" fill="url(#paperSage)" stroke="#839b88"/>
+ <path d="M296 290L296 73" fill="none" stroke="#eff4df" stroke-width="2"/>
+ <path d="M267 43L280 77H320L333 43L319 56H281Z" fill="#ede6d5" stroke="#9caa92"/>
+ <path d="M267 43L281 56L280 77Z" fill="#fff9e8"/>
+ <path d="M333 43L319 56L320 77Z" fill="#9eb09a"/>
+ <path d="M281 56H319" stroke="#fff9eb" stroke-width="2"/>
+ </g>
+<g transform="rotate(90 300 290)">
+ <path d="M292 290L290 70L310 70L308 290Z" fill="url(#paperIvory)" stroke="#839b88"/>
+ <path d="M296 290L296 73" fill="none" stroke="#eff4df" stroke-width="2"/>
+ <path d="M267 43L280 77H320L333 43L319 56H281Z" fill="#ede6d5" stroke="#9caa92"/>
+ <path d="M267 43L281 56L280 77Z" fill="#fff9e8"/>
+ <path d="M333 43L319 56L320 77Z" fill="#9eb09a"/>
+ <path d="M281 56H319" stroke="#fff9eb" stroke-width="2"/>
+ </g>
+<g transform="rotate(120 300 290)">
+ <path d="M292 290L290 70L310 70L308 290Z" fill="url(#paperSage)" stroke="#839b88"/>
+ <path d="M296 290L296 73" fill="none" stroke="#eff4df" stroke-width="2"/>
+ <path d="M267 43L280 77H320L333 43L319 56H281Z" fill="#b4876c" stroke="#9caa92"/>
+ <path d="M267 43L281 56L280 77Z" fill="#fff9e8"/>
+ <path d="M333 43L319 56L320 77Z" fill="#9eb09a"/>
+ <path d="M281 56H319" stroke="#fff9eb" stroke-width="2"/>
+ </g>
+<g transform="rotate(150 300 290)">
+ <path d="M292 290L290 70L310 70L308 290Z" fill="url(#paperSage)" stroke="#839b88"/>
+ <path d="M296 290L296 73" fill="none" stroke="#eff4df" stroke-width="2"/>
+ <path d="M267 43L280 77H320L333 43L319 56H281Z" fill="#ede6d5" stroke="#9caa92"/>
+ <path d="M267 43L281 56L280 77Z" fill="#fff9e8"/>
+ <path d="M333 43L319 56L320 77Z" fill="#9eb09a"/>
+ <path d="M281 56H319" stroke="#fff9eb" stroke-width="2"/>
+ </g>
+<g transform="rotate(180 300 290)">
+ <path d="M292 290L290 70L310 70L308 290Z" fill="url(#paperIvory)" stroke="#839b88"/>
+ <path d="M296 290L296 73" fill="none" stroke="#eff4df" stroke-width="2"/>
+ <path d="M267 43L280 77H320L333 43L319 56H281Z" fill="#ede6d5" stroke="#9caa92"/>
+ <path d="M267 43L281 56L280 77Z" fill="#fff9e8"/>
+ <path d="M333 43L319 56L320 77Z" fill="#9eb09a"/>
+ <path d="M281 56H319" stroke="#fff9eb" stroke-width="2"/>
+ </g>
+<g transform="rotate(210 300 290)">
+ <path d="M292 290L290 70L310 70L308 290Z" fill="url(#paperSage)" stroke="#839b88"/>
+ <path d="M296 290L296 73" fill="none" stroke="#eff4df" stroke-width="2"/>
+ <path d="M267 43L280 77H320L333 43L319 56H281Z" fill="#ede6d5" stroke="#9caa92"/>
+ <path d="M267 43L281 56L280 77Z" fill="#fff9e8"/>
+ <path d="M333 43L319 56L320 77Z" fill="#9eb09a"/>
+ <path d="M281 56H319" stroke="#fff9eb" stroke-width="2"/>
+ </g>
+<g transform="rotate(240 300 290)">
+ <path d="M292 290L290 70L310 70L308 290Z" fill="url(#paperSage)" stroke="#839b88"/>
+ <path d="M296 290L296 73" fill="none" stroke="#eff4df" stroke-width="2"/>
+ <path d="M267 43L280 77H320L333 43L319 56H281Z" fill="#b4876c" stroke="#9caa92"/>
+ <path d="M267 43L281 56L280 77Z" fill="#fff9e8"/>
+ <path d="M333 43L319 56L320 77Z" fill="#9eb09a"/>
+ <path d="M281 56H319" stroke="#fff9eb" stroke-width="2"/>
+ </g>
+<g transform="rotate(270 300 290)">
+ <path d="M292 290L290 70L310 70L308 290Z" fill="url(#paperIvory)" stroke="#839b88"/>
+ <path d="M296 290L296 73" fill="none" stroke="#eff4df" stroke-width="2"/>
+ <path d="M267 43L280 77H320L333 43L319 56H281Z" fill="#ede6d5" stroke="#9caa92"/>
+ <path d="M267 43L281 56L280 77Z" fill="#fff9e8"/>
+ <path d="M333 43L319 56L320 77Z" fill="#9eb09a"/>
+ <path d="M281 56H319" stroke="#fff9eb" stroke-width="2"/>
+ </g>
+<g transform="rotate(300 300 290)">
+ <path d="M292 290L290 70L310 70L308 290Z" fill="url(#paperSage)" stroke="#839b88"/>
+ <path d="M296 290L296 73" fill="none" stroke="#eff4df" stroke-width="2"/>
+ <path d="M267 43L280 77H320L333 43L319 56H281Z" fill="#ede6d5" stroke="#9caa92"/>
+ <path d="M267 43L281 56L280 77Z" fill="#fff9e8"/>
+ <path d="M333 43L319 56L320 77Z" fill="#9eb09a"/>
+ <path d="M281 56H319" stroke="#fff9eb" stroke-width="2"/>
+ </g>
+<g transform="rotate(330 300 290)">
+ <path d="M292 290L290 70L310 70L308 290Z" fill="url(#paperSage)" stroke="#839b88"/>
+ <path d="M296 290L296 73" fill="none" stroke="#eff4df" stroke-width="2"/>
+ <path d="M267 43L280 77H320L333 43L319 56H281Z" fill="#ede6d5" stroke="#9caa92"/>
+ <path d="M267 43L281 56L280 77Z" fill="#fff9e8"/>
+ <path d="M333 43L319 56L320 77Z" fill="#9eb09a"/>
+ <path d="M281 56H319" stroke="#fff9eb" stroke-width="2"/>
+ </g>
+<polygon points="300.00,56.00 417.00,87.35 502.65,173.00 534.00,290.00 502.65,407.00 417.00,492.65 300.00,524.00 183.00,492.65 97.35,407.00 66.00,290.00 97.35,173.00 183.00,87.35" fill="none" stroke="url(#paperIvory)" stroke-width="21"/>
+<polygon points="300.00,71.00 409.50,100.34 489.66,180.50 519.00,290.00 489.66,399.50 409.50,479.66 300.00,509.00 190.50,479.66 110.34,399.50 81.00,290.00 110.34,180.50 190.50,100.34" fill="none" stroke="#a2b7a1" stroke-width="3"/>
+<polygon points="300.00,56.00 417.00,87.35 502.65,173.00 534.00,290.00 502.65,407.00 417.00,492.65 300.00,524.00 183.00,492.65 97.35,407.00 66.00,290.00 97.35,173.00 183.00,87.35" fill="none" stroke="#fffced" stroke-width="2"/>
+<polygon points="300.00,246.00 322.00,251.89 338.11,268.00 344.00,290.00 338.11,312.00 322.00,328.11 300.00,334.00 278.00,328.11 261.89,312.00 256.00,290.00 261.89,268.00 278.00,251.89" fill="url(#paperIvory)" stroke="#e2dfcc" stroke-width="2"/>
+<circle cx="300" cy="290" r="23" fill="url(#paperSage)"/><circle cx="300" cy="290" r="7" fill="#bb9076"/>
+</g></svg>
 </div>
   <canvas id="millFallCanvas" class="mill-fall-canvas" aria-hidden="true"></canvas>
   <div class="mill-text">
  <span class="mill-eyebrow">КОМУ МИ ДОПОМАГАЄМО</span>
- <h2>Для кожної<br>справи —<br><em>свій підхід.</em></h2>
+ <h2>Для кожної <br>справи —<br><em>свій підхід.</em></h2>
  <p>Бухгалтерський супровід для цифрових спеціалістів, підприємців і малого бізнесу. Оберіть напрям, який відповідає саме вашій справі.</p>
  <button class="mill-explore" id="millExplore" type="button">Обрати свій напрям <span aria-hidden="true">↗</span></button>
 </div>
@@ -540,6 +565,8 @@ html.ocean-to-wheel-bridge #watermillStage::before{
  <button class="restart" id="restart" type="button">↺ Переглянути історію ще раз</button>
 </footer>
 </main>
+<script src="./assets/js/story-timeline.js?v=44"></script>
+<script src="./assets/js/ocean-fallback.js?v=44" defer></script>
 <script>
 (()=>{
 'use strict';
@@ -550,8 +577,8 @@ let w=innerWidth,h=innerHeight,dpr=1,target=0,position=0,lastAct=-1,tick=0,isVis
 let seed=8121;function rand(){seed=(seed*1664525+1013904223)>>>0;return seed/4294967296}
 const papers=Array.from({length:43},(_,i)=>({i,nx:rand()*.98+.01,ny:rand()*.92+.04,size:mix(.75,1.32,rand()),r:rand()*6.283,spin:rand()>.5?1:-1,phase:rand()*6.283,shape:rand(),tilt:(rand()-.5)*2.1,pattern:i%5,order:rand()}));
 function resize(){w=stage.clientWidth;h=stage.clientHeight;dpr=Math.min(window.devicePixelRatio||1,1.7);canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);canvas.style.width=w+'px';canvas.style.height=h+'px';ctx.setTransform(dpr,0,0,dpr,0,0)}
-function scrollProgress(){const r=journey.getBoundingClientRect();return clamp(-r.top/Math.max(1,r.height-h))}
-function setAct(act){if(act===lastAct)return;lastAct=act;dots.forEach((dot,i)=>{const ok=i===act;dot.classList.toggle('active',ok);if(ok)dot.setAttribute('aria-current','step');else dot.removeAttribute('aria-current')})}
+function scrollProgress(){const r=journey.getBoundingClientRect();const raw=clamp(-r.top/Math.max(1,r.height-h));return window.NAStory?window.NAStory.paperProgress(raw):raw}
+function setAct(act){if(window.NAStory?.travel>.55)act=4;if(act===lastAct)return;lastAct=act;dots.forEach((dot,i)=>{const ok=i===act;dot.classList.toggle('active',ok);if(ok)dot.setAttribute('aria-current','step');else dot.removeAttribute('aria-current')})}
 function actFor(p){return p<.245?0:p<.56?1:p<.815?2:3}
 function updateText(p){
  const boundaries=[.245,.56,.815],act=actFor(p);
@@ -560,8 +587,7 @@ function updateText(p){
   // Never draw two full-page story headings on top of each other.
   // The outgoing chapter fades completely BEFORE the incoming starts.
   const enter=i===0?1:smooth((p-a-.005)/.019);
-  // The fourth heading recedes during the reversible horizontal portal.
-  const leave=i===3?1-smooth((p-.951)/.046):1-smooth((p-b+.025)/.014);
+  const leave=i===3?1:1-smooth((p-b+.025)/.014);
   const vis=enter*leave;
   el.style.opacity=vis.toFixed(3);
   el.style.transform='translate3d(0,'+((1-vis)*16).toFixed(1)+'px,0)';
@@ -802,9 +828,10 @@ function drawBoat(p,time,cx,cy,S){
  const glide=phase(p,.902,.992);
  if(hull<.001)return;
 
- const destX=w*(w<670?.58:.69),destY=h*(w<670?.695:.61);
+ const destX=w*(w<670?.65:.60),destY=h*(w<670?.60:.695);
  const x=mix(cx,destX,glide), y=mix(cy+S*87,destY,glide);
- const scale=S*mix(.99,.88,glide);
+ const finalScale=w<670?Math.min(w*.58/326,h*.28/340):Math.min(w*.25/326,h*.43/340);
+ const scale=mix(S*.99,finalScale,glide);
  const bob=reduce.matches?0:Math.sin(time*.00068)*2.8*glide;
  const roll=reduce.matches?0:Math.sin(time*.00054)*.008*glide;
  const wind=reduce.matches?0:Math.sin(time*.00045)*.018*glide;
@@ -825,13 +852,13 @@ function drawBoat(p,time,cx,cy,S){
  const a=mix(70,163,hull),rise=1-hull;
  const topY=-29,lowerY=mix(36,50,hull);
  ctx.save();ctx.shadowColor='#081c249c';ctx.shadowBlur=21;ctx.shadowOffsetY=12;
- const hullGradient=grad(-170,-35,167,72,[[0,'#fff9e9'],[.32,'#d3e1d1'],[.69,'#89a998'],[1,'#ad8468']]);
+ const hullGradient=grad(-170,-35,167,72,[[0,'#fff9e9'],[.32,'#d3e1d1'],[.69,'#e5dfcc'],[1,'#c2b6a0']]);
  poly([[-a,-10],[-a*.76,20],[-a*.25,lowerY],[a*.67,39],[a,-11],
    [a*.24,topY],[-a*.33,topY]],hullGradient,'#f4f1e4',1.8);
  ctx.restore();
  // Four precisely shaded facets remain visible through final rest pose.
  poly([[-a,-10],[-a*.25,lowerY],[-a*.31,0],[0,topY]],'#bfd4c4','#729282',1.15);
- poly([[0,topY],[a,-11],[a*.67,39],[a*.25,6]],'#b08a6e','#ebd1ad',1.15);
+ poly([[0,topY],[a,-11],[a*.67,39],[a*.25,6]],'#c5b39c','#eee7d4',1.15);
  poly([[-a*.31,0],[a*.25,6],[a*.67,39],[-a*.25,lowerY]],'#eee7d6','#c6bea6',1.05);
  strokeFold(-a*.76,20,a*.67,39,hull,'#fff8e5');
  inkLine(0,topY,a*.25,6,'#f8e5c1bb',1.5);
@@ -839,7 +866,7 @@ function drawBoat(p,time,cx,cy,S){
  // The two sails unfold by rotation around the mast and have visible backs.
  // At 0 they are narrow creases; near 1 their faces become broad planes.
  if(port>.001){
-  const extent=Math.sin(port*Math.PI*.5),top=-217*port;
+  const extent=Math.sin(port*Math.PI*.5),top=-240*port;
   const lG=grad(-141,-210,24,5,[[0,'#fffef0'],[.37,'#d9e9d6'],[.72,'#a4c6b2'],[1,'#5a8873']]);
   ctx.save();ctx.shadowColor='#0b302c75';ctx.shadowBlur=12;ctx.shadowOffsetY=7;
   poly([[5,-23],[5,top],[-138*extent,-20]],lG,'#f9f7eb',1.7);
@@ -853,12 +880,12 @@ function drawBoat(p,time,cx,cy,S){
   ctx.save();ctx.globalAlpha*=port*.24;inkLine(5,-145*port,-107*extent,-19,'#ffffff',.9);ctx.restore();
  }
  if(starboard>.001){
-  const extent=Math.sin(starboard*Math.PI*.5),top=-178*starboard;
-  const rG=grad(11,-184,124,-14,[[0,'#fff4df'],[.39,'#e5c5a0'],[.73,'#cf9c77'],[1,'#986b54']]);
+  const extent=Math.sin(starboard*Math.PI*.5),top=-290*starboard;
+  const rG=grad(11,-184,124,-14,[[0,'#fffdf1'],[.39,'#f5efdf'],[.73,'#e3dcc7'],[1,'#bfb9a4']]);
   ctx.save();ctx.shadowColor='#2a18175b';ctx.shadowBlur=12;ctx.shadowOffsetY=6;
   poly([[13,-22],[13,top],[126*extent,-21]],rG,'#fff3dc',1.7);
   ctx.restore();
-  poly([[13,top],[126*extent,-21],[59*extent*(1-wind),-17]],'#b17e5d','#e9c4a1',1.2);
+  poly([[13,top],[126*extent,-21],[59*extent*(1-wind),-17]],'#ded9c4','#fff6e3',1.2);
   strokeFold(13,top,59*extent*(1-wind),-17,starboard,'#fff0da');
   ctx.save();ctx.globalAlpha*=starboard*.20;inkLine(13,-132*starboard,89*extent,-20,'#fff3df',.9);ctx.restore();
  }
@@ -909,9 +936,9 @@ function frame(t){tick=0;target=scrollProgress();const dt=previousFrame?Math.min
  const rate=reduce.matches?1:1-Math.exp(-dt/82);
  position=mix(position,target,rate);if(Math.abs(position-target)<.00008)position=target;
  const p=position;const day=smooth((p-.81)/.135),end=smooth((p-.85)/.13);stage.classList.toggle('is-day',day>.68);stage.style.setProperty('--p',p.toFixed(4));stage.style.setProperty('--day',day.toFixed(4));stage.style.setProperty('--end',end.toFixed(4));
-  updateGuide(p);updateText(p);drawPapers(p,t);
+  updateGuide(p);updateText(p);if(!(window.NAStory?.travel>.999))drawPapers(p,t);
  if(isVisible)tick=requestAnimationFrame(frame)}
-function goTo(p){const distance=journey.offsetHeight-h;const y=journey.getBoundingClientRect().top+scrollY+distance*p;window.scrollTo({top:y,behavior:reduce.matches?'instant':'smooth'})}
+function goTo(p){if(window.NAStory){window.NAStory.goPaper(p);return;}const distance=journey.offsetHeight-h;const y=journey.getBoundingClientRect().top+scrollY+distance*p;window.scrollTo({top:y,behavior:reduce.matches?'instant':'smooth'})}
 dots.forEach(dot=>dot.addEventListener('click',()=>goTo(Number(dot.dataset.jump))));document.getElementById('restart').addEventListener('click',()=>goTo(0));
 window.addEventListener('resize',()=>{clearTimeout(resizeToken);resizeToken=setTimeout(()=>{resize()},90)},{passive:true});document.addEventListener('visibilitychange',()=>{isVisible=!document.hidden;if(isVisible&&!tick)tick=requestAnimationFrame(frame)});
 window.addEventListener('pageshow',()=>{target=scrollProgress()});reduce.addEventListener?.('change',()=>{});
@@ -951,11 +978,10 @@ resize();position=scrollProgress();tick=requestAnimationFrame(frame);
 {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
 "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"}}
 </script>
-<script type="module" src="./assets/js/origami3d.js?v=43-interactive-sea" onerror="window.__enableCanvasFallback?.('module-load-error')"></script>
-<script src="./assets/js/watermill-scene.js?v=31-waterfall-on-entry" defer></script>
-<script type="module" src="./assets/js/watermill3d.js?v=35-gltf-hdri-water"></script>
+<script type="module" src="./assets/js/origami3d.js?v=44-paper-ocean" onerror="window.__enableCanvasFallback?.('module-load-error')"></script>
+<script src="./assets/js/watermill-scene.js?v=44-paper-wheel" defer></script>
+<script type="module" src="./assets/js/watermill3d.js?v=44-paper-wheel"></script>
 
-<script src="./assets/js/cinematic-film-v40.js?v=40" defer></script>
-<script src="./assets/js/ocean-to-wheel-bridge-v43.js?v=43" defer></script>
+
 </body>
 </html>
