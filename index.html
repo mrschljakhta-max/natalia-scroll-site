@@ -317,6 +317,39 @@ html.canvas-fallback .fallback-ocean{display:block}
 }
 @media(prefers-reduced-motion:reduce){.mill-film-layer,.mill-film-video--settle,.mill-film-meta{transition:none}}
 
+
+/* v41 — scroll-linked 0.42× real CGI film in chapter 04; no fake still/parallax.
+   Fades in only as paper folds complete; original 3D remains when unavailable. */
+.boat-film{
+ position:absolute;inset:0;z-index:6;opacity:0;pointer-events:none;
+ overflow:hidden;background:#e7d4b6;isolation:isolate;
+}
+.boat-film video{
+ position:absolute;inset:0;width:100%;height:100%;
+ object-fit:cover;object-position:center center;
+ display:block;pointer-events:none;
+}
+.boat-film::after{
+ content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+ background:linear-gradient(90deg,rgba(233,237,222,.20) 0%,
+ rgba(237,232,215,.08) 30%,transparent 59%);
+}
+.stage.has-boat-film #origami3d{opacity:0!important;visibility:hidden}
+.stage.has-boat-film #paperCanvas{opacity:0!important;visibility:hidden}
+.stage.has-boat-film .escape-world{opacity:0!important}
+.stage.has-boat-film::after{opacity:0}
+.stage.has-boat-film .chapter-dot,.stage.has-boat-film .brand{
+ color:#19443d;
+}
+.stage.boat-film-available .ending-copy h2{
+ text-shadow:0 3px 18px rgba(255,241,213,.25);
+}
+@media(max-width:670px){
+ .boat-film video{object-position:58% center;}
+ .boat-film::after{background:linear-gradient(180deg,rgba(243,228,203,.10),transparent 60%)}
+}
+@media(prefers-reduced-motion:reduce){.boat-film{transition:none}}
+
 </style>
 </head>
 <body>
@@ -333,6 +366,9 @@ html.canvas-fallback .fallback-ocean{display:block}
   </div>
   <canvas id="paperCanvas" aria-hidden="true"></canvas>
   <div id="origami3d" aria-hidden="true"></div>
+  <div class="boat-film" id="boatFilm" aria-hidden="true">
+    <video id="boatFilmVideo" muted playsinline webkit-playsinline preload="auto" disablepictureinpicture></video>
+  </div>
   <div class="topbar">
     <a class="brand" href="#experience" aria-label="Наталія та Анна — на початок"><span class="sail-mark" aria-hidden="true"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="markA" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f2f2de"/><stop offset=".48" stop-color="#abc5b1"/><stop offset="1" stop-color="#57826f"/></linearGradient><linearGradient id="markB" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f4dbb7"/><stop offset="1" stop-color="#af7a5c"/></linearGradient></defs><path d="M40 12L40 53L16 54Z" fill="url(#markA)" stroke="#f6f0db" stroke-width="1.3"/><path d="M45 23L64 54L45 54Z" fill="url(#markB)" stroke="#f4ddc1" stroke-width="1.3"/><path d="M9 56L71 56L58 66L23 65Z" fill="#ede8d8" stroke="#d5e1d0" stroke-width="1.3"/><path d="M16 56L41 62L64 56M40 12L33 52" fill="none" stroke="#769889" stroke-width="1.5"/><path d="M13 71Q39 65 67 71" fill="none" stroke="#c99d7b" stroke-width="1.8" stroke-linecap="round"/></svg></span><span class="brand-name">НАТАЛІЯ &amp; АННА<small>БУХГАЛТЕРСЬКИЙ СУПРОВІД</small></span></a>
   </div>
@@ -870,6 +906,7 @@ resize();position=scrollProgress();tick=requestAnimationFrame(frame);
 <script type="module" src="./assets/js/origami3d.js?v=28-mist-ocean" onerror="window.__enableCanvasFallback?.('module-load-error')"></script>
 <script src="./assets/js/watermill-scene.js?v=31-waterfall-on-entry" defer></script>
 <script type="module" src="./assets/js/watermill3d.js?v=35-gltf-hdri-water"></script>
+<script src="./assets/js/origami-boat-slowmo-v41.js?v=41" defer></script>
 <script src="./assets/js/cinematic-film-v40.js?v=40" defer></script>
 </body>
 </html>
