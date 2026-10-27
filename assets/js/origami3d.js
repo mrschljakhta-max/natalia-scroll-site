@@ -6,7 +6,8 @@
  */
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js";
 import {createPaperMaterialMaps} from "./paper-materials.js?v=11-pbr-paper";
-import {createCinematicFinale} from "./cinematic-finale.js?v=43-ripple-waves";
+import {paperBoatPoint} from "./paper-boat-shape.mjs?v=44";
+import {createCinematicFinale} from "./cinematic-finale.js?v=43-paper-ocean";
 
 const stage=document.getElementById("stage");
 const journey=document.getElementById("experience");
@@ -21,8 +22,10 @@ const smooth=(a,b,x)=>{let t=clamp((x-a)/(b-a));return t*t*(3-2*t)};
 const mix=(a,b,t)=>a+(b-a)*t;
 const W=3.55,H=4.90;
 const scene=new THREE.Scene();
-const camera=new THREE.PerspectiveCamera(36,1,.1,70);
-const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:"high-performance"});
+const camera=new THREE.PerspectiveCamera(36,1,.1,300);
+let renderer;
+try{renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:"high-performance"});}
+catch(error){window.__enableCanvasFallback?.("webgl-unavailable");throw error;}
 renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.6));
 renderer.setClearColor(0x12232a,0);
 renderer.outputColorSpace=THREE.SRGBColorSpace;
@@ -101,23 +104,24 @@ const documentImageStatus={loaded:0,failed:0,source:"generated-originals"};
    seam vertices allow the two sail tips to have independent heights. */
 const sailGroup=new THREE.Group();scene.add(sailGroup);
 const buildPaperGeometry=()=>{
- const positions=[],uvs=[],indices=[],add=(u0,u1,v0,v1,nx,ny)=>{
+ const positions=[],uvs=[],parts=[],indices=[],add=(u0,u1,v0,v1,nx,ny,part)=>{
   const first=positions.length/3;
   for(let iy=0;iy<=ny;iy++)for(let ix=0;ix<=nx;ix++){
    const u=mix(u0,u1,ix/nx),v=mix(v0,v1,iy/ny);
-   positions.push(W*(u-.5),H*(v-.5),0);uvs.push(u,v);
+   positions.push(W*(u-.5),H*(v-.5),0);uvs.push(u,v);parts.push(part);
   }
   for(let iy=0;iy<ny;iy++)for(let ix=0;ix<nx;ix++){
    const i=first+iy*(nx+1)+ix;
    indices.push(i,i+1,i+nx+2,i,i+nx+2,i+nx+1);
   }
  };
- add(0,1,0,.34,36,18);     // V-folded paper keel
- add(0,.5,.34,1,18,36);    // large sage sail
- add(.5,1,.34,1,18,36);    // smaller copper sail
+ add(0,1,0,.34,36,18,0);   // Open V-folded hull
+ add(0,.5,.34,1,18,36,1);  // Ivory main sail
+ add(.5,1,.34,1,18,36,2);  // Sage secondary sail
  const g=new THREE.BufferGeometry();
  g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
  g.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));
+ g.setAttribute('paperPart',new THREE.Float32BufferAttribute(parts,1));
  g.setAttribute('color',new THREE.BufferAttribute(new Float32Array(positions.length),3));
  g.setIndex(indices);g.computeVertexNormals();return g;
 };
@@ -155,22 +159,10 @@ const edgeShadow=new THREE.Color('#789486');
 
 // Slim physical crease details appear only when they exist on the same sail.
 const boatDetail=new THREE.Group();sailGroup.add(boatDetail);
-const detailMaterials=[];
-const makeLine=(pts,color,alpha=1)=>{
- const material=new THREE.LineBasicMaterial({color,transparent:true,opacity:alpha,depthTest:true,depthWrite:false});
- const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints(
-  pts.map(p=>new THREE.Vector3(...p))),material);
- boatDetail.add(line);detailMaterials.push({mat:material,initial:alpha});
- return line;
-};
 // Origami-mast is folded paper tubing, not a separate glossy metal pole.
-const mastMaterial=new THREE.MeshStandardMaterial({color:0xc5d7c5,roughness:.88,side:THREE.DoubleSide});
+const mastMaterial=new THREE.MeshStandardMaterial({color:0xe3d9bf,roughness:.92,side:THREE.DoubleSide});
 const mast=new THREE.Mesh(new THREE.CylinderGeometry(.024,.038,3.15,5,1),mastMaterial);
 mast.position.set(.05,.79,.025);mast.castShadow=true;boatDetail.add(mast);
-makeLine([[-1.91,-.82,.14],[0,-1.47,.75],[1.89,-.82,.14]],0xfdf9e9,.64);
-makeLine([[-1.91,-.82,.14],[0,-.76,.58],[1.89,-.82,.14]],0x9eb4a0,.50);
-makeLine([[-.02,-.67,.36],[-.69,-.67,.42],[-1.58,-.67,.16]],0xeaf5e5,.62);
-makeLine([[.13,-.67,.33],[.56,-.67,.43],[1.25,-.67,.10]],0xfff0d9,.58);
 // Scroll state can be inspected for QA without revealing implementation/UI internals.
 const dev={sheetMesh,boatDetail};
 
@@ -198,7 +190,7 @@ ribbonPath({name:'port-silhouette',from:[0,.346],to:[0,1],color:0x557c6c,width:.
 ribbonPath({name:'port-mast-fold',from:[.5,.346],to:[.5,1],color:0x607e6d,width:.013,alpha:.73,begin:.90,finish:.963});
 ribbonPath({name:'port-inner-crease',from:[.22,.35],to:[.385,.93],color:0x7f9f8a,width:.012,alpha:.56,begin:.925,finish:.982});
 ribbonPath({name:'starboard-silhouette',from:[1,.346],to:[1,1],color:0xa9795d,width:.017,alpha:.87,begin:.936,finish:.996});
-ribbonPath({name:'starboard-mast-fold',from:[.5,.346],to:[.5,1],color:0x95735c,width:.011,alpha:.68,begin:.936,finish:.996});
+ribbonPath({name:'starboard-mast-fold',from:[.5001,.346],to:[.5001,1],color:0x95735c,width:.011,alpha:.68,begin:.936,finish:.996});
 ribbonPath({name:'starboard-inner-crease',from:[.78,.35],to:[.64,.90],color:0xc19b7c,width:.011,alpha:.56,begin:.942,finish:.996});
 ribbonPath({name:'hull-upper-lip',from:[0,.335],to:[1,.335],color:0x6f9180,width:.019,alpha:.89,begin:.861,finish:.944,kind:'hull'});
 ribbonPath({name:'hull-keel',from:[0,0],to:[1,0],color:0x89998d,width:.020,alpha:.82,begin:.866,finish:.941,kind:'hull'});
@@ -456,33 +448,11 @@ function foldPoint(x0,y0,p){
 /* An elegant volumetric origami yacht formed by the very same sheet mesh.
    Patch boundaries duplicate coincident crease vertices, not entire objects.
    They can therefore rise independently without introducing a second sheet. */
-function yachtPoint(x0,y0){
- const u=clamp(x0/W+.5),v=clamp(y0/H+.5);
- if(v<=.34+.00001){
-  const h=clamp(v/.34),long=2*u-1;
-  const width=(.68+.32*h)*(1-.09*Math.pow(Math.abs(long),6));
-  return [long*2.13*width,
-   -.73-.77*(1-h)*(1-.12*Math.pow(Math.abs(long),3)),
-   .15+.59*(1-h)*(1-long*long)+.21*h*Math.sin(Math.PI*u)];
- }
- const height=(v-.34)/.66;
- const taper=Math.pow(Math.max(.003,1-height),.91);
- if(u<=.5){
-  const side=(.5-u)*2;
-  return [-.045-1.76*side*taper*(1+.045*Math.sin(Math.PI*height)),
-   -.69+3.24*height,
-   .11+.42*Math.sin(side*Math.PI)*taper+.12*Math.sin(height*Math.PI)];
- }
- const side=(u-.5)*2;
- return [.115+1.19*side*taper*(1+.025*Math.sin(Math.PI*height)),
-  -.70+2.54*height,
-  -.015+.31*Math.sin(side*Math.PI)*taper+.11*Math.sin(height*Math.PI)];
+function yachtPoint(x0,y0,part){
+ return paperBoatPoint(clamp(x0/W+.5),clamp(y0/H+.5),part);
 }
-// Screenshot-approved cinematic shape: retain the smaller folded-paper hull,
-// tall sage sail and short copper sail once the third chapter completes.
-// Crucially, do NOT keep morphing toward yachtPoint() at scroll progress 1;
-// that late morph produced the oversized, flat-looking "primitive" silhouette.
-const FINAL_YACHT_POSE_PROGRESS=.965;
+// Complete the sculpted hull and both sails before the scene-four hold.
+const FINAL_YACHT_POSE_PROGRESS=1;
 const yachtPoseProgress=p=>Math.min(p,FINAL_YACHT_POSE_PROGRESS);
 let selectedPaperPose=null;
 function updateSheet(p,time){
@@ -507,31 +477,32 @@ function updateSheet(p,time){
   const index=i*3,x0=original[index],y0=original[index+1],
         uvx=clamp(x0/W+.5),uvy=clamp(y0/H+.5);
   const folded=foldPoint(x0,y0,poseP);
-  const final=yachtPoint(x0,y0);
-  const morph=uvy<.34-.00001?hull:uvx<=.5?port:starboard;
+  const part=geo.attributes.paperPart.getX(i);
+  const final=yachtPoint(x0,y0,part);
+  const morph=part===0?hull:part===1?port:starboard;
   const wind=heroVortexWarp(uvx,uvy,poseP,time);
   const x=mix(folded[0],final[0],morph)+wind[0],
         y=mix(folded[1],final[1],morph)+wind[1],
         z=mix(folded[2],final[2],morph)+paperFlex(uvx,uvy,poseP,time)+wind[2];
   pos.setXYZ(i,x,y,z);
   let c=neutral.clone();
-  if(uvy<.34){
+  if(part===0){
    // Under-rim occlusion, keel gradient, and split sage/copper hull facets.
-   c.lerp(uvx<.5?jade:paleCopper,hull*.94);
+   c.lerp(uvy<.17?ivory:jade,hull*(uvy<.17?.97:.35));
    const keelDepth=1-clamp(uvy/.24);
    const foldedLip=1-clamp(Math.abs(uvy-.34)/.065);
    c.lerp(keelColor,hull*.24*keelDepth);
    c.multiplyScalar(1-hull*(.17*keelDepth+.075*foldedLip));
-  }else if(uvx<=.5){
-   // Large port sail: ivory inner face and deeper sage outer paper panel.
-   c.lerp(jade,port*.62);
-   c.lerp(forest,port*(.11+.53*(.5-uvx)*2));
+  }else if(part===1){
+   // Main sail: warm ivory paper with a shaded central crease.
+   c.lerp(ivory,port*.95);
+   c.lerp(paleCopper,port*.05);
    const foldShadow=1-clamp(Math.abs(uvx-.245)/.065);
    c.lerp(edgeShadow,foldShadow*port*.20);
   }else{
-   // Starboard sail: distinctly warm copper, without flat white glare.
-   c.lerp(paleCopper,starboard*.66);
-   c.lerp(sand,starboard*(.17+.49*(uvx-.5)*2));
+   // Secondary sail: sage paper matching the earlier folded documents.
+   c.lerp(jade,starboard*.75);
+   c.lerp(forest,starboard*(.12+.45*(uvx-.5)*2));
    const foldShadow=1-clamp(Math.abs(uvx-.77)/.065);
    c.multiplyScalar(1-starboard*.13*foldShadow);
   }
@@ -548,8 +519,7 @@ function updateSheet(p,time){
  }
  pos.needsUpdate=true;col.needsUpdate=true;
  geo.computeVertexNormals();geo.computeBoundingSphere();
- // Preserve the ORIGINAL continuous-sheet yacht at full scroll progress.
- // No substitute object, sprite, or photograph obscures its paper facets.
+ // The same mesh remains opaque through the final fold and the ocean hold.
  if(sheetMat.transparent){
   sheetMat.transparent=false;
   sheetMat.depthWrite=true;
@@ -561,13 +531,15 @@ function updateSheet(p,time){
  const doc=docs[0];
  const pose=selectedPaperPose||{x:0,y:0,z:0,rx:0,ry:0,rz:0};
  const align=smooth(.448,.554,p);
- const settledX=mobile?0:1.8,settledY=mobile?-.74:-.19;
+ const finalBlend=smooth(.89,1,p);
+ const viewWidth=2*Math.tan(Math.PI/10)*(mobile?12.9:13.8)*width/height;
+ const settledX=mobile?mix(0,viewWidth*.15,finalBlend):mix(1.8,viewWidth*.098,finalBlend),settledY=mobile?mix(-.74,-.88,finalBlend):mix(-.19,-.55,finalBlend);
  sailGroup.position.set(
   mix(vortex.position.x+pose.x,settledX,align),
   mix(vortex.position.y+pose.y,settledY,align),
   mix(pose.z,0,align));
  const startScale=.94*doc.pw/W;
- const fullScale=.92;
+ const fullScale=mobile?.65:.95;
  const heroFocus=smooth(.25,.385,p)*(1-smooth(.433,.559,p));
  // Lens push-in: still the original paper material/geometry and timeline.
  const targetScale=mix(startScale,fullScale,align)*(1+.16*heroFocus);
@@ -583,14 +555,13 @@ function updateSheet(p,time){
  boatDetail.visible=details>.002;
  mast.scale.y=Math.max(.002,details);
  mast.position.y=-.71+1.575*details;
- detailMaterials.forEach(({mat,initial})=>mat.opacity=initial*details);
  updatePaperEdges(poseP,time);
  updateRibbons(poseP);
  // Keep crease ribbons on the original sail geometry.
  for(const edge of paperEdges)edge.mesh.visible=true;
  const seaContact=smooth(.951,.996,p);
  contactShadow.visible=seaContact>.008;
- contactShadow.material.opacity=.54*seaContact;
+ contactShadow.material.opacity=.12*seaContact;
  contactShadow.position.y=-1.83+(reduce.matches?0:Math.sin(time*.79)*.012*seaContact);
  boatDetail.rotation.z=reduce.matches?0:Math.sin(time*.72)*.007*smooth(.973,1,p);
  boatDetail.position.y=reduce.matches?0:Math.sin(time*.79)*.014*smooth(.978,1,p);
@@ -834,14 +805,15 @@ function updateVortex(p,t){
  }
 }
 
-// Only chapter four receives a volumetric sea and a separate matte paper boat.
+// Chapter four adds the ocean beneath the continuously folded paper mesh.
 // The earlier document physics, folds and GSAP timeline are never replaced.
 const seaLight=new THREE.PointLight(0xffe4b2,3.5,11);
 seaLight.position.set(4,-2,2);scene.add(seaLight);
-const finale=createCinematicFinale(THREE,{scene,paperMaps,reduce,
+const finale=createCinematicFinale(THREE,{scene,renderer,camera,stage,paperMaps,reduce,
  mobile:matchMedia("(max-width: 670px)").matches
 });
 function renderCinematicLayers(p,t){
+ if(p>.90)finale.renderReflection();
  renderer.clear(true,true,true);
  renderer.render(scene,camera);
 }
@@ -849,58 +821,6 @@ function renderCinematicLayers(p,t){
 // Independent real-time buoyancy; scroll controls the morph only.
 // A critically damped spring follows the SAME GPU wave sampled on the CPU.
 let boatRise=0,boatRiseVelocity=0,boatRoll=0,boatPitch=0,boatFrameTime=0;
-let pointerX=0,pointerY=0,lookX=0,lookY=0;
-let lastWorldTime=0;
-const raycaster=new THREE.Raycaster();
-const touchPoint=new THREE.Vector2();
-const surfacePlane=new THREE.Plane(new THREE.Vector3(0,1,0),1.79);
-const rayHit=new THREE.Vector3();
-let pressStart=null;
-function registerSeaInteraction(){
- function setPointer(e){
-  const r=stage.getBoundingClientRect();
-  pointerX=clamp(((e.clientX-r.left)/Math.max(r.width,1)-0.5)*2,-1,1);
-  pointerY=clamp(((e.clientY-r.top)/Math.max(r.height,1)-0.5)*2,-1,1);
- }
- function eligible(e){
-  return progress>.895 &&
-   !reduce.matches &&
-   !e.target.closest('a,button,input,select,textarea,[role="button"]');
- }
- stage.addEventListener("pointermove",e=>{
-  if(e.pointerType!=="mouse"&&e.pointerType!=="pen")return;
-  if(progress>.87)setPointer(e);
- },{passive:true});
- stage.addEventListener("pointerleave",()=>{pointerX=0;pointerY=0},{passive:true});
- stage.addEventListener("pointerdown",e=>{
-  if(!eligible(e))return;
-  pressStart={x:e.clientX,y:e.clientY,t:performance.now(),id:e.pointerId};
- },{passive:true});
- stage.addEventListener("pointercancel",()=>{pressStart=null},{passive:true});
- stage.addEventListener("pointerup",e=>{
-  const down=pressStart;pressStart=null;
-  if(!down||down.id!==e.pointerId||!eligible(e))return;
-  if(Math.hypot(down.x-e.clientX,down.y-e.clientY)>14||
-     performance.now()-down.t>850)return; // a scroll gesture, not a tap
-  const rect=stage.getBoundingClientRect();
-  const nx=(e.clientX-rect.left)/Math.max(rect.width,1);
-  const ny=(e.clientY-rect.top)/Math.max(rect.height,1);
-  if(ny<.54||nx<0||nx>1||ny>1)return; // sky, outside stage
-  touchPoint.set(nx*2-1,1-ny*2);
-  raycaster.setFromCamera(touchPoint,camera);
-  if(raycaster.ray.intersectPlane(surfacePlane,rayHit)){
-   finale.addRipple(rayHit.x,rayHit.z,lastWorldTime,1);
-   window.__oceanLastTap={x:+rayHit.x.toFixed(3),z:+rayHit.z.toFixed(3),
-      at:lastWorldTime,screenX:nx,screenY:ny};
-  }
- },{passive:true});
- // Keyboard and assistive-technology alternative, invisible unless focused.
- const tapButton=document.getElementById('oceanTapButton');
- if(tapButton)tapButton.addEventListener('click',()=>{
-  if(progress>.895)finale.addRipple(width<670?0:1.8,-1.4,lastWorldTime,.85);
- });
-}
-
 let width=0,height=0,progress=0,previous=0,active=true;
 function resize(){
  const rect=stage.getBoundingClientRect(),w=Math.max(1,rect.width),h=Math.max(1,rect.height);
@@ -911,36 +831,29 @@ function resize(){
 }
 function tick(time){
  if(!active)return;
+ if(window.NAStory?.travel>.999)return;
  resize();
  const p=clamp(progress);
  const mobile=width<670;
- lastWorldTime=time;
  updateVortex(p,time*1000);
  updateSheet(p,time);
  // Slight parallax makes the folding object read as 3D, but never hides the folds.
  const lensFocus=smooth(.25,.385,p)*(1-smooth(.433,.559,p));
- // Very small inertial mouse parallax, only after the boat appears.
- const dtLook=boatFrameTime?Math.min(.05,Math.max(0,time-boatFrameTime)):1/60;
- const pointerK=1-Math.exp(-dtLook*2.4);
- lookX+=(pointerX-lookX)*pointerK;
- lookY+=(pointerY-lookY)*pointerK;
- const parallax=reduce.matches?0:smooth(.895,.985,p)*(1-smooth(.948,1,p));
- const exit=smooth(.949,1,p);
- // True virtual camera drift to the right on the way to the wheel.
- // Pointer offsets stay small enough to preserve the approved composition.
- const travel=exit*3.05;
- camera.position.x=mix(-.10,.14,smooth(.58,.94,p))+lookX*.075*parallax+travel;
- camera.position.y=mix(.13,.62,smooth(.76,1,p))-lookY*.038*parallax;
+ camera.position.x=mix(-.10,.14,smooth(.58,.94,p));
+ camera.position.y=mix(.13,.62,smooth(.76,1,p));
  camera.position.z=(mobile?12.9:13.8)-lensFocus*(mobile?.28:.52);
- camera.lookAt(travel*.84+lookX*.023*parallax,
-   mix(0,.76,smooth(.78,1,p))-lookY*.012*parallax,0);
+ const finalCamera=smooth(.88,1,p);
+ camera.position.y=mix(camera.position.y,mobile?-1.2:-.20,finalCamera);
+ camera.position.x+=finale.pointer.x*.045*finalCamera;
+ camera.position.y+=finale.pointer.y*.025*finalCamera;
+ camera.lookAt(0,mix(mix(0,.76,smooth(.78,1,p)),mobile?-.50:.50,finalCamera),0);
  // Scroll determines whether the paper is a completed sailboat.
  // Physical time determines what it does AFTER the wheel is released.
  // updateSheet() resets the base pose every tick; these offsets never drift.
  const afloat=reduce.matches?0:smooth(.933,.989,p);
  const dt=boatFrameTime?Math.min(.05,Math.max(0,time-boatFrameTime)):1/60;
  boatFrameTime=time;
- const sample=finale.sampleSurface(mobile?0:1.8,0,time);
+ const sample=finale.sampleSurface(sailGroup.position.x,0,reduce.matches?0:time);
  const desiredRise=sample.height*1.12;
  // Damped suspension: no abrupt snapping at wave crests or scroll pauses.
  const spring=11.5,damping=7.6;
@@ -948,23 +861,21 @@ function tick(time){
  boatRiseVelocity*=Math.exp(-damping*dt);
  boatRise+=boatRiseVelocity*dt;
  const waveEase=1-Math.exp(-dt*3.7);
- // Limit storm-like impulse; a paper sailboat can never flip.
- boatRoll+=(clamp(-sample.dx*.18,-.065,.065)-boatRoll)*waveEase;
- boatPitch+=(clamp(sample.dz*.17,-.055,.055)-boatPitch)*waveEase;
+ boatRoll+=(clamp(-sample.dx*.37,-.065,.065)-boatRoll)*waveEase;
+ boatPitch+=(clamp(sample.dz*.34,-.055,.055)-boatPitch)*waveEase;
  sailGroup.position.y+=boatRise*afloat;
  sailGroup.rotation.z+=boatRoll*afloat;
  sailGroup.rotation.x+=boatPitch*afloat;
  // A minuscule, genuinely time-driven paper flutter, not more bobbing.
  sailGroup.rotation.y+=(reduce.matches?0:Math.sin(time*.41)*.006*afloat);
- finale.update(p,time,{mobile});
+ finale.update(p,time,{mobile,boatX:sailGroup.position.x,boatZ:0});
  window.__livingOceanV42={
    mode:'real-time-Three.js',progress:+p.toFixed(4),realTimeSeconds:+time.toFixed(2),
    waterHeight:+sample.height.toFixed(4),boatBob:+(boatRise*afloat).toFixed(4),
    boatRollDegrees:+(boatRoll*afloat*180/Math.PI).toFixed(3),
    boatPitchDegrees:+(boatPitch*afloat*180/Math.PI).toFixed(3),
    oceanContinuesWhenScrollStops:true,videoUsed:false,
-   cursorParallax:true,interactionRipples:true,
-   rightwardTransition:true,lastRipple:window.__oceanLastTap||null
+   cursorParallax:true,interactionRipples:true,rightwardTransition:true,lastRipple:window.__oceanLastTap||null
  };
  renderCinematicLayers(p,time);
  // Reveal WebGL only after its first real render (never display a blank canvas).
@@ -978,14 +889,13 @@ function tick(time){
 try{
  resize();renderCinematicLayers(0,0);
  const initialPosition=clamp(-journey.getBoundingClientRect().top/Math.max(1,journey.offsetHeight-innerHeight));
- progress=initialPosition;
- const scrub={p:initialPosition};
+ progress=window.NAStory?window.NAStory.paperProgress(initialPosition):initialPosition;
+ const scrub={p:0};
  GS.to(scrub,{p:1,ease:"none",scrollTrigger:{
   trigger:journey,start:"top top",end:"bottom bottom",scrub:0.65,
   invalidateOnRefresh:true,onUpdate:()=>{}
- },onUpdate(){progress=scrub.p}});
+ },onUpdate(){progress=window.NAStory?window.NAStory.paperProgress(scrub.p):scrub.p}});
  GS.ticker.add(tick);
- registerSeaInteraction();
  document.addEventListener("visibilitychange",()=>{active=!document.hidden;if(active)resize()});
  window.addEventListener("resize",resize,{passive:true});
  renderer.domElement.addEventListener("webglcontextlost",()=>{
@@ -1000,7 +910,7 @@ try{
   return {scrollProgress:progress,poseProgress:yachtPoseProgress(progress),
    samples:[0,.17,.34,.51,.68,.85,1].map(r=>at(Math.min(a.count-1,Math.floor(r*(a.count-1)))))};
  };
-  window.__origami3DDiagnostics={engine:"Three.js WebGL",controller:"GSAP ScrollTrigger",sheetMeshes:halves.length,sheetVertices:halves.reduce((n,o)=>n+o.geo.attributes.position.count,0),vortexMeshes:docs.length,boatFacets:8,sailFacets:4,geometryVersion:"v8-sculpted-contours",oneContinuousSheet:true,contourPaths:creaseRibbons.length,contactShadow:true,seaShader:"v43-gpu-cpu-interactive-ripple-world",atmosphericSky:true,paperPBR:"v11-cotton-stock",paperMaps:["albedo","normal","roughness"],paperMapResolution:paperMaps.dimensions,physicalPaperEdges:paperEdges.length,edgeThickness:.014,airFlex:"reversible-pre-fold",documentImages:documentImageStatus,documentTypes:DOCUMENT_IMAGE_FILES.length,paperPhysics:"v16-visible-paper-flaps",finalScene:"v20-approved-yacht-shape-locked",waveVertices:finale.waveVertices,finale:finale.diagnostics,finalPoseProgress:FINAL_YACHT_POSE_PROGRESS,paperPhysicsStats,heroWind:true,vortexDirection:"v14-cinematic-parallax",depthTiers:3,focusOnSameSheet:true,vortexDocumentCount:VORTEX_COUNT};
+  window.__origami3DDiagnostics={engine:"Three.js WebGL",controller:"GSAP ScrollTrigger",sheetMeshes:halves.length,sheetVertices:halves.reduce((n,o)=>n+o.geo.attributes.position.count,0),vortexMeshes:docs.length,boatFacets:8,sailFacets:4,geometryVersion:"v8-sculpted-contours",oneContinuousSheet:true,contourPaths:creaseRibbons.length,contactShadow:true,seaShader:"v44-reflected-interactive-ocean",atmosphericSky:true,paperPBR:"v11-cotton-stock",paperMaps:["albedo","normal","roughness"],paperMapResolution:paperMaps.dimensions,physicalPaperEdges:paperEdges.length,edgeThickness:.014,airFlex:"reversible-pre-fold",documentImages:documentImageStatus,documentTypes:DOCUMENT_IMAGE_FILES.length,paperPhysics:"v16-visible-paper-flaps",finalScene:"v44-folded-paper-shell",waveVertices:finale.waveVertices,finale:finale.diagnostics,finalPoseProgress:FINAL_YACHT_POSE_PROGRESS,paperPhysicsStats,heroWind:true,vortexDirection:"v14-cinematic-parallax",depthTiers:3,focusOnSameSheet:true,vortexDocumentCount:VORTEX_COUNT};
 }catch(err){
  window.__origami3DReady=false;window.__natalia3d=false;
  target.style.display="none";

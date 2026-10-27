@@ -1,239 +1,202 @@
-/**
- * NATALIA & ANNA — Scene 04 / Living Ocean v42.
- * Real-time procedural Three.js water, physically motivated waves and glints.
- *
- * Two clocks are deliberately independent:
- *   progress = reversible paper -> ocean state from GSAP ScrollTrigger
- *   time     = real seconds from GSAP ticker, always advancing while visible
- * The scene stays alive when the user's mouse wheel stops.
- *
- * No video textures, video playback, or static image patchwork.
- * One and the same paper geometry from origami3d.js forms the sailboat.
- */
-export function createCinematicFinale(THREE,{scene,paperMaps,reduce,mobile=false}){
- const clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v));
- const smooth=(a,b,v)=>{const t=clamp((v-a)/(b-a));return t*t*(3-2*t);};
- const RGB=hex=>new THREE.Vector3(
-   parseInt(hex.slice(1,3),16)/255,
-   parseInt(hex.slice(3,5),16)/255,
-   parseInt(hex.slice(5,7),16)/255
- );
+/** Scene 04: reflected geometric ocean, shared CPU/GPU waves and bounded tap impulses. */
+export function createCinematicFinale(THREE,{scene,renderer,camera,stage,reduce,mobile=false}){
+ const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
+ const smooth=(a,b,x)=>{const t=clamp((x-a)/(b-a));return t*t*(3-2*t);};
  const seaLevel=-1.79;
- // Four pooled circular disturbances; a click creates real surface displacement.
- const ripplePool=Array.from({length:4},()=>({x:0,z:0,start:-10000,strength:0}));
- let rippleIndex=0;
- function ringAt(x,z,t,r){
-  const age=t-r.start;
-  if(age<0||age>9||!r.strength)return 0;
-  const d=Math.hypot(x-r.x,z-r.z);
-  const phase=d-age*2.25;
-  return r.strength*.19*Math.sin(phase*5.2)
-   *Math.exp(-phase*phase*1.8)*Math.exp(-age*.20)/(1+d*.105);
- }
- function addRipple(x,z,t,strength=1){
-  if(reduce.matches||!Number.isFinite(x)||!Number.isFinite(z))return false;
-  if(Math.abs(x)>52||z>29||z< -88)return false;
-  const r=ripplePool[rippleIndex];
-  r.x=x;r.z=z;r.start=t;r.strength=clamp(strength,.25,1);
-  rippleIndex=(rippleIndex+1)%ripplePool.length;
-  return true;
- }
-
- // Calm, multi-directional ocean. The same formula is evaluated on GPU and
- // on CPU under the paper vessel, preventing the boat from rocking out of
- // phase with the surface supporting it.
  const waveBands=[
-  {ax:.60, az:.24, k:1.30, speed:.39, amplitude:.078, phase:0},
-  {ax:-.42,az:.88, k:2.30, speed:-.53,amplitude:.037, phase:.73},
-  {ax:.88, az:.46, k:5.80, speed:.77, amplitude:.011, phase:1.52},
-  {ax:-.75,az:.66,k:12.20,speed:-1.06,amplitude:.0045,phase:2.30}
+  {ax:.94,az:.34,k:1.42,speed:.52,amplitude:.066,phase:.1},
+  {ax:-.66,az:.75,k:2.67,speed:.68,amplitude:.032,phase:1.9},
+  {ax:.26,az:.96,k:5.83,speed:.87,amplitude:.014,phase:4.1},
+  {ax:-.93,az:.37,k:11.37,speed:1.24,amplitude:.0058,phase:2.4},
+  {ax:.73,az:-.68,k:22.1,speed:1.49,amplitude:.0025,phase:.8}
  ];
+ let clock=0,lastReveal=0,boatX=1.8,boatZ=0,head=0,reflectionFrame=0;
+ const impulses=Array.from({length:4},()=>new THREE.Vector4(0,0,-100,0));
+ const pointer={x:0,y:0},pointerTarget={x:0,y:0};let lastTime=0;
+ const reflection=new THREE.WebGLRenderTarget(mobile?256:768,mobile?256:512,{depthBuffer:true});
+ const reflectedCamera=new THREE.PerspectiveCamera();
+ const reflectionMatrix=new THREE.Matrix4();
+ const bias=new THREE.Matrix4().set(.5,0,0,.5,0,.5,0,.5,0,0,.5,.5,0,0,0,1);
+ const uniforms={
+  uTime:{value:0},uReveal:{value:0},uBoat:{value:new THREE.Vector2(1.8,0)},
+  uRipples:{value:impulses},uReflection:{value:reflection.texture},
+  uReflectionMatrix:{value:reflectionMatrix},uSun:{value:new THREE.Vector3(.45,.25,-.86).normalize()}
+ };
+ const waveFunction=`
+ uniform float uTime;
+ uniform vec2 uBoat;
+ uniform vec4 uRipples[4];
+ float waves(vec2 p){
+  float t=uTime;
+  float h=sin(dot(p,vec2(.94,.34))*1.42-t*.52+.1)*.066;
+  h+=sin(dot(p,vec2(-.66,.75))*2.67-t*.68+1.9)*.032;
+  h+=sin(dot(p,vec2(.26,.96))*5.83-t*.87+4.1)*.014;
+  h+=sin(dot(p,vec2(-.93,.37))*11.37-t*1.24+2.4)*.0058;
+  h+=sin(dot(p,vec2(.73,-.68))*22.1-t*1.49+.8)*.0025;
+  for(int i=0;i<4;i++){
+   float age=t-uRipples[i].z;
+   if(age<0.||age>=8.)continue;
+   float d=length(p-uRipples[i].xy);
+   float ring=d-age*1.65;
+   h+=uRipples[i].w*sin(ring*7.5)*exp(-ring*ring*1.2)*exp(-age*.48);
+  }
+  return h;
+ }
+ `;
+ const vertexShader=`
+ precision highp float;
+ ${waveFunction}
+ uniform mat4 uReflectionMatrix;
+ varying vec3 vWorld;
+ varying vec4 vMirror;
+ void main(){
+  vec4 p=modelMatrix*vec4(position,1.);
+  p.y+=waves(p.xz);
+  vWorld=p.xyz;
+  vMirror=uReflectionMatrix*vec4(p.x,${seaLevel.toFixed(2)},p.z,1.);
+  gl_Position=projectionMatrix*viewMatrix*p;
+ }`;
+ const fragmentShader=`
+ precision highp float;
+ ${waveFunction}
+ uniform float uReveal;
+ uniform vec3 uSun;
+ uniform sampler2D uReflection;
+ varying vec3 vWorld;
+ varying vec4 vMirror;
+ float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+ float noise(vec2 p){
+  vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
+  return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+1.),f.x),f.y);
+ }
+ void main(){
+  vec2 q=vWorld.xz;
+  float e=.026;
+  vec2 slope=vec2(waves(q+vec2(e,0.))-waves(q-vec2(e,0.)),waves(q+vec2(0.,e))-waves(q-vec2(0.,e)))/(2.*e);
+  float farAway=smoothstep(15.,130.,length(cameraPosition-vWorld));
+  vec2 detail=vec2(noise(q*14.+uTime*.18),noise(q*19.-uTime*.15))-.5;
+  slope+=detail*.043*(1.-farAway);
+  vec3 N=normalize(vec3(-slope.x,1.,-slope.y));
+  vec3 V=normalize(cameraPosition-vWorld);
+  float nv=max(dot(N,V),0.);
+  float fresnel=.035+.965*pow(1.-nv,5.);
+  vec3 R=reflect(-V,N);
+  float skyUp=smoothstep(-.06,.65,R.y);
+  vec3 sky=mix(vec3(.77,.73,.59),vec3(.34,.59,.65),skyUp);
+  float sun=pow(max(dot(R,uSun),0.),200.);
+  float glow=pow(max(dot(R,uSun),0.),32.);
+  sky+=vec3(1.,.74,.38)*(sun*2.5+glow*.11);
+  float deep=noise(q*.37+vec2(uTime*.035,0.));
+  vec3 base=mix(vec3(.024,.19,.21),vec3(.065,.36,.37),deep*.63+.18);
+  vec3 color=mix(base,sky,clamp(.19+fresnel*.73,.0,.96));
+  vec3 H=normalize(V+uSun);
+  float glint=pow(max(dot(N,H),0.),260.);
+  color+=vec3(1.,.80,.48)*glint*.65;
+  vec2 uv=vMirror.xy/vMirror.w+slope*.009;
+  vec4 reflected=texture2D(uReflection,clamp(uv,.001,.999));
+  float valid=step(0.,uv.x)*step(uv.x,1.)*step(0.,uv.y)*step(uv.y,1.);
+  color=mix(color,reflected.rgb,reflected.a*valid*(.36+.33*fresnel));
+  vec2 atBoat=(q-uBoat)*vec2(.62,1.48);
+  float d=length(atBoat);
+  float wake=pow(.5+.5*sin(d*13.-uTime*1.4),12.)*exp(-pow((d-1.25)/.6,2.));
+  color+=vec3(.75,.88,.80)*wake*.055;
+  vec3 haze=vec3(.61,.73,.70);
+  color=mix(color,haze,farAway*.70);
+  gl_FragColor=vec4(color,uReveal);
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
+ }`;
+ const geometry=new THREE.PlaneGeometry(190,200,mobile?100:210,mobile?100:210);
+ const material=new THREE.ShaderMaterial({uniforms,vertexShader,fragmentShader,
+  transparent:true,depthWrite:true,side:THREE.DoubleSide});
+ const ocean=new THREE.Mesh(geometry,material);
+ ocean.rotation.x=-Math.PI/2;ocean.position.set(0,seaLevel,-65);
+ ocean.frustumCulled=false;ocean.visible=false;scene.add(ocean);
+ function rippleHeight(x,z,time){
+  let h=0;
+  for(const p of impulses){
+   const age=time-p.z;
+   if(age<0||age>8)continue;
+   const r=Math.hypot(x-p.x,z-p.y)-age*1.65;
+   h+=p.w*Math.sin(r*7.5)*Math.exp(-r*r*1.2)*Math.exp(-age*.48);
+  }
+  return h;
+ }
  function sampleSurface(x,z,time){
-  if(reduce.matches)return {height:0,dx:0,dz:0};
   let height=0,dx=0,dz=0;
   for(const b of waveBands){
-   const angle=(x*b.ax+z*b.az)*b.k-time*b.speed+b.phase;
-   const sn=Math.sin(angle),cs=Math.cos(angle);
-   height+=b.amplitude*sn;
-   dx+=b.amplitude*cs*b.k*b.ax;
-   dz+=b.amplitude*cs*b.k*b.az;
+   const a=(x*b.ax+z*b.az)*b.k-time*b.speed+b.phase;
+   height+=b.amplitude*Math.sin(a);
+   dx+=b.amplitude*Math.cos(a)*b.k*b.ax;
+   dz+=b.amplitude*Math.cos(a)*b.k*b.az;
   }
-  // Motion-free geometric wake is only a subtle optical accent. Boat bob
-  // is sampled from swells, not from its own generated wake.
-  // Match GPU ripple displacement and slope under the paper vessel.
-  const eps=.06;
-  for(const r of ripplePool){
-   height+=ringAt(x,z,time,r);
-   dx+=(ringAt(x+eps,z,time,r)-ringAt(x-eps,z,time,r))/(2*eps);
-   dz+=(ringAt(x,z+eps,time,r)-ringAt(x,z-eps,time,r))/(2*eps);
-  }
+  const e=.026;
+  height+=rippleHeight(x,z,time);
+  dx+=(rippleHeight(x+e,z,time)-rippleHeight(x-e,z,time))/(2*e);
+  dz+=(rippleHeight(x,z+e,time)-rippleHeight(x,z-e,time))/(2*e);
   return {height,dx,dz};
  }
- const shaderCommon=[
- "uniform float uTime;",
- "uniform vec2 uBoat;",
- "uniform vec4 uRipples[4];",
- "float interactionWaves(vec2 p){",
- " float res=0.0;",
- " for(int i=0;i<4;i++){",
- "  vec4 rip=uRipples[i];",
- "  float age=uTime-rip.z;",
- "  if(age>=0.0 && age<9.0 && rip.w>0.0){",
- "   float d=distance(p,rip.xy);",
- "   float phase=d-age*2.25;",
- "   res+=rip.w*.19*sin(phase*5.2)*exp(-phase*phase*1.8)*exp(-age*.20)/(1.0+d*.105);",
- "  }",
- " }",
- " return res;",
- "}",
- "float waves(vec2 p){",
- " float t=uTime;",
- " float a=sin(dot(p,vec2(.60,.24))*1.30-t*.39)*.078;",
- " float b=sin(dot(p,vec2(-.42,.88))*2.30+t*.53+.73)*.037;",
- " float c=sin(dot(p,vec2(.88,.46))*5.80-t*.77+1.52)*.011;",
- " float d=sin(dot(p,vec2(-.75,.66))*12.20+t*1.06+2.30)*.0045;",
- " float r=length((p-uBoat)*vec2(1.0,1.15));",
- " float wake=sin(r*7.4-t*1.22)*exp(-r*1.72)*.007;",
- " return a+b+c+d+wake+interactionWaves(p);",
- "}"
- ].join("\n");
- const u={
-  uTime:{value:0},
-  uReveal:{value:0},
-  uMood:{value:0},
-  uBoat:{value:new THREE.Vector2(1.8,0)},
-  uRipples:{value:Array.from({length:4},()=>new THREE.Vector4(0,0,-10000,0))},
-  uSunX:{value:5.2},
-  uDeep:{value:RGB("#0B4655")},
-  uMid:{value:RGB("#146D80")},
-  uNear:{value:RGB("#218C99")},
-  uHorizon:{value:RGB("#70B7B8")},
-  uFoam:{value:RGB("#DDF3E7")},
-  uGold:{value:RGB("#FFE1A1")}
- };
- const vertexShader=[
- "precision highp float;",
- shaderCommon,
- "varying vec3 vWorld;",
- "varying float vDistance;",
- "void main(){",
- " vec4 wp=modelMatrix*vec4(position,1.0);",
- " wp.y+=waves(wp.xz);",
- " vWorld=wp.xyz;",
- " vDistance=distance(cameraPosition,wp.xyz);",
- " gl_Position=projectionMatrix*viewMatrix*wp;",
- "}"
- ].join("\n");
- const fragmentShader=[
- "precision highp float;",
- shaderCommon,
- "uniform float uReveal;",
- "uniform float uMood;",
- "uniform float uSunX;",
- "uniform vec3 uDeep;",
- "uniform vec3 uMid;",
- "uniform vec3 uNear;",
- "uniform vec3 uHorizon;",
- "uniform vec3 uFoam;",
- "uniform vec3 uGold;",
- "varying vec3 vWorld;",
- "varying float vDistance;",
- "float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}",
- "void main(){",
- " vec2 q=vWorld.xz;",
- " float e=.075;",
- " vec3 N=normalize(vec3(",
- "  -(waves(q+vec2(e,0.0))-waves(q-vec2(e,0.0)))/(2.0*e),",
- "  1.0,",
- "  -(waves(q+vec2(0.0,e))-waves(q-vec2(0.0,e)))/(2.0*e)));",
- " vec3 V=normalize(cameraPosition-vWorld);",
- " vec3 L=normalize(vec3(.45,.68,-.55));",
- " float nv=clamp(dot(N,V),0.0,1.0);",
- " float fresnel=pow(1.0-nv,3.5);",
- " float distanceFade=smoothstep(4.0,55.0,vDistance);",
- " vec3 color=mix(uDeep,uMid,smoothstep(2.0,17.0,vDistance));",
- " color=mix(color,uHorizon,distanceFade*.78);",
- " color=mix(color,uNear,(1.0-distanceFade)*.19);",
- " color+=uHorizon*fresnel*.15;",
- " float crest=waves(q);",
- " float slope=length(N.xz);",
- " color+=uFoam*smoothstep(.08,.24,slope)*.11;",
- " // The golden sun glitters as hundreds of tiny changing reflections,",
- " // tightly limited to the right third. Not an artificial glowing pipe.",
- " vec3 H=normalize(L+V);",
- " float spec=pow(max(dot(N,H),0.0),165.0);",
- " float spark=pow(max(dot(N,H),0.0),440.0);",
- " float pathWidth=1.05+max(-q.y,0.0)*.030;",
- " float sunPath=exp(-pow((q.x-uSunX)/pathWidth,2.0));",
- " float ripples=.65+.35*sin(q.x*7.2+q.y*9.4+uTime*.56);",
- " ripples*=.70+.30*sin(q.x*15.3-q.y*5.1-uTime*.62);",
- " float grain=hash(floor(q*24.0+uTime*.15));",
- " float flecks=step(.91,grain)*(0.3+0.7*abs(ripples));",
- " float goldGain=mix(.68,1.18,uMood);",
- " color+=uGold*sunPath*goldGain*(spec*.58+spark*.80+flecks*spec*.20);",
- " // A naturally spreading, subtle white wake around the paper hull.",
- " vec2 local=(q-uBoat)*vec2(1.0,1.25);",
- " float d=length(local);",
- " float bow=exp(-abs(local.x)*3.0)*exp(-abs(local.y)*1.1);",
- " float wake=pow(.5+.5*sin(d*10.0-uTime*1.15),6.0)",
- "            *exp(-d*1.45)*smoothstep(.08,.38,d);",
- " color+=uFoam*(wake*.16+bow*.040);",
- " float interaction=interactionWaves(q);",
- " color+=uFoam*min(.19,abs(interaction)*.95);",
- " float horizonFog=1.0-smoothstep(33.0,76.0,vDistance);",
- " float alpha=mix(.94,.995,fresnel)*horizonFog*uReveal;",
- " gl_FragColor=vec4(clamp(color,0.0,1.0),alpha);",
- "}"
- ].join("\n");
-
- // Geometry moves in world space in the shader; no baked-frame playback.
- const grid=mobile?86:160;
- const geometry=new THREE.PlaneGeometry(110,130,grid,mobile?86:160);
- const material=new THREE.ShaderMaterial({
-  uniforms:u,vertexShader,fragmentShader,
-  transparent:true,depthWrite:false,depthTest:true,
-  side:THREE.DoubleSide,toneMapped:false
- });
- const ocean=new THREE.Mesh(geometry,material);
- ocean.rotation.x=-Math.PI/2;
- ocean.position.set(0,seaLevel,-30);
- ocean.frustumCulled=false;
- ocean.renderOrder=0;
- ocean.visible=false;
- scene.add(ocean);
-
- // Decorative tiny foam patches at the hull are shader-computed. No extra
- // mesh copies of the boat, avoiding geometry discontinuity on chapter 03→04.
- let lastReveal=0;
- function update(progress,realTime,{mobile:small=false}={}){
-  const reveal=smooth(.810,.965,progress);
-  const mood=smooth(.82,1.0,progress);
-  u.uTime.value=reduce.matches?0:realTime;
-  u.uReveal.value=reveal;
-  u.uMood.value=mood;
-  u.uBoat.value.set(small?0:1.8,0);
-  u.uSunX.value=small?1.35:5.2;
-  for(let i=0;i<ripplePool.length;i++){
-   const r=ripplePool[i];
-   u.uRipples.value[i].set(r.x,r.z,r.start,r.strength);
-  }
-  ocean.visible=reveal>.001;
-  lastReveal=reveal;
+ function addRipple(x,z){
+  if(reduce.matches||lastReveal<.95||!Number.isFinite(x)||!Number.isFinite(z))return;
+  impulses[head].set(x,z,clock,.11);head=(head+1)%impulses.length;
+  window.__oceanLastTap={x:+x.toFixed(3),z:+z.toFixed(3),at:clock};
+  stage.dataset.rippleCount=String(Number(stage.dataset.rippleCount||0)+1);
  }
- return {
-  update,sea:ocean,sampleSurface,addRipple,
-  get activeRippleCount(){return ripplePool.filter(r=>r.strength>0).length},
-  waveVertices:geometry.attributes.position.count,
-  get reveal(){return lastReveal;},
-  diagnostics:{
-   version:43,engine:"real-time interactive GPU ocean",
-   timeIndependentOfScroll:true,scrollControlsRevealOnly:true,
-   waveFamilies:4,interactiveRippleSlots:4,
-   rippleCpuGpuConsistent:true,waterMesh:true,goldSpecular:true,wake:true,
-   boat:"one continuous origami sheet, no 2.5D stand-in",
-   geometry:"world-space subdivided plane, vertex displacement",
-   shader:"analytic multi-band wave normals / moving sun highlights",
-   reduceMotionSupported:true
-  }
- };
+ const ray=new THREE.Raycaster(),plane=new THREE.Plane(new THREE.Vector3(0,1,0),-seaLevel);
+ const hit=new THREE.Vector3();let down=null;
+ stage.addEventListener('pointermove',event=>{
+  if(event.pointerType!=='mouse'||reduce.matches)return;
+  const r=stage.getBoundingClientRect();
+  pointerTarget.x=clamp((event.clientX-r.left)/r.width*2-1,-1,1);
+  pointerTarget.y=clamp(1-(event.clientY-r.top)/r.height*2,-1,1);
+ },{passive:true});
+ stage.addEventListener('pointerleave',()=>{pointerTarget.x=pointerTarget.y=0;down=null;});
+ stage.addEventListener('pointerdown',event=>{down={x:event.clientX,y:event.clientY,id:event.pointerId,at:performance.now()};},{passive:true});
+ stage.addEventListener('pointercancel',()=>{down=null;},{passive:true});
+ stage.addEventListener('pointerup',event=>{
+  const start=down;down=null;
+  if(!start||start.id!==event.pointerId||performance.now()-start.at>850||Math.hypot(start.x-event.clientX,start.y-event.clientY)>9)return;
+  if(event.target.closest('button,a')||window.NAStory?.travel>.02)return;
+  const r=stage.getBoundingClientRect();
+  ray.setFromCamera(new THREE.Vector2((event.clientX-r.left)/r.width*2-1,1-(event.clientY-r.top)/r.height*2),camera);
+  if(ray.ray.intersectPlane(plane,hit)&&Math.abs(hit.x)<32&&hit.z<16&&hit.z>-35)addRipple(hit.x,hit.z);
+ },{passive:true});
+ window.addEventListener('ocean-ripple',()=>addRipple(boatX-1.7,boatZ+1));
+ const oldColor=new THREE.Color(),look=new THREE.Vector3(),reflectedLook=new THREE.Vector3();
+ function renderReflection(){
+  if(!ocean.visible||reflectionFrame++%2)return;
+  camera.updateMatrixWorld();
+  reflectedCamera.copy(camera);
+  reflectedCamera.position.set(camera.position.x,2*seaLevel-camera.position.y,camera.position.z);
+  camera.getWorldDirection(look);look.add(camera.position);
+  reflectedLook.set(look.x,2*seaLevel-look.y,look.z);
+  reflectedCamera.up.set(0,-1,0);reflectedCamera.lookAt(reflectedLook);
+  reflectedCamera.updateMatrixWorld();reflectedCamera.updateProjectionMatrix();
+  reflectionMatrix.copy(bias).multiply(reflectedCamera.projectionMatrix).multiply(reflectedCamera.matrixWorldInverse);
+  const oldTarget=renderer.getRenderTarget();
+  renderer.getClearColor(oldColor);const oldAlpha=renderer.getClearAlpha();
+  const oldShadow=renderer.shadowMap.autoUpdate;
+  ocean.visible=false;renderer.shadowMap.autoUpdate=false;
+  renderer.setRenderTarget(reflection);renderer.setClearColor(0x000000,0);renderer.clear();
+  renderer.render(scene,reflectedCamera);
+  renderer.setRenderTarget(oldTarget);renderer.setClearColor(oldColor,oldAlpha);
+  renderer.shadowMap.autoUpdate=oldShadow;ocean.visible=true;
+ }
+ function update(progress,time,options={}){
+  const dt=Math.max(0,Math.min(.1,time-lastTime));lastTime=time;
+  const ease=1-Math.exp(-dt*3.2);
+  pointer.x=reduce.matches?0:pointer.x+(pointerTarget.x-pointer.x)*ease;
+  pointer.y=reduce.matches?0:pointer.y+(pointerTarget.y-pointer.y)*ease;
+  clock=reduce.matches?0:time;
+  boatX=options.boatX??1.8;boatZ=options.boatZ??0;
+  lastReveal=smooth(.82,.975,progress);
+  uniforms.uTime.value=clock;uniforms.uReveal.value=lastReveal;
+  uniforms.uBoat.value.set(boatX,boatZ);
+  ocean.visible=lastReveal>.001;
+ }
+ return {update,sea:ocean,sampleSurface,renderReflection,pointer,
+  waveVertices:geometry.attributes.position.count,get reveal(){return lastReveal;},
+  diagnostics:{version:44,engine:'real-time reflected GPU ocean',timeIndependentOfScroll:true,
+   waveFamilies:waveBands.length,waterMesh:true,planarReflection:true,touchRipples:true,
+   sameWaveEquationForBoat:true,reduceMotionSupported:true}};
 }
